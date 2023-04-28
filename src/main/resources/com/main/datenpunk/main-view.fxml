@@ -10,8 +10,8 @@
     <padding>
         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
     </padding>
-    <Button text="New Object" />
-   <TableView fx:id="objectTable" prefHeight="200.0" prefWidth="200.0">
+    <Button onAction="#onNewObject" text="New Object" />
+   <TableView fx:id="objectTable" onMouseClicked="#onTableClick" prefHeight="200.0" prefWidth="200.0">
      <columns>
        <TableColumn fx:id="nameColumn" prefWidth="75.0" text="Name" />
        <TableColumn fx:id="typeColumn" prefWidth="75.0" text="Type" />
