@@ -3,6 +3,6 @@ module com.example.datenpunk {
     requires javafx.fxml;
 
 
-    opens com.example.datenpunk to javafx.fxml;
-    exports com.example.datenpunk;
+    opens com.main.datenpunk to javafx.fxml;
+    exports com.main.datenpunk;
 }
