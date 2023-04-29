@@ -5,4 +5,5 @@ module com.example.datenpunk {
 
     opens com.main.datenpunk to javafx.fxml;
     exports com.main.datenpunk;
+    exports enteties;
 }
