@@ -1,5 +1,6 @@
 package com.main.datenpunk;
 
+import database.DAO;
 import enteties.TableElement;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
@@ -21,6 +22,8 @@ import java.net.URL;
 import java.util.ResourceBundle;
 
 public class MainController implements Initializable {
+
+    private DAO dao;
 
     @FXML
     private TableView<TableElement> objectTable;
@@ -44,6 +47,10 @@ public class MainController implements Initializable {
             new TableElement("Sword","Weapon","Planned")
     );
 
+    public void setDAO(DAO dao){
+        this.dao = dao;
+    }
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
@@ -57,6 +64,8 @@ public class MainController implements Initializable {
 
     @FXML
     public void onTableClick(MouseEvent event) throws IOException {
+        dao.seletAll();
+
         if(event.getButton().equals(MouseButton.PRIMARY)) {
             if (event.getClickCount() == 2) {
 
@@ -75,6 +84,7 @@ public class MainController implements Initializable {
 
                 DetailController detailController = fxmlLoader.getController();
                 detailController.setCurrentElement(currentElement);     //TODO: Better data transfer
+                detailController.setDao(dao);
 
                 stage.show();
 
@@ -99,7 +109,12 @@ public class MainController implements Initializable {
 
         AddElementController addElementController = fxmlLoader.getController();
         addElementController.setTableReference(tableElements);      //TODO: better data transfer
+        addElementController.setDao(dao);
 
         stage.show();
     }
+
+
+
+
 }

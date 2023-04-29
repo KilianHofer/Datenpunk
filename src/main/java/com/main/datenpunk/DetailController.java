@@ -1,5 +1,6 @@
 package com.main.datenpunk;
 
+import database.DAO;
 import enteties.TableElement;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -12,7 +13,12 @@ import java.util.ResourceBundle;
 
 public class DetailController implements Initializable {
 
+    private DAO dao;
     private TableElement currentElement;
+
+    public void setDao(DAO dao){
+        this.dao = dao;
+    }
 
     @FXML
     public TextField nameField,typeField,statusField;

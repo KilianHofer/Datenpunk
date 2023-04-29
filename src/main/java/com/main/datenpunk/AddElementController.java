@@ -1,5 +1,6 @@
 package com.main.datenpunk;
 
+import database.DAO;
 import enteties.TableElement;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -8,10 +9,16 @@ import javafx.stage.Stage;
 
 public class AddElementController {
 
+    private DAO dao;
+
     @FXML
     public TextField nameField, typeField;
 
     private ObservableList<TableElement> tableReference;
+
+    public void setDao(DAO dao){
+        this.dao = dao;
+    }
     public void onCancel() {
 
         Stage stage = (Stage) nameField.getScene().getWindow();
@@ -27,6 +34,7 @@ public class AddElementController {
                 typeField.getText(),
                 "Planned");
         tableReference.add(newObject);
+        dao.insert(nameField.getText(),typeField.getText(),System.currentTimeMillis());
         onCancel();
 
     }
