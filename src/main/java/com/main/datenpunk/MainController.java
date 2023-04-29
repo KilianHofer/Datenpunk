@@ -4,7 +4,6 @@ import enteties.TableElement;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -75,7 +74,7 @@ public class MainController implements Initializable {
                 stage.initOwner(objectTable.getScene().getWindow());
 
                 DetailController detailController = fxmlLoader.getController();
-                detailController.setCurrentElement(currentElement);
+                detailController.setCurrentElement(currentElement);     //TODO: Better data transfer
 
                 stage.show();
 
@@ -85,7 +84,22 @@ public class MainController implements Initializable {
     }
 
     @FXML
-    public void onNewObject(){
-        System.out.println("new object");
+    public void onNewObject() throws IOException {
+
+        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("addElement-view.fxml"));
+        Scene scene = new Scene(fxmlLoader.load());
+
+
+        Stage stage = new Stage();
+
+        stage.setTitle("New Object");
+        stage.setScene(scene);
+        stage.initModality(Modality.WINDOW_MODAL);
+        stage.initOwner(objectTable.getScene().getWindow());
+
+        AddElementController addElementController = fxmlLoader.getController();
+        addElementController.setTableReference(tableElements);      //TODO: better data transfer
+
+        stage.show();
     }
 }
