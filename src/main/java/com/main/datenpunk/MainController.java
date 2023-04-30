@@ -64,7 +64,7 @@ public class MainController implements Initializable {
 
     @FXML
     public void onTableClick(MouseEvent event) throws IOException {
-        dao.seletAll();
+        dao.selectAll();
 
         if(event.getButton().equals(MouseButton.PRIMARY)) {
             if (event.getClickCount() == 2) {

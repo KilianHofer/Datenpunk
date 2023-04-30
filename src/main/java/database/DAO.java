@@ -1,6 +1,12 @@
 package database;
 
+import enteties.HistoryElement;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+
 import java.sql.*;
+import java.text.Format;
+import java.text.SimpleDateFormat;
 
 public class DAO {      //TODO: make singelton
 
@@ -18,19 +24,19 @@ public class DAO {      //TODO: make singelton
                 return false;
             }
         } catch (Exception e) {
-            System.out.println(e);
+            System.out.println(e.getMessage());
             return false;
         }
     }
 
 
-    public void seletAll(){
-        Statement statement;
+    public void selectAll(){
+        PreparedStatement statement;
         ResultSet resultSet;
         try {
             String query = "SELECT * FROM objects";
-            statement = connection.createStatement();
-            resultSet = statement.executeQuery(query);
+            statement = connection.prepareStatement(query);
+            resultSet = statement.executeQuery();
 
             while(resultSet.next()){
                 System.out.print(resultSet.getString("name"));
@@ -38,13 +44,44 @@ public class DAO {      //TODO: make singelton
                 System.out.println(resultSet.getString("type"));
             }
         }catch (Exception e){
-            System.out.println(e);
+            System.out.println(e.getMessage());
         }
     }
 
-    public void insert(String name, String type, Long timestamp){
+    public ObservableList<HistoryElement> selectHistory(int id){
 
-                try {
+        ObservableList<HistoryElement> history = FXCollections.observableArrayList();
+        PreparedStatement statement;
+        ResultSet resultSet;
+        String query = "SELECT * FROM history WHERE id=?";
+        try{
+            statement = connection.prepareStatement(query);
+            statement.setInt(1,id);
+            resultSet = statement.executeQuery();
+
+            String status, timestamp;
+
+            while(resultSet.next()){
+                status = resultSet.getString("status");
+                long time = resultSet.getLong("timestamp");
+                Date date = new Date(time);
+                Format format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                timestamp = format.format(date);
+
+                history.add(new HistoryElement(status,timestamp));
+            }
+            return history;
+
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+            return null;
+        }
+    }
+
+
+    public void insert(String name, String type){
+
+        try {
             String query = ( "INSERT INTO objects(name, type) VALUES(?,?);");
             PreparedStatement statement = connection.prepareStatement(query,Statement.RETURN_GENERATED_KEYS);
             statement.setString(1,name);
@@ -59,16 +96,28 @@ public class DAO {      //TODO: make singelton
             statement = connection.prepareStatement(query);
             statement.setInt(1,id);
             statement.setString(2,"Planned");   //TODO: check for existing statuses
-            statement.setLong(3,timestamp);
+            statement.setLong(3,System.currentTimeMillis());
             statement.execute();
 
 
         }catch (Exception e){
-            System.out.println(e);
+            System.out.println(e.getMessage());
         }
+    }
 
+    public void update(int id, String status){
 
+        String querey = ("INSERT INTO history VALUES (?,?,?)");
+        try {
+            PreparedStatement statement = connection.prepareStatement(querey);
+            statement.setInt(1,id);
+            statement.setString(2,status);
+            statement.setLong(3,System.currentTimeMillis());
+            statement.execute();
 
+        }catch (SQLException e){
+            System.out.println(e.getMessage());
+        }
     }
 
     public Connection getConnection() {

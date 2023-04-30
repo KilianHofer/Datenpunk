@@ -1,18 +1,33 @@
 package enteties;
 
-import java.util.Date;
+
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+
 
 public class HistoryElement {
 
-    long timestamp;
-    String status;
+    StringProperty timestamp;
+    StringProperty status;
 
-    public HistoryElement(String status){
+    public HistoryElement(String status, String timestamp){
 
-        this.status = status;
-        Date date = new Date();
-        timestamp = date.getTime();
-
+        this.status = new SimpleStringProperty(status);
+        this.timestamp = new SimpleStringProperty(timestamp);
     }
+
+    public final StringProperty statusProperty(){
+        return status;
+    }
+    public final StringProperty timestampProperty(){
+        return timestamp;
+    }
+    public String getStatus(){
+        return statusProperty().get();
+    }
+    public String getTimestamp(){
+        return timestampProperty().get();
+    }
+
 
 }
