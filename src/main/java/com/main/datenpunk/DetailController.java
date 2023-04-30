@@ -29,10 +29,13 @@ public class DetailController{
 
     public void setDao(DAO dao){
         this.dao = dao;
-        historyElements = dao.selectHistory(8);
+        updateTable();
+    }
+
+    public void updateTable(){
+        historyElements = dao.selectHistory(currentElement.getId());
         statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
         dateColumn.setCellValueFactory(new PropertyValueFactory<>("timestamp"));
-
         historyTable.setItems(historyElements);
     }
 
@@ -47,8 +50,8 @@ public class DetailController{
         currentElement.setName(nameField.getText());        //TODO: check for changes
         currentElement.setType(typeField.getText());
         currentElement.setStatus(statusField.getText());
-        dao.update(8,statusField.getText());           //TODO: get index of object
-
+        dao.update(currentElement.getId(), statusField.getText());
+        updateTable();
 
     }
 }

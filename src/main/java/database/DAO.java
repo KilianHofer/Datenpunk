@@ -1,6 +1,7 @@
 package database;
 
 import enteties.HistoryElement;
+import enteties.TableElement;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -30,21 +31,31 @@ public class DAO {      //TODO: make singelton
     }
 
 
-    public void selectAll(){
+    public ObservableList<TableElement> selectMain(){
+
+        ObservableList<TableElement> tableElements = FXCollections.observableArrayList();
+
         PreparedStatement statement;
         ResultSet resultSet;
         try {
-            String query = "SELECT * FROM objects";
+            String query = "SELECT o.id, o.name, o.type, h.status from objects o join history h on (o.id = h.id) join (select id,max(timestamp) as t from history group by id) as i on i.id = o.id and i.t=h.timestamp";
             statement = connection.prepareStatement(query);
             resultSet = statement.executeQuery();
 
+            int id;
+            String name, type, status;
+
             while(resultSet.next()){
-                System.out.print(resultSet.getString("name"));
-                System.out.print(" ");
-                System.out.println(resultSet.getString("type"));
+                id = resultSet.getInt("id");
+                name = resultSet.getString("name");
+                type = resultSet.getString("type");
+                status = resultSet.getString("status");
+                tableElements.add(new TableElement(id,name,type,status));
             }
+            return tableElements;
         }catch (Exception e){
             System.out.println(e.getMessage());
+            return null;
         }
     }
 
@@ -79,7 +90,7 @@ public class DAO {      //TODO: make singelton
     }
 
 
-    public void insert(String name, String type){
+    public Integer insert(String name, String type){
 
         try {
             String query = ( "INSERT INTO objects(name, type) VALUES(?,?);");
@@ -98,10 +109,12 @@ public class DAO {      //TODO: make singelton
             statement.setString(2,"Planned");   //TODO: check for existing statuses
             statement.setLong(3,System.currentTimeMillis());
             statement.execute();
+            return id;
 
 
         }catch (Exception e){
             System.out.println(e.getMessage());
+            return null;
         }
     }
 
@@ -118,9 +131,5 @@ public class DAO {      //TODO: make singelton
         }catch (SQLException e){
             System.out.println(e.getMessage());
         }
-    }
-
-    public Connection getConnection() {
-        return connection;
     }
 }

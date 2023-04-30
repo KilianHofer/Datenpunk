@@ -35,37 +35,30 @@ public class MainController implements Initializable {
     @FXML
     private TableColumn<TableElement, StringProperty> statusColumn;
 
-    ObservableList<TableElement> tableElements = FXCollections.observableArrayList(
-
-            new TableElement("Barrel","Clutter","Planned"),
-            new TableElement("Fish","Food","Complete"),
-            new TableElement("Tree","Vegetation","Planned"),
-            new TableElement("House","Building","Planned"),
-            new TableElement("Book","Clutter","Complete"),
-            new TableElement("Mug","Clutter","Complete"),
-            new TableElement("Chest","Container","Complete"),
-            new TableElement("Sword","Weapon","Planned")
-    );
+    ObservableList<TableElement> tableElements = FXCollections.observableArrayList();
 
     public void setDAO(DAO dao){
         this.dao = dao;
+        updateTable();
     }
+
+    private void updateTable() {
+        tableElements = dao.selectMain();
+        nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
+        typeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
+        statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+        objectTable.setItems(tableElements);
+    }
+
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
-        nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
-        typeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
-        statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
 
-
-        objectTable.setItems(tableElements);
     }
 
     @FXML
     public void onTableClick(MouseEvent event) throws IOException {
-        dao.selectAll();
-
         if(event.getButton().equals(MouseButton.PRIMARY)) {
             if (event.getClickCount() == 2) {
 

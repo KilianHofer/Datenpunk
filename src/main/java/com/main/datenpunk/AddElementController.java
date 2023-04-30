@@ -29,12 +29,15 @@ public class AddElementController {
 
     public void onAccept() {            //TODO: check not empty
 
+
+        int id = dao.insert(nameField.getText(),typeField.getText());
+
         TableElement newObject = new TableElement(
+                id,
                 nameField.getText(),
                 typeField.getText(),
                 "Planned");
         tableReference.add(newObject);
-        dao.insert(nameField.getText(),typeField.getText());
         onCancel();
 
     }

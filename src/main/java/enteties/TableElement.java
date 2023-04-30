@@ -4,9 +4,12 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
 public class TableElement {
+
+    private final int id;
     private final StringProperty name, type, status;
 
-    public TableElement(String name, String type, String status){
+    public TableElement(int id,String name, String type, String status){
+        this.id = id;
         this.name = new SimpleStringProperty(name);
         this.type = new SimpleStringProperty(type);
         this.status = new SimpleStringProperty(status);
@@ -22,6 +25,9 @@ public class TableElement {
         return status;
     }
 
+    public  int getId(){
+        return id;
+    }
     public String getName(){
         return nameProperty().get();
     }
