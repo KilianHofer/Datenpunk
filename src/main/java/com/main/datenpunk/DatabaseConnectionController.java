@@ -34,10 +34,4 @@ public class DatabaseConnectionController {
         stage.close();
 
     }
-
-    public void checkEnter() throws IOException {
-
-        onConnect();
-
-    }
 }

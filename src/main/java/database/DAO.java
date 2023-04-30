@@ -1,6 +1,7 @@
 package database;
 
 import enteties.HistoryElement;
+import enteties.Status;
 import enteties.TableElement;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -8,6 +9,8 @@ import javafx.collections.ObservableList;
 import java.sql.*;
 import java.text.Format;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DAO {
 
@@ -52,11 +55,11 @@ public class DAO {
         PreparedStatement statement;
         ResultSet resultSet;
         try {
-            String query = "SELECT o.id, o.name, o.type, h.status FROM objects o JOIN history h ON (o.id = h.id) JOIN (SELECT id,max(timestamp) AS t FROM history GROUP BY id) AS i ON i.id = o.id AND i.t=h.timestamp";
+            String query = "SELECT o.id, o.name, o.type, h.status, s.sortOrder  FROM objects o JOIN history h ON (o.id = h.id) JOIN (SELECT id,max(timestamp) AS t FROM history GROUP BY id) AS i ON (i.id = o.id AND i.t=h.timestamp) JOIN status s ON s.name=h.status";
             statement = connection.prepareStatement(query);
             resultSet = statement.executeQuery();
 
-            int id;
+            int id,sortOrder;
             String name, type, status;
 
             while(resultSet.next()){
@@ -64,7 +67,8 @@ public class DAO {
                 name = resultSet.getString("name");
                 type = resultSet.getString("type");
                 status = resultSet.getString("status");
-                tableElements.add(new TableElement(id,name,type,status));
+                sortOrder = resultSet.getInt("sortOrder");
+                tableElements.add(new TableElement(id,name,type,status,sortOrder));
             }
             return tableElements;
         }catch (Exception e){
@@ -104,6 +108,63 @@ public class DAO {
     }
 
 
+    public Integer getMaxStatusSortOrder(){
+        try{
+            String query = "SELECT sortOrder FROM status ORDER BY sortOrder DESC LIMIT 1";
+            PreparedStatement statement = connection.prepareStatement(query);
+            ResultSet resultSet = statement.executeQuery();
+            if(resultSet.next()){
+                return resultSet.getInt("sortOrder");
+            }
+
+
+        }catch (SQLException e){
+            System.out.println(e.getMessage());
+        }
+        return null;
+    }
+
+    public List<Status> selectStatuses(){
+        try{
+            List<Status> statuses = new ArrayList<>();
+            String query = "SELECT name,sortOrder FROM status";
+            PreparedStatement statement = connection.prepareStatement(query);
+            ResultSet resultSet = statement.executeQuery();
+            int sortOrder;
+            String name;
+
+            while(resultSet.next()){
+                sortOrder = resultSet.getInt("sortOrder");
+                name = resultSet.getString("name");
+                statuses.add(new Status(name,sortOrder));
+            }
+            return statuses;
+
+
+        }catch (SQLException e){
+            System.out.println(e.getMessage());
+        }
+        return null;
+    }
+
+    public Integer selectSortOrder(String name) {
+        try{
+            String query = "SELECT sortOrder FROM status WHERE name = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setString(1,name);
+            ResultSet resultSet = statement.executeQuery();
+            if(resultSet.next()){
+                return resultSet.getInt("name");
+            }
+
+
+        }catch (SQLException e){
+            System.out.println(e.getMessage());
+        }
+        return null;
+    }
+
+
     public Integer insert(String name, String type){
 
         try {
@@ -120,7 +181,7 @@ public class DAO {
             query = "INSERT INTO History(id, status, timestamp) VALUES(?,?,?)";
             statement = connection.prepareStatement(query);
             statement.setInt(1,id);
-            statement.setString(2,"Planned");   //TODO: check for existing statuses
+            statement.setString(2,"Planned");   //TODO: make default setting
             statement.setLong(3,System.currentTimeMillis());
             statement.execute();
             return id;
@@ -159,4 +220,6 @@ public class DAO {
             System.out.println(e.getMessage());
         }
     }
+
+
 }

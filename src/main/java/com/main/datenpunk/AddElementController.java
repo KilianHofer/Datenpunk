@@ -28,7 +28,7 @@ public class AddElementController implements Initializable {
 
     }
 
-    public void onAccept() {            //TODO: check not empty
+    public void onAccept() {
 
         String name = nameField.getText();
         String type = typeField.getText();
@@ -36,11 +36,15 @@ public class AddElementController implements Initializable {
         if(!name.isEmpty() && !type.isEmpty()) {
             int id = dao.insert(nameField.getText(), typeField.getText());
 
+            int sortOrder = dao.selectSortOrder(name);
+
+
             TableElement newObject = new TableElement(
                     id,
                     name,
                     type,
-                    "Planned");
+                    "Planned",
+                    sortOrder);
             tableReference.add(newObject);
             onCancel();
         }

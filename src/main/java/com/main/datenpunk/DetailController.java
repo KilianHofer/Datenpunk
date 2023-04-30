@@ -2,16 +2,20 @@ package com.main.datenpunk;
 
 import database.DAO;
 import enteties.HistoryElement;
+import enteties.Status;
 import enteties.TableElement;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.ResourceBundle;
 
@@ -22,14 +26,16 @@ public class DetailController implements Initializable {
     private TableElement currentElement;
 
     @FXML
-    public TextField nameField,typeField,statusField;
+    private TextField nameField,typeField;
+    @FXML
+    private ChoiceBox<String> statusBox;
 
     ObservableList<HistoryElement> historyElements;
     @FXML
-    public TableView<HistoryElement> historyTable;
+    private TableView<HistoryElement> historyTable;
 
     @FXML
-    public TableColumn<HistoryElement,String> statusColumn, dateColumn;
+    private TableColumn<HistoryElement,String> statusColumn, dateColumn;
 
 
 
@@ -44,7 +50,7 @@ public class DetailController implements Initializable {
         currentElement = element;
         nameField.setText(currentElement.getName());
         typeField.setText(currentElement.getType());
-        statusField.setText(currentElement.getStatus());
+        statusBox.setValue(currentElement.getStatus());
         updateTable();
     }
 
@@ -59,16 +65,38 @@ public class DetailController implements Initializable {
             dao.updateValues(currentElement.getId(),name,type);
         }
 
-        if(!Objects.equals(statusField.getText(), currentElement.getStatus())) {
-            currentElement.setStatus(statusField.getText());
-            dao.updateHistory(currentElement.getId(), statusField.getText());
+        if(!Objects.equals(statusBox.getValue(), currentElement.getStatus())) {
+            currentElement.setStatus(statusBox.getValue());
+            dao.updateHistory(currentElement.getId(), statusBox.getValue());
             updateTable();
         }
 
+
+
     }
+    List<Status> statuses;
+    List<String> statusNames = new ArrayList<>();
+    List<Integer>   statusSortOrder = new ArrayList<>();
+
+    private void getStatuses(){
+        statuses = dao.selectStatuses();
+        Status status;
+        for (Status value : statuses) {
+            status = value;
+            statusNames.add(status.getName());
+            statusSortOrder.add(status.getSortOrder());
+        }
+    }
+
+
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         dao = DAO.getInstance();
+        getStatuses();
+        statusBox.getItems().addAll(statusNames);
+
+
+
     }
 }

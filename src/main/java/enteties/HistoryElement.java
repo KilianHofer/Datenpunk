@@ -23,10 +23,10 @@ public class HistoryElement {
         return timestamp;
     }
     public String getStatus(){
-        return statusProperty().get();
+        return status.get();
     }
     public String getTimestamp(){
-        return timestampProperty().get();
+        return timestamp.get();
     }
 
 

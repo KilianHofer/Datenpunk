@@ -16,7 +16,6 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -45,7 +44,6 @@ public class MainController implements Initializable {
         objectTable.setItems(tableElements);
     }
 
-
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
@@ -56,8 +54,9 @@ public class MainController implements Initializable {
 
     @FXML
     public void onTableClick(MouseEvent event) throws IOException {
+
         if(event.getButton().equals(MouseButton.PRIMARY)) {
-            if (event.getClickCount() == 2) {
+            if (event.getClickCount() == 2) {               //TODO: known issue: tries to open detail view even by double-click on table header
 
                 TableElement currentElement = objectTable.getSelectionModel().getSelectedItem();
 
