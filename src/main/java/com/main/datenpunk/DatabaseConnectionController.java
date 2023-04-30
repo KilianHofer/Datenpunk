@@ -16,17 +16,13 @@ public class DatabaseConnectionController {
 
     public void onConnect() throws IOException {
 
-        DAO dao = new DAO();
+        DAO dao = DAO.getInstance();
         if(dao.connectToDB("Datenpunk","postgres",passwordField.getText())){
             FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
             Scene scene = new Scene(fxmlLoader.load());
             Stage stage = (Stage)(passwordField.getScene().getWindow());
             stage.setTitle("Datenpunk");
             stage.setScene(scene);
-
-            MainController mainController = fxmlLoader.getController();
-            mainController.setDAO(dao);     //TODO: Better data transfer
-
             stage.show();
         }
 

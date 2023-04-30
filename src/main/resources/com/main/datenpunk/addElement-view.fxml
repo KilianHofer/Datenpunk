@@ -5,11 +5,10 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 
-
 <AnchorPane prefHeight="279.0" prefWidth="392.0" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.main.datenpunk.AddElementController">
    <children>
-      <TextField fx:id="nameField" layoutX="117.0" layoutY="79.0" promptText="Name" />
-      <TextField fx:id="typeField" layoutX="121.0" layoutY="148.0" promptText="Type" />
+      <TextField fx:id="nameField" layoutX="117.0" layoutY="79.0" onAction="#onAccept" promptText="Name" />
+      <TextField fx:id="typeField" layoutX="121.0" layoutY="148.0" onAction="#onAccept" promptText="Type" />
       <Button layoutX="95.0" layoutY="229.0" mnemonicParsing="false" onAction="#onCancel" text="Cancel" />
       <Button layoutX="244.0" layoutY="229.0" mnemonicParsing="false" onAction="#onAccept" text="Accept" />
       <Label layoutX="120.0" layoutY="131.0" text="Type" />

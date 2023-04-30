@@ -9,9 +9,23 @@ import java.sql.*;
 import java.text.Format;
 import java.text.SimpleDateFormat;
 
-public class DAO {      //TODO: make singelton
+public class DAO {
 
     private Connection connection;
+
+    private static DAO instance = null;
+
+    private DAO(){
+    }
+
+    public static DAO getInstance(){
+        if(instance == null){
+            instance = new DAO();
+        }
+        return instance;
+
+    }
+
 
     public Boolean connectToDB(String name, String user, String password) {
         try {
@@ -38,7 +52,7 @@ public class DAO {      //TODO: make singelton
         PreparedStatement statement;
         ResultSet resultSet;
         try {
-            String query = "SELECT o.id, o.name, o.type, h.status from objects o join history h on (o.id = h.id) join (select id,max(timestamp) as t from history group by id) as i on i.id = o.id and i.t=h.timestamp";
+            String query = "SELECT o.id, o.name, o.type, h.status FROM objects o JOIN history h ON (o.id = h.id) JOIN (SELECT id,max(timestamp) AS t FROM history GROUP BY id) AS i ON i.id = o.id AND i.t=h.timestamp";
             statement = connection.prepareStatement(query);
             resultSet = statement.executeQuery();
 
@@ -118,9 +132,22 @@ public class DAO {      //TODO: make singelton
         }
     }
 
-    public void update(int id, String status){
+    public void updateValues(int id, String name, String type){
+        String query = "UPDATE objects SET name = ?, type = ? WHERE id = ?";
+        try {
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setString(1,name);
+            statement.setString(2,type);
+            statement.setInt(3,id);
+            statement.executeUpdate();
+        }catch (SQLException e){
+            System.out.println(e.getMessage());         //TODO: better error handling
+        }
+    }
 
-        String querey = ("INSERT INTO history VALUES (?,?,?)");
+    public void updateHistory(int id, String status){
+
+        String querey = "INSERT INTO history VALUES (?,?,?)";
         try {
             PreparedStatement statement = connection.prepareStatement(querey);
             statement.setInt(1,id);

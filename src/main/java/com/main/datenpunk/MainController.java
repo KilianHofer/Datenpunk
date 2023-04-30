@@ -37,11 +37,6 @@ public class MainController implements Initializable {
 
     ObservableList<TableElement> tableElements = FXCollections.observableArrayList();
 
-    public void setDAO(DAO dao){
-        this.dao = dao;
-        updateTable();
-    }
-
     private void updateTable() {
         tableElements = dao.selectMain();
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
@@ -54,6 +49,8 @@ public class MainController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
+        dao = DAO.getInstance();
+        updateTable();
 
     }
 
@@ -77,7 +74,6 @@ public class MainController implements Initializable {
 
                 DetailController detailController = fxmlLoader.getController();
                 detailController.setCurrentElement(currentElement);     //TODO: Better data transfer
-                detailController.setDao(dao);
 
                 stage.show();
 
@@ -102,7 +98,6 @@ public class MainController implements Initializable {
 
         AddElementController addElementController = fxmlLoader.getController();
         addElementController.setTableReference(tableElements);      //TODO: better data transfer
-        addElementController.setDao(dao);
 
         stage.show();
     }
