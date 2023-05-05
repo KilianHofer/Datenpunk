@@ -18,6 +18,7 @@ import java.util.List;
 public class DAO {
 
     private Connection connection;
+    public Format format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     private static DAO instance = null;
 
@@ -67,6 +68,7 @@ public class DAO {
 
             int id,sortOrder;
             String name, type, status, color;
+            long timestampOut;
 
             while(resultSet.next()){
                 id = resultSet.getInt("id");
@@ -75,7 +77,8 @@ public class DAO {
                 status = resultSet.getString("status");
                 sortOrder = resultSet.getInt("sortOrder");
                 color = resultSet.getString("colour");
-                objectTableElements.add(new ObjectTableElement(id,name,type,new Status(status,sortOrder,color)));
+                timestampOut = resultSet.getLong("t");
+                objectTableElements.add(new ObjectTableElement(id,name,type,new Status(status,sortOrder,color),format.format(timestampOut)));
             }
             return objectTableElements;
         }catch (Exception e){
@@ -86,13 +89,14 @@ public class DAO {
 
     public ObjectTableElement selectElement(int id){
         try {
-            String query = "SELECT o.id, o.name, o.type, h.status, s.sortOrder, s.colour  FROM objects o JOIN history h ON (o.id = h.id) JOIN (SELECT id,max(timestamp) AS t FROM history GROUP BY id) AS i ON (i.id = o.id AND i.t=h.timestamp) JOIN status s ON s.name=h.status WHERE o.id = ?";
+            String query = "SELECT o.id, o.name, o.type, h.status, s.sortOrder, s.colour, i.t  FROM objects o JOIN history h ON (o.id = h.id) JOIN (SELECT id,max(timestamp) AS t FROM history GROUP BY id) AS i ON (i.id = o.id AND i.t=h.timestamp) JOIN status s ON s.name=h.status WHERE o.id = ?";
             PreparedStatement statement =  connection.prepareStatement(query);
             statement.setInt(1,id);
             ResultSet resultSet = statement.executeQuery();
 
             int sortOrder;
             String name, type, status, color;
+            long timestamp;
 
             if(resultSet.next()){
 
@@ -101,7 +105,8 @@ public class DAO {
                 status = resultSet.getString("status");
                 sortOrder = resultSet.getInt("sortOrder");
                 color = resultSet.getString("colour");
-                return new ObjectTableElement(id,name,type,new Status(status,sortOrder,color));
+                timestamp = resultSet.getLong("t");
+                return new ObjectTableElement(id,name,type,new Status(status,sortOrder,color), format.format(timestamp));
             }
 
 
@@ -128,7 +133,6 @@ public class DAO {
                 status = resultSet.getString("status");
                 long time = resultSet.getLong("timestamp");
                 Date date = new Date(time);
-                Format format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 timestamp = format.format(date);
 
                 history.add(new HistoryTableElement(status,timestamp));

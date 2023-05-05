@@ -22,11 +22,8 @@ public class AddElementController implements Initializable {
     private ObservableList<ObjectTableElement> tableReference;
 
     public void onCancel() {
-
         Stage stage = (Stage) nameField.getScene().getWindow();
         stage.close();
-
-
     }
 
     public void onAccept() {
@@ -44,7 +41,8 @@ public class AddElementController implements Initializable {
                     id,
                     name,
                     type,
-                    status);
+                    status,
+                    dao.format.format(System.currentTimeMillis()));
             tableReference.add(newObject);
             onCancel();
         }

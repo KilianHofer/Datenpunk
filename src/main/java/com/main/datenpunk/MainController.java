@@ -10,6 +10,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
+import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -33,12 +34,19 @@ public class MainController implements Initializable {
     @FXML
     private TableView<ObjectTableElement> objectTable;
 
+
     @FXML
     private TableColumn<ObjectTableElement, StringProperty> nameColumn;
     @FXML
     private TableColumn<ObjectTableElement, StringProperty> typeColumn;
     @FXML
-    private TableColumn<ObjectTableElement, String> statusColumn;
+    private TableColumn<ObjectTableElement, String> idColumn,statusColumn, dateColumn;
+
+    @FXML
+    private CheckMenuItem idCheck,nameCheck,typeCheck,statusCheck,dateCheck;
+
+    private final ObservableList<CheckMenuItem> checkMenus = FXCollections.observableArrayList();
+
 
     LocalDate date;
 
@@ -64,16 +72,23 @@ public class MainController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
+        idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         typeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
         statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
         statusColumn.setCellFactory(factory -> new ColoredObjectTableCell());
+        dateColumn.setCellValueFactory(new PropertyValueFactory<>("timestamp"));
 
         date = LocalDate.now();
         datePicker.setValue(date);
 
+        checkMenus.addAll(idCheck,nameCheck,typeCheck,statusCheck,dateCheck);
+        onCheckVisible();
+
         dao = DAO.getInstance();
         updateTable();
+
+
 
     }
 
@@ -129,6 +144,12 @@ public class MainController implements Initializable {
         stage.show();
     }
 
+    public void onCheckVisible(){
+        for (int i = 0; i < checkMenus.size(); i++) {
+            objectTable.getColumns().get(i).setVisible(checkMenus.get(i).isSelected());
+        }
+    }
+
 
     public void getDate() {
 
@@ -141,5 +162,10 @@ public class MainController implements Initializable {
         date = LocalDate.now();
         datePicker.setValue(date);
         updateTable();
+    }
+
+    public void onCancel() {
+        Stage stage = (Stage) objectTable.getScene().getWindow();
+        stage.close();
     }
 }
