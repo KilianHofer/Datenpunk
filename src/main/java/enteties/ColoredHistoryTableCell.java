@@ -10,6 +10,7 @@ public class ColoredHistoryTableCell extends TableCell<HistoryTableElement,Strin
         if(empty || getTableRow() == null){
             setText(null);
             setGraphic(null);
+            setStyle("-fx-background: transparent");
         }
         else{
             setText(item);
