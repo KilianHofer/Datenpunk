@@ -1,7 +1,8 @@
 package com.main.datenpunk;
 
 import database.DAO;
-import enteties.TableElement;
+import enteties.ColoredObjectTableCell;
+import enteties.ObjectTableElement;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -26,21 +27,32 @@ public class MainController implements Initializable {
     private DAO dao;
 
     @FXML
-    private TableView<TableElement> objectTable;
+    private TableView<ObjectTableElement> objectTable;
 
     @FXML
-    private TableColumn<TableElement, StringProperty> nameColumn;
+    private TableColumn<ObjectTableElement, StringProperty> nameColumn;
     @FXML
-    private TableColumn<TableElement, StringProperty> typeColumn;
+    private TableColumn<ObjectTableElement, StringProperty> typeColumn;
     @FXML
-    private TableColumn<TableElement, StringProperty> statusColumn;
+    private TableColumn<ObjectTableElement, String> statusColumn;
 
-    ObservableList<TableElement> tableElements = FXCollections.observableArrayList();
+    ObservableList<ObjectTableElement> objectTableElements = FXCollections.observableArrayList();
 
+    @FXML
     private void updateTable() {
-        tableElements = dao.selectMain();
+        objectTableElements = dao.selectMain();
 
-        objectTable.setItems(tableElements);
+        ObservableList<TableColumn<ObjectTableElement,?>> sortColumns = FXCollections.observableArrayList();
+        if(objectTable.getSortOrder().size()>0) {
+             sortColumns = FXCollections.observableArrayList(objectTable.getSortOrder());
+        }
+        else{
+            sortColumns.add(statusColumn);
+        }
+
+        objectTable.setItems(objectTableElements);
+        objectTable.getSortOrder().addAll(sortColumns);
+        System.out.println(objectTable.getSortOrder().size());
     }
 
     @Override
@@ -49,6 +61,7 @@ public class MainController implements Initializable {
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         typeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
         statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+        statusColumn.setCellFactory(factory -> new ColoredObjectTableCell());
 
         dao = DAO.getInstance();
         updateTable();
@@ -68,7 +81,7 @@ public class MainController implements Initializable {
     }
 
     private void openDetailView() throws IOException {
-        TableElement currentElement = objectTable.getSelectionModel().getSelectedItem();
+        ObjectTableElement currentElement = objectTable.getSelectionModel().getSelectedItem();
 
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("detail-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
@@ -102,7 +115,7 @@ public class MainController implements Initializable {
         stage.initOwner(objectTable.getScene().getWindow());
 
         AddElementController addElementController = fxmlLoader.getController();
-        addElementController.setTableReference(tableElements);      //TODO: better data transfer
+        addElementController.setTableReference(objectTableElements);      //TODO: better data transfer
 
         stage.show();
     }

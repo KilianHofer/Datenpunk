@@ -1,7 +1,8 @@
 package com.main.datenpunk;
 
 import database.DAO;
-import enteties.TableElement;
+import enteties.Status;
+import enteties.ObjectTableElement;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -18,7 +19,7 @@ public class AddElementController implements Initializable {
     @FXML
     public TextField nameField, typeField;
 
-    private ObservableList<TableElement> tableReference;
+    private ObservableList<ObjectTableElement> tableReference;
 
     public void onCancel() {
 
@@ -36,22 +37,21 @@ public class AddElementController implements Initializable {
         if(!name.isEmpty() && !type.isEmpty()) {
             int id = dao.insert(nameField.getText(), typeField.getText());
 
-            int sortOrder = dao.selectSortOrder("Planned");
+            Status status = dao.selectStatus("Planned");
 
 
-            TableElement newObject = new TableElement(
+            ObjectTableElement newObject = new ObjectTableElement(
                     id,
                     name,
                     type,
-                    "Planned",
-                    sortOrder);
+                    status);
             tableReference.add(newObject);
             onCancel();
         }
 
     }
 
-    public void setTableReference(ObservableList<TableElement> tableReference) {
+    public void setTableReference(ObservableList<ObjectTableElement> tableReference) {
         this.tableReference = tableReference;
     }
 

@@ -1,9 +1,10 @@
 package com.main.datenpunk;
 
 import database.DAO;
-import enteties.HistoryElement;
+import enteties.ColoredHistoryTableCell;
+import enteties.HistoryTableElement;
 import enteties.Status;
-import enteties.TableElement;
+import enteties.ObjectTableElement;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -23,25 +24,26 @@ import java.util.ResourceBundle;
 public class DetailController implements Initializable {
 
     private DAO dao;
-    private TableElement currentElement;
+    private ObjectTableElement currentElement;
 
     @FXML
     private TextField nameField,typeField;
     @FXML
     private ChoiceBox<String> statusBox;
 
-    ObservableList<HistoryElement> historyElements;
+    ObservableList<HistoryTableElement> historyTableElements;
     @FXML
-    private TableView<HistoryElement> historyTable;
+    private TableView<HistoryTableElement> historyTable;
 
     @FXML
-    private TableColumn<HistoryElement,String> statusColumn, dateColumn;
+    private TableColumn<HistoryTableElement,String> statusColumn, dateColumn;
 
 
 
-    public void updateTable(){
-        historyElements = dao.selectHistory(currentElement.getId());
-        historyTable.setItems(historyElements);
+    public void updateTable(){                              //update main table automatically
+        historyTableElements = dao.selectHistory(currentElement.getId());
+        historyTable.setItems(historyTableElements);
+
     }
 
     public void setCurrentElement(int id){
@@ -92,6 +94,7 @@ public class DetailController implements Initializable {
     public void initialize(URL url, ResourceBundle resourceBundle) {
         dao = DAO.getInstance();
         getStatuses();
+        statusColumn.setCellFactory(factory -> new ColoredHistoryTableCell());
         statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
         dateColumn.setCellValueFactory(new PropertyValueFactory<>("timestamp"));
         statusBox.getItems().addAll(statusNames);

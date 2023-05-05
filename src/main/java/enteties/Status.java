@@ -6,13 +6,15 @@ public class Status{
 
     private final int sortOrder;
     private String name;
+    private final String color;
 
 
-    public Status(String name, int sortOrder){
+    public Status(String name, int sortOrder, String color){
         this.sortOrder = sortOrder;
         this.name = name;
-
+        this.color = color;
     }
+
 
 
 
@@ -37,5 +39,9 @@ public class Status{
 
     public Integer getSortOrder() {
         return sortOrder;
+    }
+
+    public String getColor() {
+        return color;
     }
 }

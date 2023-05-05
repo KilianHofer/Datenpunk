@@ -1,8 +1,8 @@
 package database;
 
-import enteties.HistoryElement;
+import enteties.HistoryTableElement;
 import enteties.Status;
-import enteties.TableElement;
+import enteties.ObjectTableElement;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -48,9 +48,9 @@ public class DAO {
     }
 
 
-    public ObservableList<TableElement> selectMain(){
+    public ObservableList<ObjectTableElement> selectMain(){
 
-        ObservableList<TableElement> tableElements = FXCollections.observableArrayList();
+        ObservableList<ObjectTableElement> objectTableElements = FXCollections.observableArrayList();
 
         PreparedStatement statement;
         ResultSet resultSet;
@@ -60,7 +60,7 @@ public class DAO {
             resultSet = statement.executeQuery();
 
             int id,sortOrder;
-            String name, type, status;
+            String name, type, status, color;
 
             while(resultSet.next()){
                 id = resultSet.getInt("id");
@@ -68,24 +68,25 @@ public class DAO {
                 type = resultSet.getString("type");
                 status = resultSet.getString("status");
                 sortOrder = resultSet.getInt("sortOrder");
-                tableElements.add(new TableElement(id,name,type,status,sortOrder));
+                color = resultSet.getString("colour");
+                objectTableElements.add(new ObjectTableElement(id,name,type,new Status(status,sortOrder,color)));
             }
-            return tableElements;
+            return objectTableElements;
         }catch (Exception e){
             System.out.println(e.getMessage());
             return null;
         }
     }
 
-    public TableElement selectElement(int id){
+    public ObjectTableElement selectElement(int id){
         try {
-            String query = "SELECT o.id, o.name, o.type, h.status, s.sortOrder  FROM objects o JOIN history h ON (o.id = h.id) JOIN (SELECT id,max(timestamp) AS t FROM history GROUP BY id) AS i ON (i.id = o.id AND i.t=h.timestamp) JOIN status s ON s.name=h.status WHERE o.id = ?";
+            String query = "SELECT o.id, o.name, o.type, h.status, s.sortOrder, s.colour  FROM objects o JOIN history h ON (o.id = h.id) JOIN (SELECT id,max(timestamp) AS t FROM history GROUP BY id) AS i ON (i.id = o.id AND i.t=h.timestamp) JOIN status s ON s.name=h.status WHERE o.id = ?";
             PreparedStatement statement =  connection.prepareStatement(query);
             statement.setInt(1,id);
             ResultSet resultSet = statement.executeQuery();
 
             int sortOrder;
-            String name, type, status;
+            String name, type, status, color;
 
             if(resultSet.next()){
 
@@ -93,8 +94,8 @@ public class DAO {
                 type = resultSet.getString("type");
                 status = resultSet.getString("status");
                 sortOrder = resultSet.getInt("sortOrder");
-
-                return new TableElement(id,name,type,status,sortOrder);
+                color = resultSet.getString("colour");
+                return new ObjectTableElement(id,name,type,new Status(status,sortOrder,color));
             }
 
 
@@ -104,9 +105,9 @@ public class DAO {
         return null;
     }
 
-    public ObservableList<HistoryElement> selectHistory(int id){
+    public ObservableList<HistoryTableElement> selectHistory(int id){
 
-        ObservableList<HistoryElement> history = FXCollections.observableArrayList();
+        ObservableList<HistoryTableElement> history = FXCollections.observableArrayList();
         PreparedStatement statement;
         ResultSet resultSet;
         String query = "SELECT * FROM history WHERE id=?";
@@ -124,7 +125,7 @@ public class DAO {
                 Format format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 timestamp = format.format(date);
 
-                history.add(new HistoryElement(status,timestamp));
+                history.add(new HistoryTableElement(status,timestamp));
             }
             return history;
 
@@ -154,18 +155,42 @@ public class DAO {
     public List<Status> selectStatuses(){
         try{
             List<Status> statuses = new ArrayList<>();
-            String query = "SELECT name,sortOrder FROM status";
+            String query = "SELECT * FROM status";
             PreparedStatement statement = connection.prepareStatement(query);
             ResultSet resultSet = statement.executeQuery();
             int sortOrder;
-            String name;
+            String name, color;
 
             while(resultSet.next()){
                 sortOrder = resultSet.getInt("sortOrder");
                 name = resultSet.getString("name");
-                statuses.add(new Status(name,sortOrder));
+                color = resultSet.getString("colour");
+                statuses.add(new Status(name,sortOrder,color));
             }
             return statuses;
+
+
+        }catch (SQLException e){
+            System.out.println(e.getMessage());
+        }
+        return null;
+    }
+
+    public Status selectStatus(String planned) {
+        try{
+            String query = "SELECT * FROM status WHERE name = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setString(1,planned);
+            ResultSet resultSet = statement.executeQuery();
+            int sortOrder;
+            String name, color;
+
+            if(resultSet.next()){
+                sortOrder = resultSet.getInt("sortOrder");
+                name = resultSet.getString("name");
+                color = resultSet.getString("colour");
+                return new Status(name,sortOrder,color);
+            }
 
 
         }catch (SQLException e){
@@ -235,9 +260,9 @@ public class DAO {
 
     public void updateHistory(int id, String status){
 
-        String querey = "INSERT INTO history VALUES (?,?,?)";
+        String query = "INSERT INTO history VALUES (?,?,?)";
         try {
-            PreparedStatement statement = connection.prepareStatement(querey);
+            PreparedStatement statement = connection.prepareStatement(query);
             statement.setInt(1,id);
             statement.setString(2,status);
             statement.setLong(3,System.currentTimeMillis());
@@ -247,6 +272,4 @@ public class DAO {
             System.out.println(e.getMessage());
         }
     }
-
-
 }

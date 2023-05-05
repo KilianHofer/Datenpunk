@@ -3,17 +3,17 @@ package enteties;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
-public class TableElement {
+public class ObjectTableElement {
 
     private final int id;
     private final StringProperty name, type;
     private final Status status;
 
-    public TableElement(int id,String name, String type, String status, int sortorder){
+    public ObjectTableElement(int id, String name, String type, Status status){
         this.id = id;
         this.name = new SimpleStringProperty(name);
         this.type = new SimpleStringProperty(type);
-        this.status = new Status(status,sortorder);
+        this.status = status;
     }
 
     public final StringProperty nameProperty() {
@@ -24,7 +24,7 @@ public class TableElement {
     }
     public final StringProperty statusProperty() {
 
-        return new SimpleStringProperty(status.getTableName());
+        return new SimpleStringProperty(status.getName());
     }
 
     public  int getId(){
@@ -36,6 +36,7 @@ public class TableElement {
     public String getType(){
         return type.get();
     }
+
     public String getStatus(){
         return status.getTableName();
     }
