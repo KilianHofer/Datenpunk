@@ -10,6 +10,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -20,10 +21,13 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.URL;
+import java.time.LocalDate;
 import java.util.ResourceBundle;
 
 public class MainController implements Initializable {
 
+    @FXML
+    private DatePicker datePicker;
     private DAO dao;
 
     @FXML
@@ -36,11 +40,13 @@ public class MainController implements Initializable {
     @FXML
     private TableColumn<ObjectTableElement, String> statusColumn;
 
+    LocalDate date;
+
     ObservableList<ObjectTableElement> objectTableElements = FXCollections.observableArrayList();
 
     @FXML
     private void updateTable() {
-        objectTableElements = dao.selectMain();
+        objectTableElements = dao.selectMain(date);
 
         ObservableList<TableColumn<ObjectTableElement,?>> sortColumns = FXCollections.observableArrayList();
         if(objectTable.getSortOrder().size()>0) {
@@ -62,6 +68,9 @@ public class MainController implements Initializable {
         typeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
         statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
         statusColumn.setCellFactory(factory -> new ColoredObjectTableCell());
+
+        date = LocalDate.now();
+        datePicker.setValue(date);
 
         dao = DAO.getInstance();
         updateTable();
@@ -121,6 +130,16 @@ public class MainController implements Initializable {
     }
 
 
+    public void getDate() {
 
+        date = datePicker.getValue();
 
+        updateTable();
+    }
+
+    public void onReset() {
+        date = LocalDate.now();
+        datePicker.setValue(date);
+        updateTable();
+    }
 }
