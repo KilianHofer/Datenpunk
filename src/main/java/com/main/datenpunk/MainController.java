@@ -3,18 +3,19 @@ package com.main.datenpunk;
 import database.DAO;
 import enteties.ColoredObjectTableCell;
 import enteties.ObjectTableElement;
+import enteties.Status;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
-import javafx.scene.control.CheckMenuItem;
-import javafx.scene.control.DatePicker;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.Modality;
@@ -23,6 +24,8 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.net.URL;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 
 public class MainController implements Initializable {
@@ -33,8 +36,6 @@ public class MainController implements Initializable {
 
     @FXML
     private TableView<ObjectTableElement> objectTable;
-
-
     @FXML
     private TableColumn<ObjectTableElement, StringProperty> nameColumn;
     @FXML
@@ -44,17 +45,42 @@ public class MainController implements Initializable {
 
     @FXML
     private CheckMenuItem idCheck,nameCheck,typeCheck,statusCheck,dateCheck;
-
     private final ObservableList<CheckMenuItem> checkMenus = FXCollections.observableArrayList();
 
+    @FXML
+    private TextField whitelistNameField, whitelistTypeField, blacklistNameField, blacklistTypeField;
+    @FXML
+    private ChoiceBox<String> whitelistStatusBox, blacklistStatusBox;
+    private final ObservableList<Control> controlList = FXCollections.observableArrayList();
+
+    @FXML
+    private ListView<String> whitelistNameList, whitelistTypeList, whitelistStatusList, blacklistNameList, blacklistTypeList, blacklistStatusList;
+    private final ObservableList<ListView<String>> listViews = FXCollections.observableArrayList();
+
+    @FXML
+    private Button addToNameWhitelist,addToTypeWhitelist,addToStatusWhitelist,addToNameBlacklist,addToTypeBlacklist,addToStatusBlacklist,removeFromNameWhitelist,removeFromTypeWhitelist,removeFromStatusWhitelist,removeFromNameBlacklist,removeFromTypeBlacklist,removeFromStatusBlacklist;
+    private final ObservableList<Button> addButtons = FXCollections.observableArrayList();
+    private final ObservableList<Button> removeButtons = FXCollections.observableArrayList();
 
     LocalDate date;
 
+    List<Status> statuses = new ArrayList<>();
+    List<String> statusNames = new ArrayList<>();
+
     ObservableList<ObjectTableElement> objectTableElements = FXCollections.observableArrayList();
+
+    private void getStatuses(){
+        statuses = dao.selectStatuses();
+        Status status;
+        for (Status value : statuses) {
+            status = value;
+            statusNames.add(status.getName());
+        }
+    }
 
     @FXML
     private void updateTable() {
-        objectTableElements = dao.selectMain(date);
+        objectTableElements = dao.selectMain(date,listViews);
 
         ObservableList<TableColumn<ObjectTableElement,?>> sortColumns = FXCollections.observableArrayList();
         if(objectTable.getSortOrder().size()>0) {
@@ -66,7 +92,6 @@ public class MainController implements Initializable {
 
         objectTable.setItems(objectTableElements);
         objectTable.getSortOrder().addAll(sortColumns);
-        System.out.println(objectTable.getSortOrder().size());
     }
 
     @Override
@@ -86,6 +111,18 @@ public class MainController implements Initializable {
         onCheckVisible();
 
         dao = DAO.getInstance();
+
+        controlList.addAll(whitelistNameField,whitelistTypeField,whitelistStatusBox,blacklistNameField,blacklistTypeField,blacklistStatusBox);
+        listViews.addAll(whitelistNameList,whitelistTypeList,whitelistStatusList,blacklistNameList,blacklistTypeList, blacklistStatusList);
+        addButtons.addAll(addToNameWhitelist,addToTypeWhitelist,addToStatusWhitelist,addToNameBlacklist,addToTypeBlacklist,addToStatusBlacklist);
+        removeButtons.addAll(removeFromNameWhitelist,removeFromTypeWhitelist,removeFromStatusWhitelist,removeFromNameBlacklist,removeFromTypeBlacklist,removeFromStatusBlacklist);
+
+        getStatuses();
+
+        whitelistStatusBox.getItems().setAll(statusNames);
+        blacklistStatusBox.getItems().setAll(statusNames);
+
+
         updateTable();
 
 
@@ -96,7 +133,7 @@ public class MainController implements Initializable {
     public void onTableClick(MouseEvent event) throws IOException {
 
         if(event.getButton().equals(MouseButton.PRIMARY)) {
-            if (event.getClickCount() == 2) {               //TODO: known issue: tries to open detail view even by double-click on table header
+            if (event.getClickCount() == 2) {               //TODO: known issue: opens detail view of selected item even by double-click on table header
 
                 openDetailView();
 
@@ -105,23 +142,25 @@ public class MainController implements Initializable {
     }
 
     private void openDetailView() throws IOException {
-        ObjectTableElement currentElement = objectTable.getSelectionModel().getSelectedItem();
+        if(objectTable.getSelectionModel().getSelectedItem() != null) {
+            ObjectTableElement currentElement = objectTable.getSelectionModel().getSelectedItem();
 
-        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("detail-view.fxml"));
-        Scene scene = new Scene(fxmlLoader.load());
+            FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("detail-view.fxml"));
+            Scene scene = new Scene(fxmlLoader.load());
 
 
-        Stage stage = new Stage();
+            Stage stage = new Stage();
 
-        stage.setTitle(currentElement.getName());
-        stage.setScene(scene);
-        stage.initModality(Modality.WINDOW_MODAL);
-        stage.initOwner(objectTable.getScene().getWindow());
+            stage.setTitle(currentElement.getName());
+            stage.setScene(scene);
+            stage.initModality(Modality.WINDOW_MODAL);
+            stage.initOwner(objectTable.getScene().getWindow());
 
-        DetailController detailController = fxmlLoader.getController();
-        detailController.setCurrentElement(currentElement.getId());     //TODO: Better data transfer
+            DetailController detailController = fxmlLoader.getController();
+            detailController.setCurrentElement(currentElement.getId());     //TODO: Better data transfer
 
-        stage.show();
+            stage.show();
+        }
     }
 
     @FXML
@@ -167,5 +206,56 @@ public class MainController implements Initializable {
     public void onCancel() {
         Stage stage = (Stage) objectTable.getScene().getWindow();
         stage.close();
+    }
+
+    @FXML
+    public void onAddToList(ActionEvent actionEvent) {
+
+        int i;
+        if(actionEvent.getSource().getClass() == Button.class)
+            i = addButtons.indexOf(actionEvent.getSource());
+        else
+            i = controlList.indexOf(actionEvent.getSource());
+
+        Control control = controlList.get(i);
+        String text;
+        if(control.getClass() == TextField.class) {
+            text = ((TextField) control).getText();
+            ((TextField) control).setText("");
+        }
+        else
+            text = ((ChoiceBox<String>) control).getValue();
+
+
+        listViews.get(i).getItems().add(text);
+        updateTable();
+    }
+
+    @FXML
+    public void onRemoveFromList(ActionEvent actionEvent) {
+        removeFromList(removeButtons.indexOf(actionEvent.getSource()));
+    }
+
+
+    private void removeFromList(int id){
+        ListView<String> listView = listViews.get(id);
+        if(listView.getSelectionModel().getSelectedItem() != null){
+            listView.getItems().remove(listView.getSelectionModel().getSelectedItem());
+            updateTable();
+        }
+    }
+
+    public void onListClick(MouseEvent event) {
+        if(event.getButton().equals(MouseButton.PRIMARY)) {
+            if (event.getClickCount() == 2) {               //TODO: known issue: opens detail view of selected item even by double-click on table header
+                removeFromList(listViews.indexOf(event.getSource()));
+            }
+        }
+    }
+
+    public void onListKey(KeyEvent keyEvent) {
+        if(keyEvent.getCode().equals(KeyCode.DELETE) || keyEvent.getCode().equals(KeyCode.BACK_SPACE)){
+            removeFromList(listViews.indexOf(keyEvent.getSource()));
+        }
     }
 }

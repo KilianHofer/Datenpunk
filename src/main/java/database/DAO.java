@@ -5,6 +5,7 @@ import enteties.Status;
 import enteties.ObjectTableElement;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.scene.control.ListView;
 
 import java.sql.*;
 import java.text.Format;
@@ -51,19 +52,78 @@ public class DAO {
         }
     }
 
+    private void buildString(List<String> strings,ObservableList<ListView<String>> listViews,int id, String name){
+        if(listViews.get(id).getItems().size() > 0) {
+            System.out.println(strings);
+            strings.set(id, strings.get(id).concat( name));
+            System.out.println(strings);
+            if(id >= strings.size()/2){
+                strings.set(id, strings.get(id).concat(" NOT"));
+            }
+            System.out.println(strings);
+            strings.set(id, strings.get(id).concat(" IN ("));
+            System.out.println(strings);
+            ObservableList<String> stringList = listViews.get(id).getItems();
+            for (int i = 0; i < stringList.size(); i++) {
+                strings.set(id, strings.get(id).concat("\'"));
+                strings.set(id, strings.get(id).concat(stringList.get(i)));
+                strings.set(id, strings.get(id).concat("\'"));
+                if(i <= stringList.size()-2){
+                    strings.set(id, strings.get(id).concat(", "));
+                }
+                System.out.println(strings);
+            }
+            strings.set(id, strings.get(id).concat(")"));
+            System.out.println(strings);
+        }
+    }
 
-    public ObservableList<ObjectTableElement> selectMain(LocalDate date){
+
+    public ObservableList<ObjectTableElement> selectMain(LocalDate date, ObservableList<ListView<String>> listViews){
 
         ObservableList<ObjectTableElement> objectTableElements = FXCollections.observableArrayList();
+
+        List<String> lists = new ArrayList<>();
+        for (int i = 0; i < listViews.size(); i++) {
+            lists.add("");
+        }
+        buildString(lists,listViews,0,"o.name");                //TODO: this will have to be dynamic in the future
+        buildString(lists,listViews,1,"o.type");
+        buildString(lists,listViews,2,"h.status");
+        buildString(lists,listViews,3,"o.name");
+        buildString(lists,listViews,4,"o.type");
+        buildString(lists,listViews,5,"h.status");
+
+
+        StringBuilder subquery = new StringBuilder();
+        boolean first = true;
+        for (String list : lists) {
+
+            if (!list.equals("")) {
+                if (first) {
+                    subquery.append(" WHERE ");
+                    first = false;
+                } else {
+                    subquery.append(" AND ");
+                }
+                subquery.append(list);
+            }
+
+        }
+
+        System.out.println(lists);
+
+
 
         long timestamp = ZonedDateTime.of(date.atTime(23,59), ZoneId.systemDefault()).toInstant().toEpochMilli();
 
         PreparedStatement statement;
         ResultSet resultSet;
         try {
-            String query = "SELECT o.id, o.name, o.type, h.status, s.sortOrder, s.colour, i.t  FROM objects o JOIN history h ON (o.id = h.id) JOIN (SELECT id,max(timestamp) AS t FROM history WHERE timestamp <= ? GROUP BY id) AS i ON (i.id = o.id AND i.t=h.timestamp) JOIN status s ON s.name=h.status";
+            String query = "SELECT o.id, o.name, o.type, h.status, s.sortOrder, s.colour, i.t  FROM objects o JOIN history h ON (o.id = h.id) JOIN (SELECT id,max(timestamp) AS t FROM history WHERE timestamp <= ? GROUP BY id) AS i ON (i.id = o.id AND i.t=h.timestamp) JOIN status s ON s.name=h.status" + subquery;
             statement = connection.prepareStatement(query);
             statement.setLong(1,timestamp);
+            System.out.println(statement);
             resultSet = statement.executeQuery();
 
             int id,sortOrder;
