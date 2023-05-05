@@ -9,6 +9,9 @@ import javafx.collections.ObservableList;
 import java.sql.*;
 import java.text.Format;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,15 +51,18 @@ public class DAO {
     }
 
 
-    public ObservableList<ObjectTableElement> selectMain(){
+    public ObservableList<ObjectTableElement> selectMain(LocalDate date){
 
         ObservableList<ObjectTableElement> objectTableElements = FXCollections.observableArrayList();
+
+        long timestamp = ZonedDateTime.of(date.atTime(23,59), ZoneId.systemDefault()).toInstant().toEpochMilli();
 
         PreparedStatement statement;
         ResultSet resultSet;
         try {
-            String query = "SELECT o.id, o.name, o.type, h.status, s.sortOrder, s.colour  FROM objects o JOIN history h ON (o.id = h.id) JOIN (SELECT id,max(timestamp) AS t FROM history GROUP BY id) AS i ON (i.id = o.id AND i.t=h.timestamp) JOIN status s ON s.name=h.status";
+            String query = "SELECT o.id, o.name, o.type, h.status, s.sortOrder, s.colour, i.t  FROM objects o JOIN history h ON (o.id = h.id) JOIN (SELECT id,max(timestamp) AS t FROM history WHERE timestamp <= ? GROUP BY id) AS i ON (i.id = o.id AND i.t=h.timestamp) JOIN status s ON s.name=h.status";
             statement = connection.prepareStatement(query);
+            statement.setLong(1,timestamp);
             resultSet = statement.executeQuery();
 
             int id,sortOrder;
