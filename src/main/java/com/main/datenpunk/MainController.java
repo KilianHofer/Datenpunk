@@ -16,6 +16,7 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -38,14 +39,16 @@ public class MainController implements Initializable {
 
     private void updateTable() {
         tableElements = dao.selectMain();
-        nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
-        typeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
-        statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+
         objectTable.setItems(tableElements);
     }
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+
+        nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
+        typeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
+        statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
 
         dao = DAO.getInstance();
         updateTable();
@@ -58,27 +61,30 @@ public class MainController implements Initializable {
         if(event.getButton().equals(MouseButton.PRIMARY)) {
             if (event.getClickCount() == 2) {               //TODO: known issue: tries to open detail view even by double-click on table header
 
-                TableElement currentElement = objectTable.getSelectionModel().getSelectedItem();
-
-                FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("detail-view.fxml"));
-                Scene scene = new Scene(fxmlLoader.load());
-
-
-                Stage stage = new Stage();
-
-                stage.setTitle(currentElement.getName());
-                stage.setScene(scene);
-                stage.initModality(Modality.WINDOW_MODAL);
-                stage.initOwner(objectTable.getScene().getWindow());
-
-                DetailController detailController = fxmlLoader.getController();
-                detailController.setCurrentElement(currentElement);     //TODO: Better data transfer
-
-                stage.show();
-
+                openDetailView();
 
             }
         }
+    }
+
+    private void openDetailView() throws IOException {
+        TableElement currentElement = objectTable.getSelectionModel().getSelectedItem();
+
+        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("detail-view.fxml"));
+        Scene scene = new Scene(fxmlLoader.load());
+
+
+        Stage stage = new Stage();
+
+        stage.setTitle(currentElement.getName());
+        stage.setScene(scene);
+        stage.initModality(Modality.WINDOW_MODAL);
+        stage.initOwner(objectTable.getScene().getWindow());
+
+        DetailController detailController = fxmlLoader.getController();
+        detailController.setCurrentElement(currentElement.getId());     //TODO: Better data transfer
+
+        stage.show();
     }
 
     @FXML

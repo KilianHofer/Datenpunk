@@ -36,7 +36,7 @@ public class AddElementController implements Initializable {
         if(!name.isEmpty() && !type.isEmpty()) {
             int id = dao.insert(nameField.getText(), typeField.getText());
 
-            int sortOrder = dao.selectSortOrder(name);
+            int sortOrder = dao.selectSortOrder("Planned");
 
 
             TableElement newObject = new TableElement(

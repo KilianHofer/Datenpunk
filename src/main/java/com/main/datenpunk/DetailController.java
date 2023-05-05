@@ -41,13 +41,11 @@ public class DetailController implements Initializable {
 
     public void updateTable(){
         historyElements = dao.selectHistory(currentElement.getId());
-        statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
-        dateColumn.setCellValueFactory(new PropertyValueFactory<>("timestamp"));
         historyTable.setItems(historyElements);
     }
 
-    public void setCurrentElement(TableElement element){
-        currentElement = element;
+    public void setCurrentElement(int id){
+        currentElement = dao.selectElement(id);
         nameField.setText(currentElement.getName());
         typeField.setText(currentElement.getType());
         statusBox.setValue(currentElement.getStatus());
@@ -94,6 +92,8 @@ public class DetailController implements Initializable {
     public void initialize(URL url, ResourceBundle resourceBundle) {
         dao = DAO.getInstance();
         getStatuses();
+        statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+        dateColumn.setCellValueFactory(new PropertyValueFactory<>("timestamp"));
         statusBox.getItems().addAll(statusNames);
 
 

@@ -55,7 +55,7 @@ public class DAO {
         PreparedStatement statement;
         ResultSet resultSet;
         try {
-            String query = "SELECT o.id, o.name, o.type, h.status, s.sortOrder  FROM objects o JOIN history h ON (o.id = h.id) JOIN (SELECT id,max(timestamp) AS t FROM history GROUP BY id) AS i ON (i.id = o.id AND i.t=h.timestamp) JOIN status s ON s.name=h.status";
+            String query = "SELECT o.id, o.name, o.type, h.status, s.sortOrder, s.colour  FROM objects o JOIN history h ON (o.id = h.id) JOIN (SELECT id,max(timestamp) AS t FROM history GROUP BY id) AS i ON (i.id = o.id AND i.t=h.timestamp) JOIN status s ON s.name=h.status";
             statement = connection.prepareStatement(query);
             resultSet = statement.executeQuery();
 
@@ -75,6 +75,33 @@ public class DAO {
             System.out.println(e.getMessage());
             return null;
         }
+    }
+
+    public TableElement selectElement(int id){
+        try {
+            String query = "SELECT o.id, o.name, o.type, h.status, s.sortOrder  FROM objects o JOIN history h ON (o.id = h.id) JOIN (SELECT id,max(timestamp) AS t FROM history GROUP BY id) AS i ON (i.id = o.id AND i.t=h.timestamp) JOIN status s ON s.name=h.status WHERE o.id = ?";
+            PreparedStatement statement =  connection.prepareStatement(query);
+            statement.setInt(1,id);
+            ResultSet resultSet = statement.executeQuery();
+
+            int sortOrder;
+            String name, type, status;
+
+            if(resultSet.next()){
+
+                name = resultSet.getString("name");
+                type = resultSet.getString("type");
+                status = resultSet.getString("status");
+                sortOrder = resultSet.getInt("sortOrder");
+
+                return new TableElement(id,name,type,status,sortOrder);
+            }
+
+
+        }catch (SQLException e){
+            System.out.println(e.getMessage());
+        }
+        return null;
     }
 
     public ObservableList<HistoryElement> selectHistory(int id){
@@ -154,7 +181,7 @@ public class DAO {
             statement.setString(1,name);
             ResultSet resultSet = statement.executeQuery();
             if(resultSet.next()){
-                return resultSet.getInt("name");
+                return resultSet.getInt("sortorder");
             }
 
 
