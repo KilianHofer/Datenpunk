@@ -1,6 +1,8 @@
 package com.main.datenpunk;
 
-import enteties.TableElement;
+import database.DAO;
+import enteties.ColoredObjectTableCell;
+import enteties.ObjectTableElement;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -22,27 +24,36 @@ import java.util.ResourceBundle;
 
 public class MainController implements Initializable {
 
-    @FXML
-    private TableView<TableElement> objectTable;
+    private DAO dao;
 
     @FXML
-    private TableColumn<TableElement, StringProperty> nameColumn;
-    @FXML
-    private TableColumn<TableElement, StringProperty> typeColumn;
-    @FXML
-    private TableColumn<TableElement, StringProperty> statusColumn;
+    private TableView<ObjectTableElement> objectTable;
 
-    ObservableList<TableElement> tableElements = FXCollections.observableArrayList(
+    @FXML
+    private TableColumn<ObjectTableElement, StringProperty> nameColumn;
+    @FXML
+    private TableColumn<ObjectTableElement, StringProperty> typeColumn;
+    @FXML
+    private TableColumn<ObjectTableElement, String> statusColumn;
 
-            new TableElement("Barrel","Clutter","Planned"),
-            new TableElement("Fish","Food","Complete"),
-            new TableElement("Tree","Vegetation","Planned"),
-            new TableElement("House","Building","Planned"),
-            new TableElement("Book","Clutter","Complete"),
-            new TableElement("Mug","Clutter","Complete"),
-            new TableElement("Chest","Container","Complete"),
-            new TableElement("Sword","Weapon","Planned")
-    );
+    ObservableList<ObjectTableElement> objectTableElements = FXCollections.observableArrayList();
+
+    @FXML
+    private void updateTable() {
+        objectTableElements = dao.selectMain();
+
+        ObservableList<TableColumn<ObjectTableElement,?>> sortColumns = FXCollections.observableArrayList();
+        if(objectTable.getSortOrder().size()>0) {
+             sortColumns = FXCollections.observableArrayList(objectTable.getSortOrder());
+        }
+        else{
+            sortColumns.add(statusColumn);
+        }
+
+        objectTable.setItems(objectTableElements);
+        objectTable.getSortOrder().addAll(sortColumns);
+        System.out.println(objectTable.getSortOrder().size());
+    }
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -50,37 +61,43 @@ public class MainController implements Initializable {
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         typeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
         statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+        statusColumn.setCellFactory(factory -> new ColoredObjectTableCell());
 
+        dao = DAO.getInstance();
+        updateTable();
 
-        objectTable.setItems(tableElements);
     }
 
     @FXML
     public void onTableClick(MouseEvent event) throws IOException {
+
         if(event.getButton().equals(MouseButton.PRIMARY)) {
-            if (event.getClickCount() == 2) {
+            if (event.getClickCount() == 2) {               //TODO: known issue: tries to open detail view even by double-click on table header
 
-                TableElement currentElement = objectTable.getSelectionModel().getSelectedItem();
-
-                FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("detail-view.fxml"));
-                Scene scene = new Scene(fxmlLoader.load());
-
-
-                Stage stage = new Stage();
-
-                stage.setTitle(currentElement.getName());
-                stage.setScene(scene);
-                stage.initModality(Modality.WINDOW_MODAL);
-                stage.initOwner(objectTable.getScene().getWindow());
-
-                DetailController detailController = fxmlLoader.getController();
-                detailController.setCurrentElement(currentElement);     //TODO: Better data transfer
-
-                stage.show();
-
+                openDetailView();
 
             }
         }
+    }
+
+    private void openDetailView() throws IOException {
+        ObjectTableElement currentElement = objectTable.getSelectionModel().getSelectedItem();
+
+        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("detail-view.fxml"));
+        Scene scene = new Scene(fxmlLoader.load());
+
+
+        Stage stage = new Stage();
+
+        stage.setTitle(currentElement.getName());
+        stage.setScene(scene);
+        stage.initModality(Modality.WINDOW_MODAL);
+        stage.initOwner(objectTable.getScene().getWindow());
+
+        DetailController detailController = fxmlLoader.getController();
+        detailController.setCurrentElement(currentElement.getId());     //TODO: Better data transfer
+
+        stage.show();
     }
 
     @FXML
@@ -98,8 +115,12 @@ public class MainController implements Initializable {
         stage.initOwner(objectTable.getScene().getWindow());
 
         AddElementController addElementController = fxmlLoader.getController();
-        addElementController.setTableReference(tableElements);      //TODO: better data transfer
+        addElementController.setTableReference(objectTableElements);      //TODO: better data transfer
 
         stage.show();
     }
+
+
+
+
 }

@@ -1,17 +1,26 @@
 package com.main.datenpunk;
 
-import enteties.TableElement;
+import database.DAO;
+import enteties.Status;
+import enteties.ObjectTableElement;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
-public class AddElementController {
+import java.net.URL;
+import java.util.ResourceBundle;
+
+public class AddElementController implements Initializable {
+
+    private DAO dao;
 
     @FXML
     public TextField nameField, typeField;
 
-    private ObservableList<TableElement> tableReference;
+    private ObservableList<ObjectTableElement> tableReference;
+
     public void onCancel() {
 
         Stage stage = (Stage) nameField.getScene().getWindow();
@@ -22,16 +31,32 @@ public class AddElementController {
 
     public void onAccept() {
 
-        TableElement newObject = new TableElement(
-                nameField.getText(),
-                typeField.getText(),
-                "Planned");
-        tableReference.add(newObject);
-        onCancel();
+        String name = nameField.getText();
+        String type = typeField.getText();
+
+        if(!name.isEmpty() && !type.isEmpty()) {
+            int id = dao.insert(nameField.getText(), typeField.getText());
+
+            Status status = dao.selectStatus("Planned");
+
+
+            ObjectTableElement newObject = new ObjectTableElement(
+                    id,
+                    name,
+                    type,
+                    status);
+            tableReference.add(newObject);
+            onCancel();
+        }
 
     }
 
-    public void setTableReference(ObservableList<TableElement> tableReference) {
+    public void setTableReference(ObservableList<ObjectTableElement> tableReference) {
         this.tableReference = tableReference;
+    }
+
+    @Override
+    public void initialize(URL url, ResourceBundle resourceBundle) {
+        dao = DAO.getInstance();
     }
 }
