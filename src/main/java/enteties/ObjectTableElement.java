@@ -1,21 +1,24 @@
 package enteties;
 
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
+import javafx.beans.property.*;
 
 public class ObjectTableElement {
 
-    private final int id;
-    private final StringProperty name, type;
+    private final IntegerProperty id;
+    private final StringProperty name, type, timestamp;
     private final Status status;
 
-    public ObjectTableElement(int id, String name, String type, Status status){
-        this.id = id;
+    public ObjectTableElement(int id, String name, String type, Status status,String timestamp){
+        this.id = new SimpleIntegerProperty(id);
         this.name = new SimpleStringProperty(name);
         this.type = new SimpleStringProperty(type);
         this.status = status;
+        this.timestamp = new SimpleStringProperty(timestamp);
     }
 
+    public final IntegerProperty idProperty(){
+        return  id;
+    }
     public final StringProperty nameProperty() {
         return name;
     }
@@ -23,12 +26,14 @@ public class ObjectTableElement {
         return type;
     }
     public final StringProperty statusProperty() {
-
         return new SimpleStringProperty(status.getName());
+    }
+    public final StringProperty timestampProperty(){
+        return timestamp;
     }
 
     public  int getId(){
-        return id;
+        return id.get();
     }
     public String getName(){
         return name.get();
