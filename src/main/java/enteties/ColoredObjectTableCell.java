@@ -10,6 +10,8 @@ public class ColoredObjectTableCell extends TableCell<ObjectTableElement, String
         if(empty || getTableRow() == null){
             setText(null);
             setGraphic(null);
+            setStyle("-fx-background: transparent");
+
         }
         else{
             setText(item);
