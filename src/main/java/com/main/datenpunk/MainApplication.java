@@ -15,6 +15,7 @@ public class MainApplication extends Application {
         Scene scene = new Scene(fxmlLoader.load());
         stage.setTitle("Connect to Database");
         stage.setScene(scene);
+        stage.setResizable(false);
         stage.show();
     }
 

@@ -31,7 +31,7 @@ import java.util.ResourceBundle;
 public class MainController implements Initializable {
 
     @FXML
-    private DatePicker datePicker;
+    private DatePicker toDatePicker,fromDatePicker;
     private DAO dao;
 
     @FXML
@@ -62,7 +62,7 @@ public class MainController implements Initializable {
     private final ObservableList<Button> addButtons = FXCollections.observableArrayList();
     private final ObservableList<Button> removeButtons = FXCollections.observableArrayList();
 
-    LocalDate date;
+    LocalDate toDate,fromDate;
 
     List<Status> statuses = new ArrayList<>();
     List<String> statusNames = new ArrayList<>();
@@ -80,7 +80,7 @@ public class MainController implements Initializable {
 
     @FXML
     private void updateTable() {
-        objectTableElements = dao.selectMain(date,listViews);
+        objectTableElements = dao.selectMain(fromDate,toDate,listViews);
 
         ObservableList<TableColumn<ObjectTableElement,?>> sortColumns = FXCollections.observableArrayList();
         if(objectTable.getSortOrder().size()>0) {
@@ -104,8 +104,8 @@ public class MainController implements Initializable {
         statusColumn.setCellFactory(factory -> new ColoredObjectTableCell());
         dateColumn.setCellValueFactory(new PropertyValueFactory<>("timestamp"));
 
-        date = LocalDate.now();
-        datePicker.setValue(date);
+        toDate = LocalDate.now();
+        toDatePicker.setValue(toDate);
 
         checkMenus.addAll(idCheck,nameCheck,typeCheck,statusCheck,dateCheck);
         onCheckVisible();
@@ -159,6 +159,7 @@ public class MainController implements Initializable {
             DetailController detailController = fxmlLoader.getController();
             detailController.setCurrentElement(currentElement.getId());     //TODO: Better data transfer
 
+            stage.setResizable(false);
             stage.show();
         }
     }
@@ -179,27 +180,36 @@ public class MainController implements Initializable {
 
         AddElementController addElementController = fxmlLoader.getController();
         addElementController.setTableReference(objectTableElements);      //TODO: better data transfer
-
+        stage.setResizable(false);
         stage.show();
     }
 
-    public void onCheckVisible(){
+    public void onCheckVisible(){               //TODO: known issue: when table columns are switched the wrong column gets hidden
         for (int i = 0; i < checkMenus.size(); i++) {
             objectTable.getColumns().get(i).setVisible(checkMenus.get(i).isSelected());
         }
     }
 
+    @FXML
+    public void getToDate() {
 
-    public void getDate() {
+        toDate = toDatePicker.getValue();
 
-        date = datePicker.getValue();
+        updateTable();
+    }
+    @FXML
+    public void getFromDate() {
+
+        fromDate = fromDatePicker.getValue();
 
         updateTable();
     }
 
     public void onReset() {
-        date = LocalDate.now();
-        datePicker.setValue(date);
+        toDate = LocalDate.now();
+        fromDate = null;
+        toDatePicker.setValue(toDate);
+        fromDatePicker.setValue(fromDate);
         updateTable();
     }
 

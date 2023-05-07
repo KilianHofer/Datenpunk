@@ -34,7 +34,6 @@ public class DAO {
 
     }
 
-
     public Boolean connectToDB(String name, String user, String password) {
         try {
             Class.forName("org.postgresql.Driver");
@@ -52,34 +51,65 @@ public class DAO {
         }
     }
 
-    private void buildString(List<String> strings,ObservableList<ListView<String>> listViews,int id, String name){
-        if(listViews.get(id).getItems().size() > 0) {
-            System.out.println(strings);
-            strings.set(id, strings.get(id).concat( name));
-            System.out.println(strings);
-            if(id >= strings.size()/2){
-                strings.set(id, strings.get(id).concat(" NOT"));
-            }
-            System.out.println(strings);
-            strings.set(id, strings.get(id).concat(" IN ("));
-            System.out.println(strings);
-            ObservableList<String> stringList = listViews.get(id).getItems();
-            for (int i = 0; i < stringList.size(); i++) {
-                strings.set(id, strings.get(id).concat("\'"));
-                strings.set(id, strings.get(id).concat(stringList.get(i)));
-                strings.set(id, strings.get(id).concat("\'"));
-                if(i <= stringList.size()-2){
-                    strings.set(id, strings.get(id).concat(", "));
-                }
-                System.out.println(strings);
-            }
-            strings.set(id, strings.get(id).concat(")"));
-            System.out.println(strings);
+    public void createTables(){
+        try{
+            //Create objects Table
+            String query = "CREATE TABLE objects(id SERIAL PRIMARY KEY,name VARCHAR(200),type VARCHAR(200))";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.executeUpdate();
+
+            //Create status Table
+            query = "CREATE TABLE status(id SERIAL PRIMARY KEY, sortorder INT UNIQUE NOT NULL, name VARCHAR(200) NOT NULL UNIQUE,colour CHAR(7))";
+            statement = connection.prepareStatement(query);
+            statement.executeUpdate();
+            fillStatusTable();
+
+            //create history Table
+            query = "CREATE TABLE history(id INT,status VARCHAR(200),timestamp BIGINT,PRIMARY KEY(id,timestamp),FOREIGN KEY(id) REFERENCES objects(id), FOREIGN KEY (status) REFERENCES status(name))";
+            statement = connection.prepareStatement(query);
+            statement.executeUpdate();
+
+
+        }catch (SQLException e){
+            System.out.println(e.getMessage());
+        }
+    }
+
+    private void fillStatusTable() {
+        try{
+            String query =  "INSERT INTO status(sortorder,name,colour) VALUES(1,'Complete','#66ff66');" +
+                            "INSERT INTO status(sortorder,name,colour) VALUES(2,'In-Progress','#ffff00');" +
+                            "INSERT INTO status(sortorder,name,colour) VALUES(3,'Planned','#ff0000');";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.executeUpdate();
+        }catch (SQLException e){
+            System.out.println(e.getMessage());
         }
     }
 
 
-    public ObservableList<ObjectTableElement> selectMain(LocalDate date, ObservableList<ListView<String>> listViews){
+    private void buildString(List<String> strings,ObservableList<ListView<String>> listViews,int id, String name){
+        if(listViews.get(id).getItems().size() > 0) {
+            strings.set(id, strings.get(id).concat( name));
+            if(id >= strings.size()/2){
+                strings.set(id, strings.get(id).concat(" NOT"));
+            }
+            strings.set(id, strings.get(id).concat(" IN ("));
+            ObservableList<String> stringList = listViews.get(id).getItems();
+            for (int i = 0; i < stringList.size(); i++) {
+                strings.set(id, strings.get(id).concat("'"));
+                strings.set(id, strings.get(id).concat(stringList.get(i)));
+                strings.set(id, strings.get(id).concat("'"));
+                if(i <= stringList.size()-2){
+                    strings.set(id, strings.get(id).concat(", "));
+                }
+            }
+            strings.set(id, strings.get(id).concat(")"));
+        }
+    }
+
+
+    public ObservableList<ObjectTableElement> selectMain(LocalDate fromDate,LocalDate toDate, ObservableList<ListView<String>> listViews){
 
         ObservableList<ObjectTableElement> objectTableElements = FXCollections.observableArrayList();
 
@@ -108,21 +138,26 @@ public class DAO {
                 }
                 subquery.append(list);
             }
-
         }
 
-        System.out.println(lists);
 
 
 
-        long timestamp = ZonedDateTime.of(date.atTime(23,59), ZoneId.systemDefault()).toInstant().toEpochMilli();
+        long fromTimestamp;
+        if(fromDate == null)
+            fromTimestamp = 0;
+        else
+            fromTimestamp = ZonedDateTime.of(fromDate.atTime(23,59), ZoneId.systemDefault()).toInstant().toEpochMilli();
+
+        long toTimestamp = ZonedDateTime.of(toDate.atTime(23,59), ZoneId.systemDefault()).toInstant().toEpochMilli();
 
         PreparedStatement statement;
         ResultSet resultSet;
         try {
-            String query = "SELECT o.id, o.name, o.type, h.status, s.sortOrder, s.colour, i.t  FROM objects o JOIN history h ON (o.id = h.id) JOIN (SELECT id,max(timestamp) AS t FROM history WHERE timestamp <= ? GROUP BY id) AS i ON (i.id = o.id AND i.t=h.timestamp) JOIN status s ON s.name=h.status" + subquery;
+            String query = "SELECT o.id, o.name, o.type, h.status, s.sortOrder, s.colour, i.t  FROM objects o JOIN history h ON (o.id = h.id) JOIN (SELECT id,max(timestamp) AS t FROM history WHERE timestamp >= ? AND timestamp <= ? GROUP BY id) AS i ON (i.id = o.id AND i.t=h.timestamp) JOIN status s ON s.name=h.status" + subquery;
             statement = connection.prepareStatement(query);
-            statement.setLong(1,timestamp);
+            statement.setLong(1,fromTimestamp);
+            statement.setLong(2,toTimestamp);
             System.out.println(statement);
             resultSet = statement.executeQuery();
 
