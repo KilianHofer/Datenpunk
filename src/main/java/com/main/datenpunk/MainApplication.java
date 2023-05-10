@@ -11,9 +11,9 @@ import java.util.Date;
 public class MainApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("databaseConnection-view.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("newProject-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
-        stage.setTitle("Connect to Database");
+        stage.setTitle("Datenpunk");
         stage.setScene(scene);
         stage.setResizable(false);
         stage.show();

@@ -51,6 +51,16 @@ public class DAO {
         }
     }
 
+    public void createDatabase(String name){
+        try{
+            String query = "CREARTE DATABASE ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setString(1,name);
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
     public void createTables(){
         try{
             //Create objects Table
