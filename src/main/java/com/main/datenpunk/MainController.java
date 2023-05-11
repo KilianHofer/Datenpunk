@@ -97,6 +97,8 @@ public class MainController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
+
+
         idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         typeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
@@ -111,6 +113,12 @@ public class MainController implements Initializable {
         onCheckVisible();
 
         dao = DAO.getInstance();
+        /*objectTable.getScene().getWindow().setOnCloseRequest(windowEvent -> {         //TODO: disconnect from DB before closing window
+            dao.disconnectFromDB();
+            Platform.exit();
+        });
+
+         */
 
         controlList.addAll(whitelistNameField,whitelistTypeField,whitelistStatusBox,blacklistNameField,blacklistTypeField,blacklistStatusBox);
         listViews.addAll(whitelistNameList,whitelistTypeList,whitelistStatusList,blacklistNameList,blacklistTypeList, blacklistStatusList);

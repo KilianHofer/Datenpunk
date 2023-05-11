@@ -25,6 +25,11 @@
               <MenuItem mnemonicParsing="false" onAction="#onClose" text="Close" />
             </items>
           </Menu>
+            <Menu mnemonicParsing="false" text="Settings">
+              <items>
+                  <MenuItem mnemonicParsing="false" onAction="#onDeleteSavedPasswords" text="Delete saved passwprds" />
+              </items>
+            </Menu>
         </menus>
       </MenuBar>
    </top>
@@ -67,7 +72,7 @@
                 <TableColumn fx:id="nameColumn" minWidth="50.0" prefWidth="150.0" text="Name" />
                 <TableColumn fx:id="lastVisitedColumn" minWidth="50.0" prefWidth="150.0" text="Last Visited" />
                   <TableColumn fx:id="createdAtColumn" prefWidth="150.0" text="Created At" />
-                  <TableColumn fx:id="locationColumn" prefWidth="150.0" text="Location" />
+                  <TableColumn fx:id="locationColumn" prefWidth="300.0" text="Location" />
               </columns>
                <columnResizePolicy>
                   <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />

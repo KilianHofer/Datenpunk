@@ -51,11 +51,21 @@ public class DAO {
         }
     }
 
+    public void disconnectFromDB(){
+        try{
+            String query = "EXEC SQL DISCONNECT CURRENT";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void createDatabase(String name){
         try{
-            String query = "CREARTE DATABASE ?";
+            String query = "CREATE DATABASE \"datenpunk_" +name+"\"";
             PreparedStatement statement = connection.prepareStatement(query);
-            statement.setString(1,name);
+            statement.executeUpdate();
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
