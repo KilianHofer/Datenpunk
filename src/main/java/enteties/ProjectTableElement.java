@@ -38,7 +38,7 @@ public class ProjectTableElement {
     public String getName() {
         return name.get();
     }
-
-
-
+    public String getLocation() {
+        return  location.get();
+    }
 }

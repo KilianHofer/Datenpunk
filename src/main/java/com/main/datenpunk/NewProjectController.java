@@ -38,8 +38,12 @@ public class NewProjectController implements Initializable {
             file = new File(path);
             if (!file.exists()) {
                 try {
-                    file.createNewFile();
-
+                    if(!file.createNewFile()){
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setContentText("could not create file");
+                        alert.show();
+                        return;
+                    }
 
                     File projectFile = new File(System.getProperty("user.home")+"\\Datenpunk\\projects.dtpnk");
                     BufferedWriter writer = new BufferedWriter(new FileWriter(projectFile,true));
@@ -56,7 +60,9 @@ public class NewProjectController implements Initializable {
                     connectToDatabase();
 
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setContentText(e.getMessage());
+                    alert.showAndWait();
                 }
             }
             else{
@@ -111,7 +117,9 @@ public class NewProjectController implements Initializable {
             stage.setResizable(false);
             stage.show();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setContentText(e.getMessage());
+            alert.showAndWait();
         }
 
     }

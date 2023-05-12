@@ -4,6 +4,7 @@ import database.DAO;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.PasswordField;
 import javafx.stage.Stage;
@@ -19,28 +20,35 @@ public class DatabaseConnectionController {
     public CheckBox remenberMe;
     private String name;
     private Stage returnStage;
-    private boolean newProject;
+    private boolean newProject = false;
+    private boolean deletion = false;
 
     public void onConnect() throws IOException {
 
         DAO dao = DAO.getInstance();
 
+        if(deletion){
+            dao.connectToDB("","postgres",passwordField.getText());
+            dao.dropDatabase("");
+            checkRememberMe();
+            onCancel();
+            return;
+        }
+
         if(dao.connectToDB("","postgres",passwordField.getText()) && newProject) {
             dao.createDatabase(name);
+        }
+        else {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setContentText("Could not connect to Database");
+            alert.show();
+            return;
         }
         if (dao.connectToDB("datenpunk_" + name, "postgres", passwordField.getText())) {
             if(newProject)
                 dao.createTables();
 
-            if (remenberMe.isSelected()) {
-                File file = new File(System.getProperty("user.home") + "\\Datenpunk\\connection.dtpnk");
-                if (!file.exists()) {
-                    file.createNewFile();
-                }
-                BufferedWriter writer = new BufferedWriter(new FileWriter(file));
-                writer.write(passwordField.getText());
-                writer.close();
-            }
+            checkRememberMe();
 
 
             FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
@@ -54,7 +62,34 @@ public class DatabaseConnectionController {
             System.out.println("test");
             stage.show();
         }
+        else {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setContentText("Could not connect to Database");
+            alert.show();
+        }
 
+    }
+
+    private void checkRememberMe() {
+        if (remenberMe.isSelected()) {
+            File file = new File(System.getProperty("user.home") + "\\Datenpunk\\connection.dtpnk");
+            try {
+                if (!file.exists()) {
+                    if(!file.createNewFile()){
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setContentText("Could not save password");
+                        alert.showAndWait();
+                    }
+                }
+                BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+                writer.write(passwordField.getText());
+                writer.close();
+            } catch (IOException e) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setContentText(e.getMessage());
+                alert.showAndWait();
+            }
+        }
     }
 
     public void onCancel() {
@@ -74,5 +109,8 @@ public class DatabaseConnectionController {
 
     public void setNew(boolean newProject) {
         this.newProject = newProject;
+    }
+    public void setDeletion(boolean deletion) {
+        this.deletion = deletion;
     }
 }
