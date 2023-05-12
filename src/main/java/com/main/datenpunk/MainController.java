@@ -276,4 +276,36 @@ public class MainController implements Initializable {
             removeFromList(listViews.indexOf(keyEvent.getSource()));
         }
     }
+
+    public void onNewProject() throws IOException {
+        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("newProject-view.fxml"));
+        Scene scene = new Scene(fxmlLoader.load());
+
+
+        Stage stage = new Stage();
+
+        stage.setTitle("New Project");
+        stage.setScene(scene);
+        stage.initModality(Modality.WINDOW_MODAL);
+        stage.initOwner(objectTable.getScene().getWindow());
+
+        NewProjectController newProjectController = fxmlLoader.getController();
+        newProjectController.setReturnStage((Stage)objectTable.getScene().getWindow());      //TODO: better data transfer
+        stage.setResizable(false);
+        stage.show();
+    }
+
+    public void onProjectSelection() throws IOException {
+
+        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("projectSelection-view.fxml"));
+        Scene scene = new Scene(fxmlLoader.load());
+
+        Stage stage = (Stage)objectTable.getScene().getWindow();
+        stage.setScene(scene);
+
+        ProjectSelectionController controller = fxmlLoader.getController();
+        controller.initalizeTable();
+        stage.show();
+
+    }
 }

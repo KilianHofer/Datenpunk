@@ -397,4 +397,22 @@ public class DAO {
             System.out.println(e.getMessage());
         }
     }
+
+
+    public void deleteObject(int id){
+
+        try{
+            String query = "DELETE FROM history WHERE id = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1,id);
+            statement.executeUpdate();
+            query = "DELETE FROM objects WHERE id = ?";
+            statement = connection.prepareStatement(query);
+            statement.setInt(1,id);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

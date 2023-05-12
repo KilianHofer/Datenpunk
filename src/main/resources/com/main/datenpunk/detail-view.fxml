@@ -11,7 +11,6 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-
 <BorderPane prefHeight="371.0" prefWidth="525.0" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.main.datenpunk.DetailController">
    <center>
       <HBox alignment="CENTER">
@@ -53,10 +52,16 @@
       </HBox>
    </top>
    <bottom>
-      <Button mnemonicParsing="false" onAction="#onUpdatePressed" text="Update" BorderPane.alignment="CENTER">
+      <BorderPane BorderPane.alignment="CENTER">
          <BorderPane.margin>
-            <Insets bottom="10.0" top="10.0" />
+            <Insets bottom="10.0" left="50.0" right="50.0" top="10.0" />
          </BorderPane.margin>
-      </Button>
+         <right>
+            <Button mnemonicParsing="false" onAction="#onUpdatePressed" text="Update" BorderPane.alignment="CENTER" />
+         </right>
+         <left>
+            <Button mnemonicParsing="false" onAction="#onDelete" text="Delete" BorderPane.alignment="CENTER" />
+         </left>
+      </BorderPane>
    </bottom>
 </BorderPane>
