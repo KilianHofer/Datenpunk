@@ -70,47 +70,54 @@ public class ProjectSelectionController implements Initializable {
 
         if(projectTable.getSelectionModel().getSelectedItem() != null){
             ProjectTableElement element = projectTable.getSelectionModel().getSelectedItem();
-            String location = element.getLocation();
             Alert alert = new Alert((Alert.AlertType.CONFIRMATION));
             alert.setContentText("Do you want to delete Project: " + element.getName());
             if(alert.showAndWait().get() == ButtonType.OK){
-                File file = new File(location);
-                file.delete();
-                String subPath = System.getProperty("user.home")+"\\Datenpunk";
-                file = new File(subPath+"\\Projects\\"+element.getName());
-                file.delete();
-
-
-
-                if (!checkSavedPasswordAndConnect(new File(subPath + "\\connection.dtpnk"), "")) {
-
-                    FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("databaseConnection-view.fxml"));
-                    Scene scene = new Scene(fxmlLoader.load());
-
-                    Stage stage = new Stage();
-
-                    stage.setTitle("Connect to Database");
-                    stage.setScene(scene);
-
-                    DatabaseConnectionController databaseConnectionController = fxmlLoader.getController();
-                    databaseConnectionController.setName("");      //TODO: better data transfer
-                    databaseConnectionController.setRetrunStage((Stage) searchBar.getScene().getWindow());
-                    databaseConnectionController.setDeletion(true);
-                    databaseConnectionController.setName(element.getName());
-                    stage.setResizable(false);
-                    stage.show();
-                    }
-                else {
-                    dao.dropDatabase(element.getName());
-                }
-
-                RemoveFromProjectsFile(location);
-
+            deleteProject(element.getName(),element.getLocation());
             }
         }
-}
+    }
 
-    private void RemoveFromProjectsFile(String location) throws IOException {
+
+    public void deleteProject(String name, String location) throws IOException {
+
+            String subString = System.getProperty("user.home")+"\\Datenpunk";
+            File file = new File(subString+"\\Projects\\"+name);
+            file.delete();
+
+            file = new File(location);
+            file.delete();
+
+
+            if (!checkSavedPasswordAndConnect(new File(subString + "\\connection.dtpnk"), "")) {
+
+                FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("databaseConnection-view.fxml"));
+                Scene scene = new Scene(fxmlLoader.load());
+
+                Stage stage = new Stage();
+
+                stage.setTitle("Connect to Database");
+                stage.setScene(scene);
+
+                DatabaseConnectionController databaseConnectionController = fxmlLoader.getController();
+                databaseConnectionController.setName("");      //TODO: better data transfer
+                databaseConnectionController.setRetrunStage((Stage) searchBar.getScene().getWindow());
+                databaseConnectionController.setDeletion(true);
+                databaseConnectionController.setName(name);
+                stage.setResizable(false);
+                stage.show();
+            }
+            else {
+                dao.dropDatabase(name);
+            }
+
+            removeFromProjectsFile(location);
+
+    }
+
+
+
+    public void removeFromProjectsFile(String location) throws IOException {
         String subPath = System.getProperty("user.home")+"\\Datenpunk";
         File file = new File(subPath+"\\projects.dtpnk");
         File tmpFile = new File(subPath+"\\tmp.dtpnk");
@@ -119,7 +126,8 @@ public class ProjectSelectionController implements Initializable {
 
 
         Scanner scanner = new Scanner(file);
-        BufferedWriter writer = new BufferedWriter(new FileWriter(tmpFile,true));
+        FileWriter fileWriter = new FileWriter(tmpFile,true);
+        BufferedWriter writer = new BufferedWriter(fileWriter);
         String line;
         while(scanner.hasNext()){
             line = scanner.nextLine();
@@ -127,8 +135,9 @@ public class ProjectSelectionController implements Initializable {
                 writer.append(line).append("\n");
             }
         }
-        scanner.close();
         writer.close();
+        fileWriter.close();
+        scanner.close();
 
 
         System.out.println(file.delete());
@@ -156,6 +165,7 @@ public class ProjectSelectionController implements Initializable {
                     dao.connectToDB(dbName,"postgres",password);
                     return true;
                 }
+                scanner.close();
             }
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
@@ -169,7 +179,7 @@ public class ProjectSelectionController implements Initializable {
             ProjectTableElement element = projectTable.getSelectionModel().getSelectedItem();
 
 
-            File file = new File(System.getProperty("user.home")+"\\Datenpunk\\conneciton.dtpnk");
+            File file = new File(System.getProperty("user.home")+"\\Datenpunk\\connection.dtpnk");
             if(checkSavedPasswordAndConnect(file,element.getName())){
                 openProject();
             }
@@ -237,12 +247,28 @@ public class ProjectSelectionController implements Initializable {
         }catch (IOException e){
             e.printStackTrace();
         }
+    }
 
+    public void initalizeTable(){
+        String path = System.getProperty("user.home")+"\\Datenpunk";
+        File file = new File(path);
+        try {
+            if (!file.exists()) {
+                Files.createDirectory(file.toPath());
+            }
+
+            path += "\\projects.dtpnk";
+            file = new File(path);
+            if (!file.exists()) {
+                Files.createFile(file.toPath());
+            }
+        }catch (IOException e){
+            e.printStackTrace();
+        }
         getProjects(file);
 
     }
-
-    private void getProjects(File file)  {
+    public void getProjects(File file)  {
         try {
             projectTableElements = FXCollections.observableArrayList();
             Scanner scanner = new Scanner(file);
@@ -258,10 +284,12 @@ public class ProjectSelectionController implements Initializable {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setContentText(e.getMessage());
             alert.showAndWait();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    private void getProjectData(String path) {
+    private void getProjectData(String path) throws IOException {
         File file = new File(path);
         try {
 
@@ -273,10 +301,18 @@ public class ProjectSelectionController implements Initializable {
             BasicFileAttributes attributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
 
             projectTableElements.add(new ProjectTableElement(name,attributes.lastAccessTime().toString(),attributes.creationTime().toString(),path,local));
-        } catch (IOException e) {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setContentText(e.getMessage());
-            alert.showAndWait();
+        } catch (IOException ignore) {
+            FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("fileNotFound-view.fxml"));
+            Stage stage = new Stage();
+            stage.setTitle("Error");
+            stage.setScene( new Scene(fxmlLoader.load()));
+            stage.setResizable(false);
+
+            FileNotFoundController controller = fxmlLoader.getController();
+            controller.setProjectSelectionController(this);      //TODO: better data transfer
+            controller.setErrorMessage("File '"+file.getName()+"' could not be found at location:\n" + file.getAbsolutePath());
+
+            stage.show();
         }
     }
 

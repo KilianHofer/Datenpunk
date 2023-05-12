@@ -15,8 +15,9 @@ public class MainApplication extends Application {
         stage.setTitle("Datenpunk");
         stage.setScene(scene);
         stage.setResizable(false);
+        ProjectSelectionController controller = fxmlLoader.getController();
         stage.show();
-
+        controller.initalizeTable();
 
     }
 
