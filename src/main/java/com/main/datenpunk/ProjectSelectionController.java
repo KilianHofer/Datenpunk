@@ -12,6 +12,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
@@ -60,8 +61,44 @@ public class ProjectSelectionController implements Initializable {
     }
 
     @FXML
-    public void onOpenFromFile() {
+    public void onOpenFromFile() throws IOException {
 
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setInitialDirectory(new File(System.getProperty("user.home") + "\\Datenpunk\\Projects"));
+        String path = String.valueOf(fileChooser.showOpenDialog(projectTable.getScene().getWindow()));
+        String subString = path.substring(path.lastIndexOf("."));
+        if(subString.equals(".dtpnkl") || subString.equals(".dtpnkr")){
+
+            File file = new File(path);
+
+            if(!inProjectList(path)){
+                FileWriter fileWriter = new FileWriter(System.getProperty("user.home")+"\\Datenpunk\\projects.dtpnk",true);
+                BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+                bufferedWriter.append(path).append("\n");
+                bufferedWriter.close();
+                fileWriter.close();
+            }
+
+
+            String name = path.substring(path.lastIndexOf("\\")+1,path.lastIndexOf("."));
+
+            BasicFileAttributes attributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
+            boolean local = path.charAt(path.length() - 1) != 'r';
+            openProject(new ProjectTableElement(name,attributes.lastAccessTime().toString(),attributes.creationTime().toString(),file.getAbsolutePath(),local));
+        }
+
+
+
+    }
+    private boolean inProjectList(String path) {
+
+        Scanner scanner = new Scanner(System.getProperty("user.home")+"\\Datenpunk\\projects.dtpnk");
+
+        while (scanner.hasNext()){
+            if(scanner.next().equals(path))
+                return true;
+        }
+        return false;
     }
 
     @FXML
@@ -180,40 +217,39 @@ public class ProjectSelectionController implements Initializable {
     public void onOpen() throws IOException {
         if(projectTable.getSelectionModel().getSelectedItem() != null){
             ProjectTableElement element = projectTable.getSelectionModel().getSelectedItem();
-
-
-            File file = new File(System.getProperty("user.home")+"\\Datenpunk\\connection.dtpnk");
-            if(checkSavedPasswordAndConnect(file,element.getName())){
-                openProject();
-            }
-            else {
-
-                FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("databaseConnection-view.fxml"));
-                Scene scene = new Scene(fxmlLoader.load());
-
-
-                Stage stage = new Stage();
-
-                stage.initModality(Modality.WINDOW_MODAL);
-                stage.initOwner(projectTable.getScene().getWindow());
-
-                stage.setTitle("Connect to Database");
-                stage.setScene(scene);
-
-                DatabaseConnectionController databaseConnectionController = fxmlLoader.getController();
-                databaseConnectionController.setName(element.getName());      //TODO: better data transfer
-                databaseConnectionController.setRetrunStage((Stage) stage.getOwner());
-                databaseConnectionController.setNew(false);
-                stage.setResizable(false);
-                stage.show();
-            }
-
-
-
+             openProject(element);
         }
     }
 
-    private void openProject() throws IOException {
+    private void openProject(ProjectTableElement element) throws IOException {
+        File file = new File(System.getProperty("user.home")+"\\Datenpunk\\connection.dtpnk");
+        if(checkSavedPasswordAndConnect(file,element.getName())){
+            openProjectWindow();
+        }
+        else {
+
+            FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("databaseConnection-view.fxml"));
+            Scene scene = new Scene(fxmlLoader.load());
+
+
+            Stage stage = new Stage();
+
+            stage.initModality(Modality.WINDOW_MODAL);
+            stage.initOwner(projectTable.getScene().getWindow());
+
+            stage.setTitle("Connect to Database");
+            stage.setScene(scene);
+
+            DatabaseConnectionController databaseConnectionController = fxmlLoader.getController();
+            databaseConnectionController.setName(element.getName());      //TODO: better data transfer
+            databaseConnectionController.setRetrunStage((Stage) stage.getOwner());
+            databaseConnectionController.setNew(false);
+            stage.setResizable(false);
+            stage.show();
+        }
+    }
+
+    private void openProjectWindow() throws IOException {
 
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
         Stage stage = (Stage) projectTable.getScene().getWindow();
