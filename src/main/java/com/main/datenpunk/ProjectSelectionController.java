@@ -4,6 +4,8 @@ import database.DAO;
 import enteties.ProjectTableElement;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -64,6 +66,7 @@ public class ProjectSelectionController implements Initializable {
 
     @FXML
     public void onClose() {
+        ((Stage)projectTable.getScene().getWindow()).close();
     }
 
     public void onDelete() throws IOException {
@@ -267,6 +270,8 @@ public class ProjectSelectionController implements Initializable {
         }
         getProjects(file);
 
+
+
     }
     public void getProjects(File file)  {
         try {
@@ -277,7 +282,16 @@ public class ProjectSelectionController implements Initializable {
             }
             scanner.close();
 
-            projectTable.getItems().setAll(projectTableElements);
+            FilteredList<ProjectTableElement> filteredList = new FilteredList<>(projectTableElements, elements -> true);
+            searchBar.textProperty().addListener((obserbable, oldValue, newValue) -> filteredList.setPredicate(element -> {
+                if(newValue == null || newValue.isEmpty()) return  true;
+                return element.getName().toLowerCase().contains(newValue.toLowerCase());
+
+            }));
+
+            SortedList<ProjectTableElement> sortedList = new SortedList<>(filteredList);
+            sortedList.comparatorProperty().bind(projectTable.comparatorProperty());
+            projectTable.setItems(sortedList);
             projectTable.getSortOrder().add(lastVisitedColumn);
 
         } catch (FileNotFoundException e) {
