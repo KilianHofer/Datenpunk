@@ -51,6 +51,26 @@ public class DAO {
         }
     }
 
+
+    public void createDatabase(String name){
+        try{
+            String query = "CREATE DATABASE \"datenpunk_" +name+"\"";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+    public void dropDatabase(String name){
+        try{
+            String query = "DROP DATABASE \"datenpunk_" +name+"\"";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
     public void createTables(){
         try{
             //Create objects Table
@@ -154,7 +174,7 @@ public class DAO {
         PreparedStatement statement;
         ResultSet resultSet;
         try {
-            String query = "SELECT o.id, o.name, o.type, h.status, s.sortOrder, s.colour, i.t  FROM objects o JOIN history h ON (o.id = h.id) JOIN (SELECT id,max(timestamp) AS t FROM history WHERE timestamp >= ? AND timestamp <= ? GROUP BY id) AS i ON (i.id = o.id AND i.t=h.timestamp) JOIN status s ON s.name=h.status" + subquery;
+            String query = "SELECT o.id, o.name, o.type, h.status, s.sortOrder, s.colour, i.t  FROM objects o JOIN history h ON (o.id = h.id) JOIN (SELECT id,max(timestamp) AS t FROM history WHERE timestamp >= ? AND timestamp <= ? GROUP BY id) AS i ON (i.id = o.id AND i.t=h.timestamp) JOIN status s ON s.name=h.status" + subquery; //TODO: fix SQL-Injection
             statement = connection.prepareStatement(query);
             statement.setLong(1,fromTimestamp);
             statement.setLong(2,toTimestamp);
@@ -377,4 +397,22 @@ public class DAO {
             System.out.println(e.getMessage());
         }
     }
+
+
+    public void deleteObject(int id){
+
+        try{
+            String query = "DELETE FROM history WHERE id = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1,id);
+            statement.executeUpdate();
+            query = "DELETE FROM objects WHERE id = ?";
+            statement = connection.prepareStatement(query);
+            statement.setInt(1,id);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

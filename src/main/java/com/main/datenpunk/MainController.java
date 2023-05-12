@@ -97,6 +97,8 @@ public class MainController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
+
+
         idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         typeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
@@ -111,6 +113,12 @@ public class MainController implements Initializable {
         onCheckVisible();
 
         dao = DAO.getInstance();
+        /*objectTable.getScene().getWindow().setOnCloseRequest(windowEvent -> {         //TODO: disconnect from DB before closing window
+            dao.disconnectFromDB();
+            Platform.exit();
+        });
+
+         */
 
         controlList.addAll(whitelistNameField,whitelistTypeField,whitelistStatusBox,blacklistNameField,blacklistTypeField,blacklistStatusBox);
         listViews.addAll(whitelistNameList,whitelistTypeList,whitelistStatusList,blacklistNameList,blacklistTypeList, blacklistStatusList);
@@ -267,5 +275,37 @@ public class MainController implements Initializable {
         if(keyEvent.getCode().equals(KeyCode.DELETE) || keyEvent.getCode().equals(KeyCode.BACK_SPACE)){
             removeFromList(listViews.indexOf(keyEvent.getSource()));
         }
+    }
+
+    public void onNewProject() throws IOException {
+        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("newProject-view.fxml"));
+        Scene scene = new Scene(fxmlLoader.load());
+
+
+        Stage stage = new Stage();
+
+        stage.setTitle("New Project");
+        stage.setScene(scene);
+        stage.initModality(Modality.WINDOW_MODAL);
+        stage.initOwner(objectTable.getScene().getWindow());
+
+        NewProjectController newProjectController = fxmlLoader.getController();
+        newProjectController.setReturnStage((Stage)objectTable.getScene().getWindow());      //TODO: better data transfer
+        stage.setResizable(false);
+        stage.show();
+    }
+
+    public void onProjectSelection() throws IOException {
+
+        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("projectSelection-view.fxml"));
+        Scene scene = new Scene(fxmlLoader.load());
+
+        Stage stage = (Stage)objectTable.getScene().getWindow();
+        stage.setScene(scene);
+
+        ProjectSelectionController controller = fxmlLoader.getController();
+        controller.initalizeTable();
+        stage.show();
+
     }
 }
