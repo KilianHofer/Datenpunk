@@ -40,6 +40,7 @@ public class ProjectSelectionController implements Initializable {
 
 
     DAO dao = DAO.getInstance();
+    Singelton singelton = Singelton.getInstance();
 
     @FXML
     public void onNew() throws IOException {
@@ -224,6 +225,7 @@ public class ProjectSelectionController implements Initializable {
     private void openProject(ProjectTableElement element) throws IOException {
         File file = new File(System.getProperty("user.home")+"\\Datenpunk\\connection.dtpnk");
         if(checkSavedPasswordAndConnect(file,element.getName())){
+            singelton.setCurrentProject(element.getName());
             openProjectWindow();
         }
         else {
@@ -250,6 +252,8 @@ public class ProjectSelectionController implements Initializable {
     }
 
     private void openProjectWindow() throws IOException {
+
+
 
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
         Stage stage = (Stage) projectTable.getScene().getWindow();

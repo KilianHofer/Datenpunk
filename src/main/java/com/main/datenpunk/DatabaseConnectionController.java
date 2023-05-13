@@ -26,6 +26,7 @@ public class DatabaseConnectionController {
     public void onConnect() throws IOException {
 
         DAO dao = DAO.getInstance();
+        Singelton singelton = Singelton.getInstance();
 
         if(deletion){
             dao.connectToDB("","postgres",passwordField.getText());
@@ -50,7 +51,7 @@ public class DatabaseConnectionController {
 
             checkRememberMe();
 
-
+            singelton.setCurrentProject(name);
             FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
             Scene scene = new Scene(fxmlLoader.load());
             Stage stage = returnStage;

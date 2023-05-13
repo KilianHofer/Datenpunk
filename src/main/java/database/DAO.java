@@ -110,21 +110,22 @@ public class DAO {
 
     private void buildString(List<String> strings,ObservableList<ListView<String>> listViews,int id, String name){
         if(listViews.get(id).getItems().size() > 0) {
-            strings.set(id, strings.get(id).concat( name));
-            if(id >= strings.size()/2){
-                strings.set(id, strings.get(id).concat(" NOT"));
-            }
-            strings.set(id, strings.get(id).concat(" IN ("));
             ObservableList<String> stringList = listViews.get(id).getItems();
             for (int i = 0; i < stringList.size(); i++) {
-                strings.set(id, strings.get(id).concat("'"));
-                strings.set(id, strings.get(id).concat(stringList.get(i)));
-                strings.set(id, strings.get(id).concat("'"));
+                strings.set(id, strings.get(id).concat("LOWER("));
+                strings.set(id, strings.get(id).concat( name));
+                strings.set(id, strings.get(id).concat(")"));
+                if(id >= strings.size()/2){
+                    strings.set(id, strings.get(id).concat(" NOT"));
+                }
+                strings.set(id, strings.get(id).concat(" LIKE "));
+                strings.set(id, strings.get(id).concat("'%"));
+                strings.set(id, strings.get(id).concat(stringList.get(i).toLowerCase()));
+                strings.set(id, strings.get(id).concat("%'"));
                 if(i <= stringList.size()-2){
-                    strings.set(id, strings.get(id).concat(", "));
+                    strings.set(id, strings.get(id).concat(" OR "));
                 }
             }
-            strings.set(id, strings.get(id).concat(")"));
         }
     }
 

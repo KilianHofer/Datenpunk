@@ -19,10 +19,13 @@ import java.util.Scanner;
 public class NewProjectController implements Initializable {
 
 
+    DAO dao = DAO.getInstance();
+    Singelton singelton = Singelton.getInstance();
+
     Stage returnStage;
     @FXML
     public TextField nameField,pathField;
-    DAO dao = DAO.getInstance();
+
 
     @FXML
     public void onCreate() throws IOException {
@@ -52,11 +55,11 @@ public class NewProjectController implements Initializable {
 
 
                     path = System.getProperty("user.home")+"\\Datenpunk\\Projects";
-                    file = new File(path+"\\" + name);
-                    if(!file.exists()){
-                        Files.createDirectory(file.toPath());
-                    }
-
+                    path += "\\" + name;
+                    file = new File(path);
+                    Files.createDirectory(file.toPath());
+                    file = new File(path+"\\Presets");
+                    Files.createDirectory(file.toPath());
                     connectToDatabase();
 
                 } catch (IOException e) {
@@ -86,6 +89,7 @@ public class NewProjectController implements Initializable {
                     }
                     if(dao.connectToDB("datenpunk_"+name,"postgres",password)){
                         dao.createTables();
+                        singelton.setCurrentProject(name);
                         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
                         Stage stage = returnStage;
                         stage.setTitle("Datenpunk");
