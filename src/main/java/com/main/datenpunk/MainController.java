@@ -21,18 +21,28 @@ import javafx.scene.input.MouseEvent;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.Scanner;
+import java.util.stream.Stream;
 
 public class MainController implements Initializable {
 
+
+    private final DAO dao = DAO.getInstance();
+    private final Singelton singelton = Singelton.getInstance();
+
     @FXML
     private DatePicker toDatePicker,fromDatePicker;
-    private DAO dao;
 
     @FXML
     private TableView<ObjectTableElement> objectTable;
@@ -50,7 +60,7 @@ public class MainController implements Initializable {
     @FXML
     private TextField whitelistNameField, whitelistTypeField, blacklistNameField, blacklistTypeField;
     @FXML
-    private ChoiceBox<String> whitelistStatusBox, blacklistStatusBox;
+    private ChoiceBox<String> whitelistStatusBox, blacklistStatusBox, presetBox;
     private final ObservableList<Control> controlList = FXCollections.observableArrayList();
 
     @FXML
@@ -62,12 +72,13 @@ public class MainController implements Initializable {
     private final ObservableList<Button> addButtons = FXCollections.observableArrayList();
     private final ObservableList<Button> removeButtons = FXCollections.observableArrayList();
 
-    LocalDate toDate,fromDate;
+    private LocalDate toDate,fromDate;
 
-    List<Status> statuses = new ArrayList<>();
-    List<String> statusNames = new ArrayList<>();
+    private List<Status> statuses = new ArrayList<>();
+    private List<String> presets = new ArrayList<>();
+    private final List<String> statusNames = new ArrayList<>();
 
-    ObservableList<ObjectTableElement> objectTableElements = FXCollections.observableArrayList();
+    private ObservableList<ObjectTableElement> objectTableElements = FXCollections.observableArrayList();
 
     private void getStatuses(){
         statuses = dao.selectStatuses();
@@ -76,6 +87,56 @@ public class MainController implements Initializable {
             status = value;
             statusNames.add(status.getName());
         }
+    }
+
+    public List<String> getWhitelist(){
+        List<String> list = new ArrayList<>();
+
+        for (int i = 0; i < listViews.size()/2; i++) {
+            list.addAll(listViews.get(i).getItems());
+            list.add("");
+        }
+        return  list;
+    }
+
+    public List<String> getBlacklist(){
+        List<String> list = new ArrayList<>();
+
+        for (int i = listViews.size()/2; i < listViews.size(); i++) {
+            list.addAll(listViews.get(i).getItems());
+            list.add("");
+        }
+        return  list;
+    }
+
+    public void selectPresets() {
+
+        presets = new ArrayList<>();
+
+        List<Path> paths;
+        try{
+            Stream<Path> files = Files.list(Paths.get(singelton.getWorkingDirectory()+"\\Projects\\"+singelton.getCurrentProject()+"\\Presets"));
+            paths = files.toList();
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        String path;
+        File file;
+        for (Path value : paths) {
+            path = value.toString();
+            file = new File(path);
+            if (file.isDirectory())
+                presets.add(path.substring(path.lastIndexOf("\\") + 1));
+        }
+
+        presetBox.getItems().setAll(presets);
+        presetBox.setValue("Custom");
+    }
+
+    public void setPreset(String name){
+        presetBox.setValue(name);
     }
 
     @FXML
@@ -111,8 +172,6 @@ public class MainController implements Initializable {
 
         checkMenus.addAll(idCheck,nameCheck,typeCheck,statusCheck,dateCheck);
         onCheckVisible();
-
-        dao = DAO.getInstance();
         /*objectTable.getScene().getWindow().setOnCloseRequest(windowEvent -> {         //TODO: disconnect from DB before closing window
             dao.disconnectFromDB();
             Platform.exit();
@@ -126,6 +185,9 @@ public class MainController implements Initializable {
         removeButtons.addAll(removeFromNameWhitelist,removeFromTypeWhitelist,removeFromStatusWhitelist,removeFromNameBlacklist,removeFromTypeBlacklist,removeFromStatusBlacklist);
 
         getStatuses();
+        selectPresets();
+
+        presetBox.setOnAction(this::onPresetChange);
 
         whitelistStatusBox.getItems().setAll(statusNames);
         blacklistStatusBox.getItems().setAll(statusNames);
@@ -136,6 +198,7 @@ public class MainController implements Initializable {
 
 
     }
+
 
     @FXML
     public void onTableClick(MouseEvent event) throws IOException {
@@ -199,21 +262,37 @@ public class MainController implements Initializable {
     }
 
     @FXML
-    public void getToDate() {
+    public void selectToDate() {
 
         toDate = toDatePicker.getValue();
-
+        //presetBox.setValue("Custom");
         updateTable();
     }
     @FXML
-    public void getFromDate() {
+    public void selectFromDate() {
 
         fromDate = fromDatePicker.getValue();
-
+        //presetBox.setValue("Custom");
         updateTable();
     }
 
-    public void onReset() {
+    public String getFromDate(){
+
+        if(fromDate == null)
+            return "";
+        return fromDate.toString();
+    }
+    public String getToDate(){
+        if(toDate == null)
+            return "";
+        return toDate.toString();
+    }
+
+    public void onResetDates() {
+        presetBox.setValue("Custom");
+        resetDates();
+    }
+    private void resetDates(){
         toDate = LocalDate.now();
         fromDate = null;
         toDatePicker.setValue(toDate);
@@ -244,7 +323,7 @@ public class MainController implements Initializable {
         else
             text = ((ChoiceBox<String>) control).getValue();
 
-
+        presetBox.setValue("Custom");
         listViews.get(i).getItems().add(text);
         updateTable();
     }
@@ -259,6 +338,7 @@ public class MainController implements Initializable {
         ListView<String> listView = listViews.get(id);
         if(listView.getSelectionModel().getSelectedItem() != null){
             listView.getItems().remove(listView.getSelectionModel().getSelectedItem());
+            presetBox.setValue("Custom");
             updateTable();
         }
     }
@@ -307,5 +387,109 @@ public class MainController implements Initializable {
         controller.initalizeTable();
         stage.show();
 
+    }
+
+    public void onNewPreset() throws IOException {
+
+        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("newPreset-view.fxml"));
+        Scene scene = new Scene(fxmlLoader.load());
+        Stage stage = new Stage();
+        stage.setTitle("New preset");
+        stage.setScene(scene);
+        stage.initModality(Modality.WINDOW_MODAL);
+        stage.initOwner(objectTable.getScene().getWindow());
+        stage.setResizable(false);
+
+        NewPresetController controller = fxmlLoader.getController();
+        controller.setPresets(presets);
+        controller.setController(this);
+
+        stage.show();
+
+    }
+
+    public void onDeletePreset() {
+
+        String name = presetBox.getValue();
+        if(!name.equals("Custom")) {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setContentText("Delete Prefab: " + name);
+            if (alert.showAndWait().get() == ButtonType.OK) {
+                File file = new File(singelton.getWorkingDirectory() + "\\Projects\\" + singelton.getCurrentProject() + "\\Presets\\" + name);
+                file.delete();
+                selectPresets();
+            }
+        }
+
+    }
+
+    public void onResetPresets() {
+
+        presetBox.setValue("Custom");
+        for (ListView<String> list : listViews) {
+            list.getItems().setAll(new ArrayList<>());
+        }
+        onResetDates();
+        updateTable();
+
+    }
+
+    public void onPresetChange(ActionEvent event) {
+        String preset = presetBox.getValue();
+        if(!preset.equals("Custom")){
+            try {
+                String path = singelton.getWorkingDirectory() + "\\Projects\\" + singelton.getCurrentProject() + "\\Presets\\" + preset;
+                Scanner scanner = new Scanner(new File(path+"\\dateRange.dtpnk"));
+
+                String next;
+                if(scanner.hasNext()){
+                    next = scanner.next();
+                    if(next.equals(""))
+                        fromDate = null;
+                    else
+                        fromDate = LocalDate.parse(next);
+                    fromDatePicker.setValue(fromDate);
+                    if(scanner.hasNext()){
+                        next = scanner.next();
+                        if(next.equals(""))
+                            fromDate = LocalDate.now();
+                        else
+                            toDate = LocalDate.parse(next);
+                        toDatePicker.setValue(toDate);
+                    }
+                }
+                else {
+                    resetDates();
+                }
+                scanner.close();
+
+                scanner = new Scanner(new File(path+"\\whitelist.dtpnk"));
+                int count = listViews.size();
+                for (int i = 0; i < count; i++) {
+                    if(i == count/2){
+                        scanner.close();
+                        scanner = new Scanner(new File(path+"\\blacklist.dtpnk"));
+                    }
+                    ListView<String> list = listViews.get(i);
+                    list.getItems().setAll(new ArrayList<>());
+                    while(scanner.hasNext()){
+                        String line = scanner.nextLine();
+                        if(!line.equals(""))
+                            list.getItems().add(line);
+                        else
+                            break;
+                    }
+                }
+                scanner.close();
+
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+            updateTable();
+        }
+    }
+
+    public void setCustom() {
+        presetBox.setValue("Custom");
     }
 }

@@ -27,6 +27,8 @@ public class RecoverProjectController {
     String name;
     String type;
 
+    boolean error = false;
+
     public void  setController(ProjectSelectionController controller){
         this.controller = controller;
     }
@@ -89,17 +91,29 @@ public class RecoverProjectController {
         }
     }
 
+    private void prefabRecoveryError(){
+        if (!error) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setContentText("Prefabs could not be recovered.");
+            alert.showAndWait();
+        }
+    }
+
     private void corectProjectList(File file){
 
         try {
         if(!file.exists())
             file.createNewFile();
-        file = new File(System.getProperty("user.home")+"\\Datenpunk\\Projects\\"+name.substring(0,name.lastIndexOf(".")));
+        String folderPath = System.getProperty("user.home")+"\\Datenpunk\\Projects\\"+name.substring(0,name.lastIndexOf("."));
+        file = new File(folderPath);
             if (!file.exists()) {
                 Files.createDirectory(file.toPath());
-                Alert alert = new Alert(Alert.AlertType.WARNING);
-                alert.setContentText("Prefabs could not be recovered.");
-                alert.showAndWait();
+                prefabRecoveryError();
+            }
+            file = new File(folderPath+"\\Presets");
+            if(!file.exists()){
+                Files.createDirectory(file.toPath());
+                prefabRecoveryError();
             }
 
             controller.removeFromProjectsFile(originalPath);
