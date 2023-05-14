@@ -12,12 +12,16 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
+import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
@@ -40,6 +44,9 @@ public class MainController implements Initializable {
 
     private final DAO dao = DAO.getInstance();
     private final Singelton singelton = Singelton.getInstance();
+    @FXML
+    public VBox chartContainer;
+
 
     @FXML
     private DatePicker toDatePicker,fromDatePicker;
@@ -195,7 +202,52 @@ public class MainController implements Initializable {
 
         updateTable();
 
+        /*
 
+        XYChart.Series<String,Integer> planned = new XYChart.Series<>();
+        planned.setName("Planned");
+
+
+        XYChart.Series<String,Integer> inProgress = new XYChart.Series<>();
+        inProgress.setName("In-Progress");
+
+        XYChart.Series<String,Integer> complete = new XYChart.Series<>();
+        complete.setName("Complete");
+
+
+
+        LocalDate start = LocalDate.parse("2023-05-01");
+        LocalDate end = LocalDate.now().plusDays(1);
+
+
+        String dateString;
+        for(LocalDate date:start.datesUntil(end).toList()){
+            dateString = date.toString();
+            planned.getData().add(new XYChart.Data<>(dateString,5));
+            inProgress.getData().add(new XYChart.Data<>(dateString,dao.getValuesByDate("status","timestamp",date.toString(),"In-Progress")));
+            complete.getData().add(new XYChart.Data<>(dateString,dao.getValuesByDate("status","timestamp",date.toString(),"Complete")));
+
+
+        }
+        lineTest.getYAxis().setLabel("test");
+        lineTest.getData().addAll(planned,inProgress,complete);
+
+
+
+        ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList();
+
+        for (Status status:statuses) {
+            PieChart.Data data = new PieChart.Data(status.getName(),dao.getValuesByColumn("h.status",status.getName()));
+            pieData.add(data);
+        }
+
+        pieTest.setData(pieData);
+        for(PieChart.Data data:pieData){
+            Status status = dao.selectStatus(data.getName());
+            data.getNode().setStyle("-fx-pie-color: "+status.getColor());
+        }
+
+         */
 
     }
 
@@ -491,5 +543,71 @@ public class MainController implements Initializable {
 
     public void setCustom() {
         presetBox.setValue("Custom");
+    }
+
+    public void showChartOptions(MouseEvent event) {
+        VBox vBox = (VBox) ((HBox)event.getSource()).getChildren().get(1);
+        vBox.setVisible(true);
+    }
+
+    public void hideChartOptions(MouseEvent event) {
+        VBox vBox = (VBox) ((HBox)event.getSource()).getChildren().get(1);
+        vBox.setVisible(false);
+    }
+
+    public void onAddChart() throws IOException {
+        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("newChart-view.fxml"));
+        Scene scene = new Scene(fxmlLoader.load());
+
+
+        Stage stage = new Stage();
+
+        stage.setTitle("New Diagram");
+        stage.setScene(scene);
+        stage.initModality(Modality.WINDOW_MODAL);
+        stage.initOwner(objectTable.getScene().getWindow());
+
+        stage.setResizable(false);
+        stage.show();
+    }
+
+    public void addChart() {
+
+        HBox hBox = new HBox();
+
+        hBox.getChildren().add(new LineChart(new CategoryAxis(),new NumberAxis()));
+        hBox.setOnMouseEntered(this::showChartOptions);
+        hBox.setOnMouseExited(this::hideChartOptions);
+
+        VBox vBox = new VBox();
+        vBox.setVisible(false);
+
+        Button closeButton = new Button("⛌");
+        closeButton.setOnAction(this::onDeleteChart);
+
+
+        Button editButton = new Button("\uD83D\uDD89");
+        editButton.setOnAction(this::onEditChart);
+        vBox.getChildren().addAll(closeButton,editButton);
+
+        hBox.getChildren().add(vBox);
+
+        chartContainer.getChildren().add(hBox);
+        chartContainer.setPrefWidth(Region.USE_COMPUTED_SIZE);
+    }
+
+    private void onEditChart(ActionEvent event) {
+    }
+
+    private void onDeleteChart(ActionEvent event) {
+
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        Button button = (Button)event.getSource();
+        HBox hBox = (HBox) button.getParent().getParent();
+        alert.setContentText("Do you want to delete this Diagram: \n"+((Chart)hBox.getChildren().get(0)).getTitle());
+        if(alert.showAndWait().get() == ButtonType.OK) {
+            VBox vBox = (VBox) hBox.getParent();
+            vBox.getChildren().remove(hBox);
+        }
     }
 }

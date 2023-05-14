@@ -302,20 +302,20 @@ public class DAO {
         return null;
     }
 
-    public Status selectStatus(String planned) {
+    public Status selectStatus(String name) {
         try{
             String query = "SELECT * FROM status WHERE name = ?";
             PreparedStatement statement = connection.prepareStatement(query);
-            statement.setString(1,planned);
+            statement.setString(1,name);
             ResultSet resultSet = statement.executeQuery();
             int sortOrder;
-            String name, color;
+            String sName, color;
 
             if(resultSet.next()){
                 sortOrder = resultSet.getInt("sortOrder");
-                name = resultSet.getString("name");
+                sName = resultSet.getString("name");
                 color = resultSet.getString("colour");
-                return new Status(name,sortOrder,color);
+                return new Status(sName,sortOrder,color);
             }
 
 
@@ -342,11 +342,50 @@ public class DAO {
         return null;
     }
 
+    public Integer getValuesByDate(String y, String x, String xValue, String condition){
+
+
+        try {
+            String query = "SELECT COUNT(*) FROM objects o JOIN history h ON (o.id = h.id) JOIN (SELECT id,max(timestamp) AS t FROM history WHERE "+x+"  <= ? GROUP BY id) AS i ON (i.id = o.id AND i.t=h.timestamp) JOIN status s ON s.name=h.status WHERE " + y + " = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+
+            statement.setLong(1,ZonedDateTime.of(LocalDate.parse(xValue).atTime(23,59), ZoneId.systemDefault()).toInstant().toEpochMilli());
+            statement.setString(2,condition);
+
+            System.out.println(statement);
+            ResultSet resultSet = statement.executeQuery();
+            if(resultSet.next())
+                return resultSet.getInt("count");
+
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+
+    }
+
+    public double getValuesByColumn(String column, String columnValue) {
+        try{
+
+            String query = "SELECT COUNT(*) FROM objects o JOIN history h ON (o.id = h.id) JOIN (SELECT id,max(timestamp) AS t FROM history WHERE timestamp  <= " + System.currentTimeMillis() + " GROUP BY id) AS i ON (i.id = o.id AND i.t=h.timestamp) JOIN status s ON s.name=h.status WHERE " + column + "= ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setString(1,columnValue);
+            ResultSet resultSet = statement.executeQuery();
+            if(resultSet.next()){
+                return resultSet.getDouble("count");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return 0;
+    }
+
 
     public Integer insert(String name, String type){
 
         try {
-            String query = ( "INSERT INTO objects(name, type) VALUES(?,?);");
+            String query = "INSERT INTO objects(name, type) VALUES(?,?);";
             PreparedStatement statement = connection.prepareStatement(query,Statement.RETURN_GENERATED_KEYS);
             statement.setString(1,name);
             statement.setString(2,type);
@@ -415,5 +454,4 @@ public class DAO {
             throw new RuntimeException(e);
         }
     }
-
 }
