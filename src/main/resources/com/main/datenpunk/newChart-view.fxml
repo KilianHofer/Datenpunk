@@ -118,23 +118,6 @@
                         <VBox maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="73.0" prefWidth="150.0">
                            <children>
                               <Label text="y-Axis" />
-                              <HBox>
-                                 <children>
-                                    <RadioButton mnemonicParsing="false" onAction="#setYType" selected="true" text="Count">
-                                       <toggleGroup>
-                                          <ToggleGroup fx:id="yTypeGroup" />
-                                       </toggleGroup>
-                                    </RadioButton>
-                                    <RadioButton mnemonicParsing="false" onAction="#setYType" text="Sum" toggleGroup="$yTypeGroup">
-                                       <HBox.margin>
-                                          <Insets left="5.0" />
-                                       </HBox.margin>
-                                    </RadioButton>
-                                 </children>
-                                 <VBox.margin>
-                                    <Insets bottom="5.0" top="5.0" />
-                                 </VBox.margin>
-                              </HBox>
                               <ChoiceBox fx:id="ySelectionBox" prefHeight="25.0" prefWidth="150.0" />
                            </children>
                         </VBox>
@@ -151,12 +134,17 @@
                            <children>
                               <Label prefHeight="17.0" prefWidth="150.0" text="x-Axis:">
                                  <VBox.margin>
-                                    <Insets bottom="5.0" />
+                                    <Insets />
                                  </VBox.margin>
                               </Label>
+                              <ChoiceBox prefWidth="150.0" fx:id="xSelectionBox">
+                                 <VBox.margin>
+                                    <Insets bottom="10.0" top="5.0" />
+                                 </VBox.margin>
+                              </ChoiceBox>
                               <HBox fx:id="xToggle">
                                  <children>
-                                    <RadioButton mnemonicParsing="false" onAction="#setXType" selected="true" text="Time">
+                                    <RadioButton mnemonicParsing="false" onAction="#setXType" selected="true" text="Accumulative" fx:id="xStandard">
                                        <HBox.margin>
                                           <Insets right="5.0" />
                                        </HBox.margin>
@@ -164,14 +152,18 @@
                                           <ToggleGroup fx:id="xTypeGroup" />
                                        </toggleGroup>
                                     </RadioButton>
-                                    <RadioButton mnemonicParsing="false" onAction="#setXType" text="Category" toggleGroup="$xTypeGroup" />
+                                    <RadioButton mnemonicParsing="false" onAction="#setXType" text="Range" toggleGroup="$xTypeGroup" />
                                  </children>
                               </HBox>
-                              <ChoiceBox prefWidth="150.0" visible="false" fx:id="xSelectionBox">
-                                 <VBox.margin>
-                                    <Insets bottom="10.0" top="10.0" />
-                                 </VBox.margin>
-                              </ChoiceBox>
+                              <HBox>
+                                 <children>
+                                    <TextField fx:id="rangeField" promptText="Range" visible="false">
+                                       <HBox.margin>
+                                          <Insets top="5.0" />
+                                       </HBox.margin>
+                                    </TextField>
+                                 </children>
+                              </HBox>
                            </children>
                         </VBox>
                      </children>
@@ -181,8 +173,18 @@
                   <VBox>
                      <children>
                         <Label text="Series:" />
+                        <TextField fx:id="seriesNameField" promptText="Name">
+                           <VBox.margin>
+                              <Insets bottom="5.0" />
+                           </VBox.margin>
+                        </TextField>
                         <ChoiceBox fx:id="seriesSelectionBox" prefHeight="25.0" prefWidth="200.0" />
-                        <BorderPane>
+                        <TextField fx:id="comparatorField">
+                           <VBox.margin>
+                              <Insets top="5.0" />
+                           </VBox.margin>
+                        </TextField>
+                        <BorderPane fx:id="seriesPane">
                            <left>
                               <Button mnemonicParsing="false" onAction="#onSeriesAdd" text="Add" BorderPane.alignment="CENTER" />
                            </left>
@@ -193,7 +195,7 @@
                               <Insets bottom="10.0" top="10.0" />
                            </VBox.margin>
                         </BorderPane>
-                        <ListView fx:id="seriesList" prefHeight="200.0" prefWidth="200.0" />
+                        <ListView fx:id="seriesList" onMouseClicked="#onSeriesListClick" prefHeight="200.0" prefWidth="200.0" />
                      </children>
                      <BorderPane.margin>
                         <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />

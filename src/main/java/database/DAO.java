@@ -1,5 +1,6 @@
 package database;
 
+import com.main.datenpunk.ColumnInfo;
 import enteties.HistoryTableElement;
 import enteties.Status;
 import enteties.ObjectTableElement;
@@ -14,6 +15,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+
 import java.util.List;
 
 public class DAO {
@@ -105,6 +107,24 @@ public class DAO {
         }catch (SQLException e){
             System.out.println(e.getMessage());
         }
+    }
+
+    public List<ColumnInfo> selectTableColumns(String table){
+        List<ColumnInfo> names = new ArrayList<>();
+        try{
+            String query = "SELECT column_name,data_type FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = N'"+table+"' AND column_name != 'id'";
+            PreparedStatement statement = connection.prepareStatement(query);
+            System.out.println(statement);
+            ResultSet resultSet = statement.executeQuery();
+            ColumnInfo columnInfo;
+            while (resultSet.next()){
+                columnInfo = new ColumnInfo(resultSet.getString("column_name"),resultSet.getString("data_type").contains("char"));
+                names.add(columnInfo);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return names;
     }
 
 
@@ -395,8 +415,8 @@ public class DAO {
             if (generatedKeys.next()) {
                 id = generatedKeys.getInt(1);
             }
-            query = "INSERT INTO History(id, status, timestamp) VALUES(?,?,?)";
-            statement = connection.prepareStatement(query);
+            String historyQuery = "INSERT INTO History(id, status, timestamp) VALUES(?,?,?)";
+            statement = connection.prepareStatement(historyQuery);
             statement.setInt(1,id);
             statement.setString(2,"Planned");   //TODO: make default setting
             statement.setLong(3,System.currentTimeMillis());
@@ -453,5 +473,27 @@ public class DAO {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public List<String> selectSeriesOptions(String name) {
+
+        List<String> series = new ArrayList<>();
+        try{
+            String query;                                     //TODO: only returns statuses that have already been in use
+            if(name.equals("name"))                           //TODO: temporary solution might have to be more complicated with dynamic database
+                query = "SELECT o."+name+" FROM objects o, history, status group by o."+name;
+            else
+                query = "SELECT "+name+" FROM objects, history, status group by "+name;
+            PreparedStatement statement = connection.prepareStatement(query);
+            System.out.println(statement);
+            ResultSet resultSet = statement.executeQuery();
+
+            while (resultSet.next()){
+                series.add(resultSet.getString(name));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return series;
     }
 }
