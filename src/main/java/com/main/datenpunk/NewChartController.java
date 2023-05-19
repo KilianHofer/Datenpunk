@@ -174,7 +174,8 @@ public class NewChartController implements Initializable {
                 discrete = column.discrete;
         }
         if (discrete != null) {
-            comparatorField.setVisible(!discrete && !seriesSelectionBox.getSelectionModel().getSelectedItem().equals("value"));
+            String selected = seriesSelectionBox.getSelectionModel().getSelectedItem();
+            comparatorField.setVisible(!discrete);
         }
     }
 
@@ -312,15 +313,28 @@ public class NewChartController implements Initializable {
                     if (startDataDate == null) {
                         startDataDate = Instant.ofEpochMilli(0).atZone(ZoneId.systemDefault()).toLocalDate();
                     }
+                    String comperator = "5";        //TODO: read from comperatorfield
 
                     List<LocalDate> dates = startDate.datesUntil(endDate.plusDays(1)).toList();
                     for (int i = 0; i < dates.size(); i += stepSize) {
 
-                        if (xType.equals("Accumulative"))
-                            plot.getData().add(new XYChart.Data<>(dates.get(i).toString(), dao.getCategoryCountByTime(startDataDate, dates.get(i).plusDays(stepSize), yAxis, value, startDataTimestamp, endDataTimestamp)));
-                        else
-                            plot.getData().add(new XYChart.Data<>(dates.get(i).toString(), dao.getCategoryCountByTime(dates.get(i), dates.get(i).plusDays(stepSize), yAxis, value, startDataTimestamp, endDataTimestamp)));
-
+                        float total = 1;
+                        if (xType.equals("Accumulative")) {
+                            if (relativeCheck.isSelected()){
+                                total = dao.getValuesByTime(startDataDate, dates.get(i).plusDays(stepSize), yAxis, "All", startDataTimestamp, endDataTimestamp, comperator);
+                            }
+                            if(total>0)
+                                plot.getData().add(new XYChart.Data<>(dates.get(i).toString(), dao.getValuesByTime(startDataDate, dates.get(i).plusDays(stepSize), yAxis, value, startDataTimestamp, endDataTimestamp, comperator)/total));
+                            else plot.getData().add(new XYChart.Data<>(dates.get(i).toString(),0f));
+                        }
+                        else {
+                            if(relativeCheck.isSelected()) {
+                                total = dao.getValuesByTime(dates.get(i), dates.get(i).plusDays(stepSize), yAxis, "All", startDataTimestamp, endDataTimestamp, comperator);
+                            }
+                            if(total>0)
+                                plot.getData().add(new XYChart.Data<>(dates.get(i).toString(), dao.getValuesByTime(dates.get(i), dates.get(i).plusDays(stepSize), yAxis, value, startDataTimestamp, endDataTimestamp, comperator)/total));
+                            else plot.getData().add(new XYChart.Data<>(dates.get(i).toString(),0f));
+                        }
                     }
                 }
                 else{
@@ -343,6 +357,8 @@ public class NewChartController implements Initializable {
                 chart.setAnimated(false);
             }
             List<String> colors = new ArrayList<>();
+
+            //TODO: check for chart type
 
             for (LineChart.Series<?, ?> plot : ((XYChart<?, ?>) chart).getData()) {         //sets line and symbol colors
                 int index = ((LineChart<?, ?>) chart).getData().indexOf(plot);          //I hate all of this but at least it's somewhat readable
@@ -389,10 +405,11 @@ public class NewChartController implements Initializable {
         if (seriesSelectionBox.getValue() != null) {
             String color = "#" + colorPicker.getValue().toString().substring(2,8);
             String function;
-            if (comparatorField.isVisible()) {
-                function = seriesSelectionBox.getValue() + " " + comparatorField.getText()+"("+color+")";
+            String value = seriesSelectionBox.getValue();
+            if (comparatorField.isVisible() && !value.equals("value") && !value.equals("sum") && !value.equals("average")) {
+                function = value + " " + comparatorField.getText();
             } else {
-                function = seriesSelectionBox.getValue();
+                function = value;
             }
             if (seriesNameField.getText().equals(""))
                 seriesList.getItems().add(function + ": " + function + " ("+color+")");
@@ -426,14 +443,14 @@ public class NewChartController implements Initializable {
         }
     }
 
-    public void onAddAll() {
+    public void onAddAll() {            //TODO: check for comparator dependency
 
         List<String> allSeries = seriesSelectionBox.getItems();
 
         for (int i = 1; i < allSeries.size(); i++) {
 
             String function;
-            if (comparatorField.isVisible()) {
+            if (comparatorField.isVisible() && !allSeries.get(i).equals("value") && !allSeries.get(i).equals("sum") && !allSeries.get(i).equals("average")) {
                 function = allSeries.get(i) + " " + comparatorField.getText();
             } else {
                 function = allSeries.get(i);

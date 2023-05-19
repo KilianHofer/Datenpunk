@@ -382,21 +382,52 @@ public class DAO {
         return null;
     }
 
-    public Float getCategoryCountByTime(LocalDate start, LocalDate end, String yAxis, String value, long startDataTimestamp, long endDataTimestamp) {
+    public Float getValuesByTime(LocalDate start, LocalDate end, String yAxis, String value, long startDataTimestamp, long endDataTimestamp, String comparator) {
 
         try {
             long startTimestamp = ZonedDateTime.of(start.atStartOfDay(), ZoneId.systemDefault()).toInstant().toEpochMilli();
             long endTimestamp = ZonedDateTime.of(end.atStartOfDay(), ZoneId.systemDefault()).toInstant().toEpochMilli();
-            String subquery = "";
-            if(!value.equals("All")){
-                subquery = " AND " + yAxis + " = '" + value + "'";
+            String subquery1 = "", subquery2 = "";
+            switch (value) {
+                case "All" -> subquery1 = "COUNT";
+                case "value" -> subquery2 = " ORDER BY history.timestamp DESC LIMIT 1";
+                case "sum" -> subquery1 = "SUM";
+                case "average" -> subquery1 = "AVG";
+                case "greater than " -> {
+                    subquery1 = "COUNT";
+                    subquery2 = " AND " + yAxis + " > " + comparator + "";
+                }
+                case "greater or equal " -> {
+                    subquery1 = "COUNT";
+                    subquery2 = " AND " + yAxis + " >= '" + comparator + "'";
+                }
+                case "less than " -> {
+                    subquery1 = "COUNT";
+                    subquery2 = " AND " + yAxis + " < '" + comparator + "'";
+                }
+                case "less or equal " -> {
+                    subquery1 = "COUNT";
+                    subquery2 = " AND " + yAxis + " <= '" + comparator + "'";
+                }
+                case "equals " -> {
+                    subquery1 = "COUNT";
+                    subquery2 = " AND " + yAxis + " = " + comparator;
+                }
+                default -> {
+                    subquery1 = "COUNT";
+                    subquery2 = " AND " + yAxis + " = '" + value + "'";
+                }
             }
-            String query = "SELECT COUNT(" + yAxis + ") FROM objects JOIN history ON objects.id = history.id JOIN (SELECT id,MAX(timestamp) AS t FROM history WHERE timestamp BETWEEN " + startDataTimestamp + " AND " + endTimestamp + " AND timestamp <= "+endDataTimestamp+" GROUP BY id) AS i ON (i.id = objects.id AND i.t=history.timestamp) JOIN status ON status.name = history.status WHERE history.timestamp BETWEEN " + startTimestamp + " AND " + endTimestamp + subquery;
+
+            String query = "SELECT " + subquery1 + " (" + yAxis + ") FROM objects JOIN history ON objects.id = history.id JOIN (SELECT id,MAX(timestamp) AS t FROM history WHERE timestamp BETWEEN " + startDataTimestamp + " AND " + endTimestamp + " AND timestamp <= " + endDataTimestamp + " GROUP BY id) AS i ON (i.id = objects.id AND i.t=history.timestamp) JOIN status ON status.name = history.status WHERE history.timestamp BETWEEN " + startTimestamp + " AND " + endTimestamp + subquery2;
             System.out.println(query);
             PreparedStatement statement = connection.prepareStatement(query);
             ResultSet resultSet = statement.executeQuery();
-            if(resultSet.next())
-                return resultSet.getFloat("count");
+            if (resultSet.next()) {
+            if(value.equals("value"))
+                return resultSet.getFloat(yAxis);
+            return resultSet.getFloat(subquery1.toLowerCase());
+            }
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
