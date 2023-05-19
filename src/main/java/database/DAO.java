@@ -11,9 +11,7 @@ import javafx.scene.control.ListView;
 import java.sql.*;
 import java.text.Format;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.util.ArrayList;
 
 import java.util.List;
@@ -362,43 +360,48 @@ public class DAO {
         return null;
     }
 
-    public Integer getValuesByDate(String y, String x, String xValue, String condition){
+    public String getFirstOrLastValue(boolean first, String source){
+        try{
+            String query;
+            if(first)
+                query = "SELECT "+source+ " FROM history,objects ORDER BY "+source+ " ASC LIMIT 1";
+            else
+                query = "SELECT "+source+ " FROM history,objects ORDER BY "+source+ " DESC LIMIT 1";
 
-
-        try {
-            String query = "SELECT COUNT(*) FROM objects o JOIN history h ON (o.id = h.id) JOIN (SELECT id,max(timestamp) AS t FROM history WHERE "+x+"  <= ? GROUP BY id) AS i ON (i.id = o.id AND i.t=h.timestamp) JOIN status s ON s.name=h.status WHERE " + y + " = ?";
             PreparedStatement statement = connection.prepareStatement(query);
-
-            statement.setLong(1,ZonedDateTime.of(LocalDate.parse(xValue).atTime(23,59), ZoneId.systemDefault()).toInstant().toEpochMilli());
-            statement.setString(2,condition);
-
             System.out.println(statement);
             ResultSet resultSet = statement.executeQuery();
-            if(resultSet.next())
-                return resultSet.getInt("count");
 
+            if(resultSet.next()){
+                return Instant.ofEpochMilli(resultSet.getLong("timestamp")).atZone(ZoneId.systemDefault()).toLocalDate().toString();
+            }
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
         return null;
-
     }
 
-    public double getValuesByColumn(String column, String columnValue) {
-        try{
+    public Float getCategoryCountByTime(LocalDate start, LocalDate end, String yAxis, String value, long startDataTimestamp, long endDataTimestamp) {
 
-            String query = "SELECT COUNT(*) FROM objects o JOIN history h ON (o.id = h.id) JOIN (SELECT id,max(timestamp) AS t FROM history WHERE timestamp  <= " + System.currentTimeMillis() + " GROUP BY id) AS i ON (i.id = o.id AND i.t=h.timestamp) JOIN status s ON s.name=h.status WHERE " + column + "= ?";
-            PreparedStatement statement = connection.prepareStatement(query);
-            statement.setString(1,columnValue);
-            ResultSet resultSet = statement.executeQuery();
-            if(resultSet.next()){
-                return resultSet.getDouble("count");
+        try {
+            long startTimestamp = ZonedDateTime.of(start.atStartOfDay(), ZoneId.systemDefault()).toInstant().toEpochMilli();
+            long endTimestamp = ZonedDateTime.of(end.atStartOfDay(), ZoneId.systemDefault()).toInstant().toEpochMilli();
+            String subquery = "";
+            if(!value.equals("All")){
+                subquery = " AND " + yAxis + " = '" + value + "'";
             }
+            String query = "SELECT COUNT(" + yAxis + ") FROM objects JOIN history ON objects.id = history.id JOIN (SELECT id,MAX(timestamp) AS t FROM history WHERE timestamp BETWEEN " + startDataTimestamp + " AND " + endTimestamp + " AND timestamp <= "+endDataTimestamp+" GROUP BY id) AS i ON (i.id = objects.id AND i.t=history.timestamp) JOIN status ON status.name = history.status WHERE history.timestamp BETWEEN " + startTimestamp + " AND " + endTimestamp + subquery;
+            System.out.println(query);
+            PreparedStatement statement = connection.prepareStatement(query);
+            ResultSet resultSet = statement.executeQuery();
+            if(resultSet.next())
+                return resultSet.getFloat("count");
+
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        return 0;
+        return null;
     }
 
 

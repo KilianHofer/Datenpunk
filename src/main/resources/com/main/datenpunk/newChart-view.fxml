@@ -2,7 +2,9 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.ColorPicker?>
 <?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
@@ -40,7 +42,7 @@
                               <VBox BorderPane.alignment="CENTER">
                                  <children>
                                     <Label text="From:" />
-                                    <DatePicker fx:id="fromDatePicker" />
+                                    <DatePicker fx:id="fromDatePicker" promptText="no beginning" />
                                  </children>
                               </VBox>
                            </left>
@@ -48,7 +50,7 @@
                               <VBox BorderPane.alignment="CENTER">
                                  <children>
                                     <Label text="To:" />
-                                    <DatePicker fx:id="toDatePicker" />
+                                    <DatePicker fx:id="toDatePicker" promptText="current date" />
                                  </children>
                               </VBox>
                            </right>
@@ -110,7 +112,7 @@
                   </BorderPane>
                </center>
                <left>
-                  <HBox fx:id="yOptions" alignment="CENTER" BorderPane.alignment="CENTER">
+                  <HBox alignment="CENTER" BorderPane.alignment="CENTER">
                      <BorderPane.margin>
                         <Insets left="15.0" />
                      </BorderPane.margin>
@@ -119,13 +121,18 @@
                            <children>
                               <Label text="y-Axis" />
                               <ChoiceBox fx:id="ySelectionBox" prefHeight="25.0" prefWidth="150.0" />
+                              <CheckBox fx:id="relativeCheck" mnemonicParsing="false" text="Relative">
+                                 <VBox.margin>
+                                    <Insets top="5.0" />
+                                 </VBox.margin>
+                              </CheckBox>
                            </children>
                         </VBox>
                      </children>
                   </HBox>
                </left>
                <bottom>
-                  <HBox alignment="CENTER" BorderPane.alignment="CENTER">
+                  <HBox alignment="CENTER" BorderPane.alignment="CENTER" fx:id="xOptions">
                      <BorderPane.margin>
                         <Insets top="20.0" />
                      </BorderPane.margin>
@@ -144,7 +151,7 @@
                               </ChoiceBox>
                               <HBox fx:id="xToggle">
                                  <children>
-                                    <RadioButton mnemonicParsing="false" onAction="#setXType" selected="true" text="Accumulative" fx:id="xStandard">
+                                    <RadioButton mnemonicParsing="false" onAction="#onChooseX" selected="true" text="Accumulative">
                                        <HBox.margin>
                                           <Insets right="5.0" />
                                        </HBox.margin>
@@ -152,12 +159,12 @@
                                           <ToggleGroup fx:id="xTypeGroup" />
                                        </toggleGroup>
                                     </RadioButton>
-                                    <RadioButton mnemonicParsing="false" onAction="#setXType" text="Range" toggleGroup="$xTypeGroup" />
+                                    <RadioButton mnemonicParsing="false" onAction="#onChooseX" text="Range" toggleGroup="$xTypeGroup" />
                                  </children>
                               </HBox>
                               <HBox>
                                  <children>
-                                    <TextField fx:id="rangeField" promptText="Range" visible="false">
+                                    <TextField fx:id="rangeField" promptText="range">
                                        <HBox.margin>
                                           <Insets top="5.0" />
                                        </HBox.margin>
@@ -170,7 +177,7 @@
                   </HBox>
                </bottom>
                <right>
-                  <VBox>
+                  <VBox fx:id="seriesPane">
                      <children>
                         <Label text="Series:" />
                         <TextField fx:id="seriesNameField" promptText="Name">
@@ -179,12 +186,12 @@
                            </VBox.margin>
                         </TextField>
                         <ChoiceBox fx:id="seriesSelectionBox" prefHeight="25.0" prefWidth="200.0" />
-                        <TextField fx:id="comparatorField">
+                        <TextField fx:id="comparatorField" visible="false">
                            <VBox.margin>
                               <Insets top="5.0" />
                            </VBox.margin>
                         </TextField>
-                        <BorderPane fx:id="seriesPane">
+                        <BorderPane>
                            <left>
                               <Button mnemonicParsing="false" onAction="#onSeriesAdd" text="Add" BorderPane.alignment="CENTER" />
                            </left>
@@ -194,8 +201,30 @@
                            <VBox.margin>
                               <Insets bottom="10.0" top="10.0" />
                            </VBox.margin>
+                           <center>
+                              <Button mnemonicParsing="false" onAction="#onAddAll" text="Add All" BorderPane.alignment="CENTER" />
+                           </center>
                         </BorderPane>
-                        <ListView fx:id="seriesList" onMouseClicked="#onSeriesListClick" prefHeight="200.0" prefWidth="200.0" />
+                        <ListView fx:id="seriesList" editable="true" onMouseClicked="#onSeriesListClick" prefHeight="200.0" prefWidth="200.0" />
+                        <ColorPicker fx:id="colorPicker" prefHeight="25.0" prefWidth="200.0">
+                           <VBox.margin>
+                              <Insets top="5.0" />
+                           </VBox.margin>
+                        </ColorPicker>
+                        <HBox alignment="CENTER">
+                           <children>
+                              <Button mnemonicParsing="false" onAction="#onChangeName" text="Set Name">
+                                 <HBox.margin>
+                                    <Insets top="5.0" />
+                                 </HBox.margin>
+                              </Button>
+                              <Button mnemonicParsing="false" onAction="#onChangeColor" text="Set Color">
+                                 <HBox.margin>
+                                    <Insets left="5.0" top="5.0" />
+                                 </HBox.margin>
+                              </Button>
+                           </children>
+                        </HBox>
                      </children>
                      <BorderPane.margin>
                         <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
