@@ -1,6 +1,6 @@
 package database;
 
-import com.main.datenpunk.ColumnInfo;
+import enteties.ColumnInfo;
 import enteties.HistoryTableElement;
 import enteties.Status;
 import enteties.ObjectTableElement;
@@ -116,7 +116,7 @@ public class DAO {
             ResultSet resultSet = statement.executeQuery();
             ColumnInfo columnInfo;
             while (resultSet.next()){
-                columnInfo = new ColumnInfo(resultSet.getString("column_name"),resultSet.getString("data_type").contains("char"));
+                columnInfo = new ColumnInfo(table,resultSet.getString("column_name"),resultSet.getString("data_type").contains("char"));
                 names.add(columnInfo);
             }
         } catch (SQLException e) {
@@ -373,7 +373,7 @@ public class DAO {
             ResultSet resultSet = statement.executeQuery();
 
             if(resultSet.next()){
-                return Instant.ofEpochMilli(resultSet.getLong("timestamp")).atZone(ZoneId.systemDefault()).toLocalDate().toString();
+                return String.valueOf(resultSet.getLong(source.substring(source.indexOf(".")+1)));
             }
 
         } catch (SQLException e) {
@@ -382,57 +382,67 @@ public class DAO {
         return null;
     }
 
-    public Float getValuesByTime(LocalDate start, LocalDate end, String yAxis, String value, long startDataTimestamp, long endDataTimestamp, String comparator) {
-
-        try {
-            long startTimestamp = ZonedDateTime.of(start.atStartOfDay(), ZoneId.systemDefault()).toInstant().toEpochMilli();
-            long endTimestamp = ZonedDateTime.of(end.atStartOfDay(), ZoneId.systemDefault()).toInstant().toEpochMilli();
-            String subquery1 = "", subquery2 = "";
+    public Float getContinuousValues(Number start,Number end, String yAxis, String value, long startDataTimestamp, long endDataTimestamp, String comparator, String xAxis){
+        try{
+            String subquery1 = "",subquery2 = "", subquery3 = "";
             switch (value) {
                 case "All" -> subquery1 = "COUNT";
-                case "value" -> subquery2 = " ORDER BY history.timestamp DESC LIMIT 1";
+                case "value" -> subquery3 = " ORDER BY history.timestamp DESC LIMIT 1";
                 case "sum" -> subquery1 = "SUM";
                 case "average" -> subquery1 = "AVG";
-                case "greater than " -> {
+                case "greater than" -> {
                     subquery1 = "COUNT";
-                    subquery2 = " AND " + yAxis + " > " + comparator + "";
+                    subquery3 = " AND " + yAxis + " > " + comparator + "";
                 }
-                case "greater or equal " -> {
+                case "greater or equal" -> {
                     subquery1 = "COUNT";
-                    subquery2 = " AND " + yAxis + " >= '" + comparator + "'";
+                    subquery3 = " AND " + yAxis + " >= '" + comparator + "'";
                 }
-                case "less than " -> {
+                case "less than" -> {
                     subquery1 = "COUNT";
-                    subquery2 = " AND " + yAxis + " < '" + comparator + "'";
+                    subquery3 = " AND " + yAxis + " < '" + comparator + "'";
                 }
-                case "less or equal " -> {
+                case "less or equal" -> {
                     subquery1 = "COUNT";
-                    subquery2 = " AND " + yAxis + " <= '" + comparator + "'";
+                    subquery3 = " AND " + yAxis + " <= '" + comparator + "'";
                 }
-                case "equals " -> {
+                case "equals" -> {
                     subquery1 = "COUNT";
-                    subquery2 = " AND " + yAxis + " = " + comparator;
+                    subquery3 = " AND " + yAxis + " = " + comparator;
                 }
                 default -> {
                     subquery1 = "COUNT";
-                    subquery2 = " AND " + yAxis + " = '" + value + "'";
+                    subquery3 = " AND " + yAxis + " = '" + value + "'";
                 }
             }
 
-            String query = "SELECT " + subquery1 + " (" + yAxis + ") FROM objects JOIN history ON objects.id = history.id JOIN (SELECT id,MAX(timestamp) AS t FROM history WHERE timestamp BETWEEN " + startDataTimestamp + " AND " + endTimestamp + " AND timestamp <= " + endDataTimestamp + " GROUP BY id) AS i ON (i.id = objects.id AND i.t=history.timestamp) JOIN status ON status.name = history.status WHERE history.timestamp BETWEEN " + startTimestamp + " AND " + endTimestamp + subquery2;
+            if(xAxis.equals("timestamp")){
+                subquery2 = " AND timestamp < " + end;
+            }
+
+            String query = "SELECT " + subquery1 + " (" + yAxis + ") FROM objects JOIN history ON objects.id = history.id JOIN (SELECT id,MAX(timestamp) AS t FROM history WHERE timestamp >= " + startDataTimestamp + subquery2 + " AND timestamp < " + endDataTimestamp + " GROUP BY id) AS i ON (i.id = objects.id AND i.t=history.timestamp) JOIN status ON status.name = history.status WHERE "+ xAxis +" >= " + start + " AND " +xAxis + " < " + end + subquery3;
             System.out.println(query);
             PreparedStatement statement = connection.prepareStatement(query);
             ResultSet resultSet = statement.executeQuery();
             if (resultSet.next()) {
-            if(value.equals("value"))
-                return resultSet.getFloat(yAxis);
-            return resultSet.getFloat(subquery1.toLowerCase());
+                if(value.equals("value"))
+                    return resultSet.getFloat(yAxis.substring(yAxis.indexOf(".")+1));
+                return resultSet.getFloat(subquery1.toLowerCase());
             }
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        return null;
+        return 0f;
+
+    }
+
+    public Float getValuesByTime(LocalDate start, LocalDate end, String yAxis, String value, long startDataTimestamp, long endDataTimestamp, String comparator) {
+
+        long startTimestamp = ZonedDateTime.of(start.atStartOfDay(), ZoneId.systemDefault()).toInstant().toEpochMilli();
+        long endTimestamp = ZonedDateTime.of(end.atStartOfDay(), ZoneId.systemDefault()).toInstant().toEpochMilli();
+        return getContinuousValues(startTimestamp,endTimestamp,yAxis,value,startDataTimestamp,endDataTimestamp,comparator,"timestamp");
+
     }
 
 
