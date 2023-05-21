@@ -216,10 +216,14 @@ public class NewChartController implements Initializable {
         if (discrete != null) {
             if (discrete) {
                 xToggle.setVisible(false);
+                xMinField.setVisible(false);
+                xMaxField.setVisible(false);
                 rangeField.setVisible(false);
                 xContiniuous = false;
             } else {
                 xToggle.setVisible(true);
+                xMinField.setVisible(true);
+                xMaxField.setVisible(true);
                 rangeField.setVisible(true);
                 xContiniuous = true;
             }
@@ -255,8 +259,8 @@ public class NewChartController implements Initializable {
                 series.addAll(List.of(continuousOptions));
             } else {
                 series.add("All");
-                System.out.println(dao.selectSeriesOptions(name));
-                series.addAll(dao.selectSeriesOptions(name));
+                System.out.println(dao.selectColumnEntries(name));
+                series.addAll(dao.selectColumnEntries(name));
             }
             seriesSelectionBox.getItems().setAll(series);
         }
@@ -309,7 +313,7 @@ public class NewChartController implements Initializable {
         String previous = xSelectionBox.getValue();
         xSelectionBox.getItems().setAll(new ArrayList<>());
         for (ColumnInfo column : columnInfo) {
-            if (!(column.discrete && xMinField.isVisible()))
+            if (!(column.discrete && !(chart.getClass().equals(BarChart.class) || chart.getClass().equals(StackedBarChart.class))))
                 xSelectionBox.getItems().add(column.name);
         }
         if(xSelectionBox.getItems().contains(previous))
@@ -322,16 +326,6 @@ public class NewChartController implements Initializable {
             ((XYChart) chart).getData().clear();
             for (String series : seriesList.getItems()) {
                 String range = rangeField.getText();
-                if(range.equals("") || !range.matches("[0-9]+[.]?[0-9]?+")) {
-                    rangeField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
-                    return;
-                }
-                float stepSize = Float.parseFloat(range);
-                if(stepSize == 0){
-                    rangeField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
-                    return;
-                }
-                rangeField.setStyle("--fx-border-width: 0px;");
 
                 String value = series.substring(series.indexOf(":") + 2, series.lastIndexOf(" "));
 
@@ -369,7 +363,7 @@ public class NewChartController implements Initializable {
                     endDataTimestamp = Long.MAX_VALUE;
                 }
 
-
+                String comparator = series.substring(series.lastIndexOf(" ")+1,series.lastIndexOf("("));
 
                 String name = xSelectionBox.getValue();
                 Boolean discrete = null;
@@ -379,18 +373,35 @@ public class NewChartController implements Initializable {
                 }
                 if (discrete != null) {
                     XYChart.Series<String, Float> plot = new XYChart.Series<>();
+                    plot.setName(series.substring(0, series.lastIndexOf(":")));
                     if (discrete) {
-                        //TODO: implement
+                        for(String category:dao.selectColumnEntries(xAxis)) {
+                            float total = 1f;
+                            if (relativeCheck.isSelected()) {
+                                total = dao.getXYValues(null, null,category, yAxis, "All", startDataTimestamp, endDataTimestamp, comparator,xAxis);
+                            }
+                            if (total > 0)
+                                plot.getData().add(new XYChart.Data<>(category, dao.getXYValues(null, null,category, yAxis, value, startDataTimestamp, endDataTimestamp, comparator,xAxis) / total));
+                            else plot.getData().add(new XYChart.Data<>(category, 0f));
+                        }
                     } else {
+
+                        if(range.equals("") || !range.matches("[0-9]+[.]?[0-9]?+")) {
+                            rangeField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+                            return;
+                        }
+                        float stepSize = Float.parseFloat(range);
+                        if(stepSize == 0){
+                            rangeField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+                            return;
+                        }
+                        rangeField.setStyle("--fx-border-width: 0px;");
 
                         if (xMin.equals(""))
                             xMin = dao.getFirstOrLastValue(true, xAxis);
                         if (xMax.equals(""))
                             xMax = dao.getFirstOrLastValue(false, xAxis);
 
-                        String comparator = series.substring(series.lastIndexOf(" ")+1,series.lastIndexOf("("));
-
-                        plot.setName(series.substring(0, series.lastIndexOf(":")));
                         if (xAxis.equals("history.timestamp")) {
 
                             if(!range.matches("[0-9]+")) {
@@ -422,7 +433,7 @@ public class NewChartController implements Initializable {
                             List<LocalDate> xValues = startDate.datesUntil(endDate.plusDays(1)).toList();
                             for (int i = 0; i < xValues.size(); i += stepSize) {
 
-                                float total = 1;
+                                float total = 1f;
                                 if (xType.equals("Accumulative")) {
                                     if (relativeCheck.isSelected()) {
                                         total = dao.getValuesByTime(startDataDate, xValues.get(i).plusDays((long) stepSize), yAxis, "All", startDataTimestamp, endDataTimestamp, comparator);
@@ -450,17 +461,17 @@ public class NewChartController implements Initializable {
                                 float total = 1;
                                 if (xType.equals("Accumulative")) {
                                     if (relativeCheck.isSelected()) {
-                                        total = dao.getContinuousValues(xMinF, i+stepSize, yAxis, "All", startDataTimestamp, endDataTimestamp, comparator,xAxis);
+                                        total = dao.getXYValues(xMinF, i+stepSize,null, yAxis, "All", startDataTimestamp, endDataTimestamp, comparator,xAxis);
                                     }
                                     if (total > 0)
-                                        plot.getData().add(new XYChart.Data<>(String.valueOf(i), dao.getContinuousValues(xMinF, i+stepSize, yAxis, value, startDataTimestamp, endDataTimestamp, comparator,xAxis) / total));
+                                        plot.getData().add(new XYChart.Data<>(String.valueOf(i), dao.getXYValues(xMinF, i+stepSize,null, yAxis, value, startDataTimestamp, endDataTimestamp, comparator,xAxis) / total));
                                     else plot.getData().add(new XYChart.Data<>(String.valueOf(i), 0f));
                                 } else {
                                     if (relativeCheck.isSelected()) {
-                                        total = dao.getContinuousValues(i, i+stepSize, yAxis, "All", startDataTimestamp, endDataTimestamp, comparator,xAxis);
+                                        total = dao.getXYValues(i, i+stepSize,null, yAxis, "All", startDataTimestamp, endDataTimestamp, comparator,xAxis);
                                     }
                                     if (total > 0)
-                                        plot.getData().add(new XYChart.Data<>(String.valueOf(i), dao.getContinuousValues(i, i+stepSize, yAxis, value, startDataTimestamp, endDataTimestamp, comparator,xAxis) / total));
+                                        plot.getData().add(new XYChart.Data<>(String.valueOf(i), dao.getXYValues(i, i+stepSize,null, yAxis, value, startDataTimestamp, endDataTimestamp, comparator,xAxis) / total));
                                     else plot.getData().add(new XYChart.Data<>(String.valueOf(i), 0f));
                                 }
                             }
@@ -509,7 +520,10 @@ public class NewChartController implements Initializable {
                 for (String styleClass : node.getStyleClass()){
                     if (styleClass.startsWith("series")) {
                         final int index = Integer.parseInt(styleClass.substring(6));
-                        node.setStyle("-fx-background-color: " + colors.get(index) + ",whitesmoke;");
+                        String inside  = ";";
+                        if(!chart.getClass().equals(BarChart.class) && !chart.getClass().equals(StackedBarChart.class))
+                            inside = ",whitesmoke;";
+                        node.setStyle("-fx-background-color: " + colors.get(index) + inside);
                     }
                 }
             }

@@ -382,37 +382,37 @@ public class DAO {
         return null;
     }
 
-    public Float getContinuousValues(Number start,Number end, String yAxis, String value, long startDataTimestamp, long endDataTimestamp, String comparator, String xAxis){
+    public Float getXYValues(Number start, Number end, String category, String yAxis, String value, long startDataTimestamp, long endDataTimestamp, String comparator, String xAxis){
         try{
-            String subquery1 = "",subquery2 = "", subquery3 = "";
+            String subquery1 = "",subquery2 = "", subquery3, subquery4 = "";
             switch (value) {
                 case "All" -> subquery1 = "COUNT";
-                case "value" -> subquery3 = " ORDER BY history.timestamp DESC LIMIT 1";
+                case "value" -> subquery4 = " ORDER BY history.timestamp DESC LIMIT 1";
                 case "sum" -> subquery1 = "SUM";
                 case "average" -> subquery1 = "AVG";
                 case "greater than" -> {
                     subquery1 = "COUNT";
-                    subquery3 = " AND " + yAxis + " > " + comparator + "";
+                    subquery4 = " AND " + yAxis + " > " + comparator + "";
                 }
                 case "greater or equal" -> {
                     subquery1 = "COUNT";
-                    subquery3 = " AND " + yAxis + " >= '" + comparator + "'";
+                    subquery4 = " AND " + yAxis + " >= '" + comparator + "'";
                 }
                 case "less than" -> {
                     subquery1 = "COUNT";
-                    subquery3 = " AND " + yAxis + " < '" + comparator + "'";
+                    subquery4 = " AND " + yAxis + " < '" + comparator + "'";
                 }
                 case "less or equal" -> {
                     subquery1 = "COUNT";
-                    subquery3 = " AND " + yAxis + " <= '" + comparator + "'";
+                    subquery4 = " AND " + yAxis + " <= '" + comparator + "'";
                 }
                 case "equals" -> {
                     subquery1 = "COUNT";
-                    subquery3 = " AND " + yAxis + " = " + comparator;
+                    subquery4 = " AND " + yAxis + " = " + comparator;
                 }
                 default -> {
                     subquery1 = "COUNT";
-                    subquery3 = " AND " + yAxis + " = '" + value + "'";
+                    subquery4 = " AND " + yAxis + " = '" + value + "'";
                 }
             }
 
@@ -420,7 +420,14 @@ public class DAO {
                 subquery2 = " AND timestamp < " + end;
             }
 
-            String query = "SELECT " + subquery1 + " (" + yAxis + ") FROM objects JOIN history ON objects.id = history.id JOIN (SELECT id,MAX(timestamp) AS t FROM history WHERE timestamp >= " + startDataTimestamp + subquery2 + " AND timestamp < " + endDataTimestamp + " GROUP BY id) AS i ON (i.id = objects.id AND i.t=history.timestamp) JOIN status ON status.name = history.status WHERE "+ xAxis +" >= " + start + " AND " +xAxis + " < " + end + subquery3;
+            if(category == null){
+                subquery3 = xAxis +" >= " + start + " AND " +xAxis + " < " + end;
+            }
+            else {
+                subquery3 = xAxis + " = '" + category + "'";
+            }
+
+            String query = "SELECT " + subquery1 + " (" + yAxis + ") FROM objects JOIN history ON objects.id = history.id JOIN (SELECT id,MAX(timestamp) AS t FROM history WHERE timestamp >= " + startDataTimestamp + subquery2 + " AND timestamp < " + endDataTimestamp + " GROUP BY id) AS i ON (i.id = objects.id AND i.t=history.timestamp) JOIN status ON status.name = history.status WHERE "+ subquery3 + subquery4;
             System.out.println(query);
             PreparedStatement statement = connection.prepareStatement(query);
             ResultSet resultSet = statement.executeQuery();
@@ -441,7 +448,7 @@ public class DAO {
 
         long startTimestamp = ZonedDateTime.of(start.atStartOfDay(), ZoneId.systemDefault()).toInstant().toEpochMilli();
         long endTimestamp = ZonedDateTime.of(end.atStartOfDay(), ZoneId.systemDefault()).toInstant().toEpochMilli();
-        return getContinuousValues(startTimestamp,endTimestamp,yAxis,value,startDataTimestamp,endDataTimestamp,comparator,"timestamp");
+        return getXYValues(startTimestamp,endTimestamp,null,yAxis,value,startDataTimestamp,endDataTimestamp,comparator,"timestamp");
 
     }
 
@@ -519,7 +526,7 @@ public class DAO {
         }
     }
 
-    public List<String> selectSeriesOptions(String name) {
+    public List<String> selectColumnEntries(String name) {
 
         List<String> series = new ArrayList<>();
         try{
@@ -532,6 +539,8 @@ public class DAO {
             System.out.println(statement);
             ResultSet resultSet = statement.executeQuery();
 
+            if(name.contains("."))
+                name = name.substring(name.lastIndexOf(".")+1);
             while (resultSet.next()){
                 series.add(resultSet.getString(name));
             }
