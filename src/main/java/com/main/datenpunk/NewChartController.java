@@ -15,7 +15,6 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.util.Callback;
@@ -34,8 +33,6 @@ public class NewChartController implements Initializable {
     String xType = "Accumulative";
     @FXML
     private BorderPane chartPane;
-    @FXML
-    VBox seriesPane;
     @FXML
     private ListView<String> chartSelectionList, seriesList;
     @FXML
@@ -259,7 +256,6 @@ public class NewChartController implements Initializable {
                 series.addAll(List.of(continuousOptions));
             } else {
                 series.add("All");
-                System.out.println(dao.selectColumnEntries(name));
                 series.addAll(dao.selectColumnEntries(name));
             }
             seriesSelectionBox.getItems().setAll(series);
@@ -272,7 +268,6 @@ public class NewChartController implements Initializable {
         }
         xOptions.setVisible(true);
         xToggle.setVisible(true);
-        seriesPane.setVisible(true);
         pointCheck.setVisible(points);
     }
 
@@ -304,7 +299,6 @@ public class NewChartController implements Initializable {
                 showTextFields(false, false);
                 xOptions.setVisible(false);
                 xToggle.setVisible(false);
-                seriesPane.setVisible(false);
             }
         }
         chart.setAnimated(false);
@@ -321,6 +315,25 @@ public class NewChartController implements Initializable {
     }
 
     private void updateChart() {
+
+        LocalDate startDataDate, endDataDate;
+        long startDataTimestamp, endDataTimestamp;
+
+        if(fromDatePicker.getValue() != null) {
+            startDataDate = fromDatePicker.getValue();
+            startDataTimestamp = ZonedDateTime.of(startDataDate.atStartOfDay(), ZoneId.systemDefault()).toInstant().toEpochMilli();
+        }
+        else {
+            startDataTimestamp = 0;
+            startDataDate = Instant.ofEpochMilli(0).atZone(ZoneId.systemDefault()).toLocalDate();
+        }
+        if(toDatePicker.getValue() != null) {
+            endDataDate = toDatePicker.getValue().plusDays(1);
+            endDataTimestamp = ZonedDateTime.of(endDataDate.atStartOfDay(), ZoneId.systemDefault()).toInstant().toEpochMilli();
+        }
+        else {
+            endDataTimestamp = Long.MAX_VALUE;
+        }
 
         if (!chartSelectionList.getSelectionModel().getSelectedItem().equals("Pie Chart")) {
             ((XYChart) chart).getData().clear();
@@ -341,26 +354,6 @@ public class NewChartController implements Initializable {
                         xAxis = info.table + "." + xAxis;
                     if(info.name.equals(yAxis))
                         yAxis = info.table + "." + yAxis;
-                }
-
-
-                LocalDate startDataDate, endDataDate;
-                long startDataTimestamp, endDataTimestamp;
-
-                if(fromDatePicker.getValue() != null) {
-                    startDataDate = fromDatePicker.getValue();
-                    startDataTimestamp = ZonedDateTime.of(startDataDate.atStartOfDay(), ZoneId.systemDefault()).toInstant().toEpochMilli();
-                }
-                else {
-                    startDataTimestamp = 0;
-                    startDataDate = Instant.ofEpochMilli(0).atZone(ZoneId.systemDefault()).toLocalDate();
-                }
-                if(toDatePicker.getValue() != null) {
-                    endDataDate = toDatePicker.getValue().plusDays(1);
-                    endDataTimestamp = ZonedDateTime.of(endDataDate.atStartOfDay(), ZoneId.systemDefault()).toInstant().toEpochMilli();
-                }
-                else {
-                    endDataTimestamp = Long.MAX_VALUE;
                 }
 
                 String comparator = series.substring(series.lastIndexOf(" ")+1,series.lastIndexOf("("));
@@ -530,7 +523,69 @@ public class NewChartController implements Initializable {
 
         }
         else{
-            //TODO: implement
+            ((PieChart)chart).getData().clear();
+
+            String column = ySelectionBox.getValue();
+            Boolean discrete = null;
+            for (ColumnInfo info: columnInfo){
+                if(column.equals(info.name)){
+                    column = info.table+"."+column;
+                    discrete = info.discrete;
+                    break;
+                }
+            }
+            for(String category: seriesList.getItems()){
+                String comparator = "";
+                if(Boolean.FALSE.equals(discrete))
+                    comparator = category.substring(category.lastIndexOf(" ")+1,category.lastIndexOf("("));
+                String name = category.substring(0,category.lastIndexOf(":"));
+                String value = category.substring(category.indexOf(":") + 2, category.lastIndexOf(" "));
+                PieChart.Data data;
+
+                data = new PieChart.Data(name,dao.getPieValues(column,value,startDataTimestamp,endDataTimestamp, comparator));
+
+
+                ((PieChart)chart).getData().add(data);
+            }
+            if(relativeCheck.isSelected()){
+                double sum = 0f;
+                for(PieChart.Data data :((PieChart) chart).getData()){
+                    sum+=data.getPieValue();
+                }
+                double result = dao.getPieValues(column,"All",startDataTimestamp,endDataTimestamp,"")-sum;
+
+                if(result<=0) {
+                    result = 0f;
+                }
+                PieChart.Data rest = new PieChart.Data("REST", result);
+                ((PieChart) chart).getData().add(rest);
+
+            }
+
+            List<String> colors = new ArrayList<>();
+            for(PieChart.Data data:((PieChart) chart).getData()){
+                String color;
+                if(!data.getName().equals("REST")) {
+                    int index = ((PieChart) chart).getData().indexOf(data);
+                    String series = seriesList.getItems().get(index);
+                     color= series.substring(series.lastIndexOf("(") + 1, series.lastIndexOf(")"));
+                }
+                else {
+                    color = "#444444";
+                }
+                colors.add(color);
+                data.getNode().setStyle("-fx-pie-color: "+color+";");
+            }
+            chart.applyCss();
+            for (Node node:chart.lookupAll(".chart-legend-item-symbol")){
+                for (String styleClass : node.getStyleClass()){
+                    if (styleClass.startsWith("data")) {
+                        final int index = Integer.parseInt(styleClass.substring(4));
+
+                        node.setStyle("-fx-background-color: " + colors.get(index) + ";");
+                    }
+                }
+            }
         }
 
     }

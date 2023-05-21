@@ -112,7 +112,6 @@ public class DAO {
         try{
             String query = "SELECT column_name,data_type FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = N'"+table+"' AND column_name != 'id'";
             PreparedStatement statement = connection.prepareStatement(query);
-            System.out.println(statement);
             ResultSet resultSet = statement.executeQuery();
             ColumnInfo columnInfo;
             while (resultSet.next()){
@@ -197,7 +196,6 @@ public class DAO {
             statement = connection.prepareStatement(query);
             statement.setLong(1,fromTimestamp);
             statement.setLong(2,toTimestamp);
-            System.out.println(statement);
             resultSet = statement.executeQuery();
 
             int id,sortOrder;
@@ -369,7 +367,6 @@ public class DAO {
                 query = "SELECT "+source+ " FROM history,objects ORDER BY "+source+ " DESC LIMIT 1";
 
             PreparedStatement statement = connection.prepareStatement(query);
-            System.out.println(statement);
             ResultSet resultSet = statement.executeQuery();
 
             if(resultSet.next()){
@@ -428,7 +425,6 @@ public class DAO {
             }
 
             String query = "SELECT " + subquery1 + " (" + yAxis + ") FROM objects JOIN history ON objects.id = history.id JOIN (SELECT id,MAX(timestamp) AS t FROM history WHERE timestamp >= " + startDataTimestamp + subquery2 + " AND timestamp < " + endDataTimestamp + " GROUP BY id) AS i ON (i.id = objects.id AND i.t=history.timestamp) JOIN status ON status.name = history.status WHERE "+ subquery3 + subquery4;
-            System.out.println(query);
             PreparedStatement statement = connection.prepareStatement(query);
             ResultSet resultSet = statement.executeQuery();
             if (resultSet.next()) {
@@ -450,6 +446,39 @@ public class DAO {
         long endTimestamp = ZonedDateTime.of(end.atStartOfDay(), ZoneId.systemDefault()).toInstant().toEpochMilli();
         return getXYValues(startTimestamp,endTimestamp,null,yAxis,value,startDataTimestamp,endDataTimestamp,comparator,"timestamp");
 
+    }
+    public Float getPieValues(String column ,String value,long startTimestamp,long endTimestamp, String comparator){
+        try{
+            String subquery1 = "COUNT(", subquery2;
+
+            switch (value) {
+                case "All" -> subquery2 = "";
+                case "value", "sum", "average" -> {
+                    return 0f;
+                }
+                case "greater than" -> subquery2 = " WHERE " + column + " > " + comparator;
+
+                case "greater or equal" -> subquery2 = " WHERE " + column + " >= " + comparator;
+
+                case "less than" -> subquery2 = " WHERE " + column + " < " + comparator;
+
+                case "less or equal" -> subquery2 = " WHERE " + column + " <= " + comparator;
+
+                case "equals" -> subquery2 = " WHERE " + column + " = " + comparator;
+                default -> subquery2 = " WHERE " + column + " = '" + value + "'";
+
+            }
+
+            String query = "SELECT "+subquery1+"*) FROM objects JOIN history ON objects.id=history.id JOIN (SELECT id, MAX(timestamp) t FROM history WHERE timestamp >= "+startTimestamp+" AND timestamp <= "+endTimestamp+" GROUP BY id) AS i ON (i.id = objects.id AND i.t=history.timestamp) JOIN status ON status.name = history.status"+subquery2;
+            PreparedStatement statement = connection.prepareStatement(query);
+            ResultSet resultSet = statement.executeQuery();
+            if(resultSet.next()){
+                return resultSet.getFloat("count");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
     }
 
 
@@ -536,7 +565,6 @@ public class DAO {
             else
                 query = "SELECT "+name+" FROM objects, history, status group by "+name;
             PreparedStatement statement = connection.prepareStatement(query);
-            System.out.println(statement);
             ResultSet resultSet = statement.executeQuery();
 
             if(name.contains("."))

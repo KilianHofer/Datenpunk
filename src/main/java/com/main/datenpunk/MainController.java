@@ -202,53 +202,6 @@ public class MainController implements Initializable {
 
         updateTable();
 
-        /*
-
-        XYChart.Series<String,Integer> planned = new XYChart.Series<>();
-        planned.setName("Planned");
-
-
-        XYChart.Series<String,Integer> inProgress = new XYChart.Series<>();
-        inProgress.setName("In-Progress");
-
-        XYChart.Series<String,Integer> complete = new XYChart.Series<>();
-        complete.setName("Complete");
-
-
-
-        LocalDate start = LocalDate.parse("2023-05-01");
-        LocalDate end = LocalDate.now().plusDays(1);
-
-
-        String dateString;
-        for(LocalDate date:start.datesUntil(end).toList()){
-            dateString = date.toString();
-            planned.getData().add(new XYChart.Data<>(dateString,5));
-            inProgress.getData().add(new XYChart.Data<>(dateString,dao.getValuesByDate("status","timestamp",date.toString(),"In-Progress")));
-            complete.getData().add(new XYChart.Data<>(dateString,dao.getValuesByDate("status","timestamp",date.toString(),"Complete")));
-
-
-        }
-        lineTest.getYAxis().setLabel("test");
-        lineTest.getData().addAll(planned,inProgress,complete);
-
-
-
-        ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList();
-
-        for (Status status:statuses) {
-            PieChart.Data data = new PieChart.Data(status.getName(),dao.getValuesByColumn("h.status",status.getName()));
-            pieData.add(data);
-        }
-
-        pieTest.setData(pieData);
-        for(PieChart.Data data:pieData){
-            Status status = dao.selectStatus(data.getName());
-            data.getNode().setStyle("-fx-pie-color: "+status.getColor());
-        }
-
-         */
-
     }
 
 
