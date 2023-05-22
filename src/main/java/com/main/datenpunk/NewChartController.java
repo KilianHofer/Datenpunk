@@ -1,6 +1,7 @@
 package com.main.datenpunk;
 
 import database.DAO;
+import enteties.ChartDescriptor;
 import enteties.ColumnInfo;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
@@ -8,7 +9,6 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.Node;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseButton;
@@ -25,6 +25,9 @@ import java.util.*;
 
 public class NewChartController implements Initializable {
 
+    @FXML
+    public Button createButton;
+    MainController controller;
     @FXML
     public ColorPicker colorPicker;
     public CheckBox relativeCheck, pointCheck;
@@ -49,6 +52,7 @@ public class NewChartController implements Initializable {
     DAO dao = DAO.getInstance();
 
     private Chart chart;
+    private ChartDescriptor chartDescriptor;
     private String currentChartType;
 
     List<ColumnInfo> columnInfo;
@@ -58,14 +62,17 @@ public class NewChartController implements Initializable {
     String[] continuousOptions = new String[]{"value", "sum", "average", "greater than", "greater or equal", "less than", "less or equal", "equals"};
 
     boolean xContiniuous = false;
+    boolean update = false;
+
+    Singelton singelton = Singelton.getInstance();
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
-        columnInfo = new ArrayList<>();
-        columnInfo.add(new ColumnInfo("objects","id", false));
-        columnInfo.addAll(dao.selectTableColumns("objects"));
-        columnInfo.addAll(dao.selectTableColumns("history"));
+        controller = singelton.getController();
+
+        singelton.setColumnInfo();          //TODO: move to on project open
+        columnInfo = singelton.getColumnInfo();
 
         textFields.addAll(xMinField, xMaxField, xNameField, yMinField, yMaxField, yNameField);
 
@@ -73,6 +80,7 @@ public class NewChartController implements Initializable {
         chartSelectionList.getSelectionModel().selectedItemProperty().addListener((observableValue, s, t1) -> {
             currentChartType = chartSelectionList.getSelectionModel().getSelectedItem();
             changeChart();
+            updateChart();
         });
         chartSelectionList.getSelectionModel().select(0);
 
@@ -87,12 +95,6 @@ public class NewChartController implements Initializable {
             getAvailableSeries();
             hideComparatorField();
         });
-
-        ChangeListener<String> boundsListener = (observableValue, s, t1) -> setBounds();
-
-        yMinField.textProperty().addListener(boundsListener);
-        yMaxField.textProperty().addListener(boundsListener);
-
 
         seriesList.setCellFactory(new Callback<>() {
             @Override
@@ -119,9 +121,10 @@ public class NewChartController implements Initializable {
             xType = ((RadioButton)xTypeGroup.getSelectedToggle()).getText();
             setPoints(pointCheck.isSelected());
             updateChart();
-            setBounds();
-
         };
+
+        yMinField.textProperty().addListener(/*boundsListener*/changeChartListener);
+        yMaxField.textProperty().addListener(/*boundsListener*/changeChartListener);
 
         fromDatePicker.valueProperty().addListener(changeChartListener);
         toDatePicker.valueProperty().addListener(changeChartListener);
@@ -135,7 +138,7 @@ public class NewChartController implements Initializable {
         xTypeGroup.selectedToggleProperty().addListener(changeChartListener);
         seriesList.getItems().addListener((ListChangeListener<String>) change -> {
             updateChart();
-            setBounds();
+            //setBounds();
         });
         seriesList.getSelectionModel().selectedItemProperty().addListener((observableValue, s, t1) -> {
             if(t1 != null) {
@@ -146,7 +149,39 @@ public class NewChartController implements Initializable {
         });
 
         comparatorField.textProperty().addListener((observableValue, s, t1) -> comparatorValid());
+    }
 
+    public void loadChart(ChartDescriptor c){
+
+        update = true;
+        createButton.setText("Update");
+
+        xNameField.setText(c.xName);
+        yNameField.setText(c.yName);
+        titleField.setText(c.title);
+
+        chartSelectionList.getSelectionModel().select(chartSelectionList.getItems().indexOf(c.chartType));
+
+        xSelectionBox.setValue(c.xAxis);
+        ySelectionBox.setValue(c.yAxis);
+
+        fromDatePicker.setValue(c.fromDate);
+        toDatePicker.setValue(c.toDate);
+
+        String range;
+        if(!c.chartType.equals("Pie Chart")) {
+            if (c.xAxis.equals("timestamp"))
+                range = String.valueOf((int) c.stepSize);
+            else
+                range = String.valueOf(c.stepSize);
+            rangeField.setText(range);
+        }
+
+        seriesList.getItems().addAll(c.seriesList);
+
+
+
+        chart = singelton.generateChart(c);
 
     }
 
@@ -159,49 +194,7 @@ public class NewChartController implements Initializable {
             ((StackedAreaChart)chart).setCreateSymbols(points);
     }
 
-    private void setBounds() {
-        if (yMaxField.isVisible()) {
-            String yMax = yMaxField.getText();
-            String yMin = yMinField.getText();
-            try {
-                if (yMax.equals(yMin) && yMax.equals("")) {
-                    ((XYChart) chart).getYAxis().setAutoRanging(true);
-                    yMinField.setStyle("fx-border-width: 0px;");
-                    yMaxField.setStyle("fx-border-width: 0px;");
 
-                } else {
-                    Axis<Number> axis = ((XYChart) chart).getYAxis();
-                    axis.setAutoRanging(false);
-                    if (axis.getClass().equals(NumberAxis.class)) {
-                        if (!yMin.equals("")) {
-                            if (yMin.matches("[-]?[0-9]+[.]?[0-9]?+")) {
-                                ((NumberAxis) axis).setLowerBound(Double.parseDouble(yMin));
-                                yMinField.setStyle("fx-border-width: 0px;");
-                            }
-                            else{
-                                yMinField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
-                            }
-                        }
-                        else
-                            yMinField.setStyle("fx-border-width: 0px;");
-
-                        if (!yMax.equals("")) {
-                            if (yMax.matches("[-]?[0-9]+[.]?[0-9]?+")) {
-                                ((NumberAxis) axis).setUpperBound(Double.parseDouble(yMax));
-                                yMaxField.setStyle("fx-border-width: 0px;");
-                            } else {
-                                yMaxField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
-                            }
-                        }
-                        else
-                            yMaxField.setStyle("fx-border-width: 0px;");
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
 
     private void hideContinuousOptions() {
         String name = xSelectionBox.getValue();
@@ -273,321 +266,178 @@ public class NewChartController implements Initializable {
 
     private void changeChart() {                                //changes Layout to fit selected Chart type
         chartPane.setCenter(null);
-        switch (currentChartType) {
-            case "Line Chart" -> {
-                chart = new LineChart<>(new CategoryAxis(), new NumberAxis());
-                showTextFields(true, true);
+        if(currentChartType != null) {
+            switch (currentChartType) {
+                case "Line Chart" -> {
+                    chart = new LineChart<>(new CategoryAxis(), new NumberAxis());
+                    showTextFields(true, true);
+                }
+                case "Area Chart" -> {
+                    chart = new AreaChart<>(new CategoryAxis(), new NumberAxis());
+                    showTextFields(true, true);
+                }
+                case "Stacked Area Chart" -> {
+                    chart = new StackedAreaChart<>(new CategoryAxis(), new NumberAxis());
+                    showTextFields(true, true);
+                }
+                case "Bar Chart" -> {
+                    chart = new BarChart<>(new CategoryAxis(), new NumberAxis());
+                    showTextFields(true, false);
+                }
+                case "Stacked Bar Chart" -> {
+                    chart = new StackedBarChart<>(new CategoryAxis(), new NumberAxis());
+                    showTextFields(true, false);
+                }
+                case "Pie Chart" -> {
+                    chart = new PieChart();
+                    showTextFields(false, false);
+                    xOptions.setVisible(false);
+                    xToggle.setVisible(false);
+                }
             }
-            case "Area Chart" -> {
-                chart = new AreaChart<>(new CategoryAxis(), new NumberAxis());
-                showTextFields(true, true);
-            }
-            case "Stacked Area Chart" -> {
-                chart = new StackedAreaChart<>(new CategoryAxis(), new NumberAxis());
-                showTextFields(true, true);
-            }
-            case "Bar Chart" -> {
-                chart = new BarChart<>(new CategoryAxis(), new NumberAxis());
-                showTextFields(true, false);
-            }
-            case "Stacked Bar Chart" -> {
-                chart = new StackedBarChart<>(new CategoryAxis(), new NumberAxis());
-                showTextFields(true, false);
-            }
-            case "Pie Chart" -> {
-                chart = new PieChart();
-                showTextFields(false, false);
-                xOptions.setVisible(false);
-                xToggle.setVisible(false);
-            }
-        }
-        chart.setAnimated(false);
-        chartPane.setCenter(chart);
+            chart.setAnimated(false);
+            chartPane.setCenter(chart);
 
-        String previous = xSelectionBox.getValue();
-        xSelectionBox.getItems().setAll(new ArrayList<>());
-        for (ColumnInfo column : columnInfo) {
-            if (!(column.discrete && !(chart.getClass().equals(BarChart.class) || chart.getClass().equals(StackedBarChart.class))))
-                xSelectionBox.getItems().add(column.name);
+            String previous = xSelectionBox.getValue();
+            xSelectionBox.getItems().setAll(new ArrayList<>());
+            for (ColumnInfo column : columnInfo) {
+                if (!(column.discrete && !(chart.getClass().equals(BarChart.class) || chart.getClass().equals(StackedBarChart.class))))
+                    xSelectionBox.getItems().add(column.name);
+            }
+            if (xSelectionBox.getItems().size()>0 && xSelectionBox.getItems().contains(previous))
+                xSelectionBox.setValue(previous);
         }
-        if(xSelectionBox.getItems().contains(previous))
-            xSelectionBox.setValue(previous);
     }
 
     private void updateChart() {
 
-        LocalDate startDataDate, endDataDate;
-        long startDataTimestamp, endDataTimestamp;
+        boolean cont = true;
 
-        if(fromDatePicker.getValue() != null) {
-            startDataDate = fromDatePicker.getValue();
-            startDataTimestamp = ZonedDateTime.of(startDataDate.atStartOfDay(), ZoneId.systemDefault()).toInstant().toEpochMilli();
+        if(chartSelectionList.getSelectionModel().getSelectedItem() == null) {
+            chartSelectionList.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+            cont = false;
         }
-        else {
-            startDataTimestamp = 0;
-            startDataDate = Instant.ofEpochMilli(0).atZone(ZoneId.systemDefault()).toLocalDate();
+        String chartType = chartSelectionList.getSelectionModel().getSelectedItem();
+        if(xSelectionBox.getSelectionModel().getSelectedItem() == null && !chartType.equals("Pie Chart")){
+            xSelectionBox.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+            cont = false;
         }
-        if(toDatePicker.getValue() != null) {
-            endDataDate = toDatePicker.getValue().plusDays(1);
-            endDataTimestamp = ZonedDateTime.of(endDataDate.atStartOfDay(), ZoneId.systemDefault()).toInstant().toEpochMilli();
+        if(ySelectionBox.getSelectionModel().getSelectedItem() == null){
+            ySelectionBox.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+            cont = false;
         }
-        else {
-            endDataTimestamp = Long.MAX_VALUE;
-        }
+        if(!cont)
+            return;
 
-        if (!chartSelectionList.getSelectionModel().getSelectedItem().equals("Pie Chart")) {
-            ((XYChart) chart).getData().clear();
-            for (String series : seriesList.getItems()) {
-                String range = rangeField.getText();
-
-                String value = series.substring(series.indexOf(":") + 2, series.lastIndexOf(" "));
-
-                String xMin = xMinField.getText();
-                String xMax = xMaxField.getText();
+        chartSelectionList.setStyle("-fx-border-width: 0px;");
+        xSelectionBox.setStyle("-fx-border-width: 0px;");
+        ySelectionBox.setStyle("-fx-border-width: 0px;");
 
 
-                String xAxis = xSelectionBox.getValue();
-                String yAxis = ySelectionBox.getValue();
+        LocalDate fromDate = fromDatePicker.getValue();
+        LocalDate toDate = toDatePicker.getValue();
+        List<String> seriesList = this.seriesList.getItems();
+        boolean showPoints = pointCheck.isSelected();
+        boolean isRelative = relativeCheck.isSelected();
+        String xAxis = xSelectionBox.getValue();
+        String xMin = xMinField.getText();
+        String xMax = xMaxField.getText();
+        String xType = this.xType;
+        String yAxis = ySelectionBox.getValue();
+        String yMin = yMinField.getText();
+        String yMax = yMaxField.getText();
+        String range = rangeField.getText();
 
-                for (ColumnInfo info:columnInfo) {
-                    if(info.name.equals(xAxis))
-                        xAxis = info.table + "." + xAxis;
-                    if(info.name.equals(yAxis))
-                        yAxis = info.table + "." + yAxis;
-                }
+        Boolean discrete = null;
 
-                String comparator = series.substring(series.lastIndexOf(" ")+1,series.lastIndexOf("("));
+        int stepSize = 1;
 
-                String name = xSelectionBox.getValue();
-                Boolean discrete = null;
-                for (ColumnInfo column : columnInfo) {
-                    if (column.name.equals(name))
-                        discrete = column.discrete;
-                }
-                if (discrete != null) {
-                    XYChart.Series<String, Float> plot = new XYChart.Series<>();
-                    plot.setName(series.substring(0, series.lastIndexOf(":")));
-                    if (discrete) {
-                        for(String category:dao.selectColumnEntries(xAxis)) {
-                            float total = 1f;
-                            if (relativeCheck.isSelected()) {
-                                total = dao.getXYValues(null, null,category, yAxis, "All", startDataTimestamp, endDataTimestamp, comparator,xAxis);
-                            }
-                            if (total > 0)
-                                plot.getData().add(new XYChart.Data<>(category, dao.getXYValues(null, null,category, yAxis, value, startDataTimestamp, endDataTimestamp, comparator,xAxis) / total));
-                            else plot.getData().add(new XYChart.Data<>(category, 0f));
-                        }
-                    } else {
-
-                        if(range.equals("") || !range.matches("[0-9]+[.]?[0-9]?+")) {
-                            rangeField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
-                            return;
-                        }
-                        float stepSize = Float.parseFloat(range);
-                        if(stepSize == 0){
-                            rangeField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
-                            return;
-                        }
-                        rangeField.setStyle("--fx-border-width: 0px;");
-
-                        if (xMin.equals(""))
-                            xMin = dao.getFirstOrLastValue(true, xAxis);
-                        if (xMax.equals(""))
-                            xMax = dao.getFirstOrLastValue(false, xAxis);
-
-                        if (xAxis.equals("history.timestamp")) {
-
-                            if(!range.matches("[0-9]+")) {
-                                rangeField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
-                                return;
-                            }
-
-                            if(xMinField.getText().equals(""))
-                                xMin = Instant.ofEpochMilli(Long.parseLong(xMin)).atZone(ZoneId.systemDefault()).toLocalDate().toString();
-                            if(xMaxField.getText().equals(""))
-                                xMax = Instant.ofEpochMilli(Long.parseLong(xMax)).atZone(ZoneId.systemDefault()).toLocalDate().toString();
-
-                            LocalDate startDate, endDate;
-                            try {
-                                startDate = LocalDate.parse(xMin);
-                                xMinField.setStyle("-fx-border-width: 0px;");
-                            }catch (Exception e){
-                                xMinField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
-                                return;
-                            }
-                            try {
-                                endDate = LocalDate.parse(xMax);
-                                xMaxField.setStyle("-fx-border-width: 0px;");
-                            }catch (Exception e){
-                                xMaxField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
-                                return;
-                            }
-
-                            List<LocalDate> xValues = startDate.datesUntil(endDate.plusDays(1)).toList();
-                            for (int i = 0; i < xValues.size(); i += stepSize) {
-
-                                float total = 1f;
-                                if (xType.equals("Accumulative")) {
-                                    if (relativeCheck.isSelected()) {
-                                        total = dao.getValuesByTime(startDataDate, xValues.get(i).plusDays((long) stepSize), yAxis, "All", startDataTimestamp, endDataTimestamp, comparator);
-                                    }
-                                    if (total > 0)
-                                        plot.getData().add(new XYChart.Data<>(xValues.get(i).toString().substring(0,10), dao.getValuesByTime(startDataDate, xValues.get(i).plusDays((long) stepSize), yAxis, value, startDataTimestamp, endDataTimestamp, comparator) / total));
-                                    else plot.getData().add(new XYChart.Data<>(xValues.get(i).toString().substring(0,10), 0f));
-                                } else {
-                                    if (relativeCheck.isSelected()) {
-                                        total = dao.getValuesByTime(xValues.get(i), xValues.get(i).plusDays((long) stepSize), yAxis, "All", startDataTimestamp, endDataTimestamp, comparator);
-                                    }
-                                    if (total > 0)
-                                        plot.getData().add(new XYChart.Data<>(xValues.get(i).toString().substring(0,10), dao.getValuesByTime(xValues.get(i), xValues.get(i).plusDays((long) stepSize), yAxis, value, startDataTimestamp, endDataTimestamp, comparator) / total));
-                                    else plot.getData().add(new XYChart.Data<>(xValues.get(i).toString().substring(0,10), 0f));
-                                }
-                            }
-                        } else {
-
-
-                            float xMinF = Float.parseFloat(xMin);
-                            float xMaxF = Float.parseFloat(xMax);
-
-                            for (float i = xMinF; i < xMaxF; i += stepSize) {
-
-                                float total = 1;
-                                if (xType.equals("Accumulative")) {
-                                    if (relativeCheck.isSelected()) {
-                                        total = dao.getXYValues(xMinF, i+stepSize,null, yAxis, "All", startDataTimestamp, endDataTimestamp, comparator,xAxis);
-                                    }
-                                    if (total > 0)
-                                        plot.getData().add(new XYChart.Data<>(String.valueOf(i), dao.getXYValues(xMinF, i+stepSize,null, yAxis, value, startDataTimestamp, endDataTimestamp, comparator,xAxis) / total));
-                                    else plot.getData().add(new XYChart.Data<>(String.valueOf(i), 0f));
-                                } else {
-                                    if (relativeCheck.isSelected()) {
-                                        total = dao.getXYValues(i, i+stepSize,null, yAxis, "All", startDataTimestamp, endDataTimestamp, comparator,xAxis);
-                                    }
-                                    if (total > 0)
-                                        plot.getData().add(new XYChart.Data<>(String.valueOf(i), dao.getXYValues(i, i+stepSize,null, yAxis, value, startDataTimestamp, endDataTimestamp, comparator,xAxis) / total));
-                                    else plot.getData().add(new XYChart.Data<>(String.valueOf(i), 0f));
-                                }
-                            }
-
-                        }
-                    }
-                    ((XYChart<String,Float>) chart).getData().add(plot);
-                    chart.setAnimated(false);
-                }
-
-            }
-            List<String> colors = new ArrayList<>();
-
-            for (XYChart.Series<?, ?> plot : ((XYChart<?, ?>) chart).getData()) {         //sets line and symbol colors
-                int index = ((XYChart<?, ?>) chart).getData().indexOf(plot);          //I hate all of this but at least it's somewhat readable
-                String series = seriesList.getItems().get(index);
-                String color = series.substring(series.lastIndexOf("(") + 1, series.lastIndexOf(")"));
-                colors.add(color);
-
-                Class<? extends Chart> chartClass = chart.getClass();
-
-
-
-                if(chartClass.equals(LineChart.class)) {
-                    plot.getNode().lookup(".chart-series-line").setStyle("-fx-stroke: " + color);
-                    if(pointCheck.isSelected())
-                        for (XYChart.Data<?, ?> data : plot.getData())
-                            data.getNode().lookup(".chart-line-symbol").setStyle("-fx-background-color: " + color + ",whitesmoke;");
-                }
-                else if (chartClass.equals(AreaChart.class) || chartClass.equals(StackedAreaChart.class)){
-
-                    plot.getNode().lookup(".chart-series-area-line").setStyle("-fx-stroke: " + color);
-                    plot.getNode().lookup(".chart-series-area-fill").setStyle("-fx-fill: rgba("+Integer.parseInt(color.substring(1,3),16)+","+Integer.parseInt(color.substring(3,5),16)+","+Integer.parseInt(color.substring(5),16)+",0.15);" );
-                    if(pointCheck.isSelected())
-                        for (XYChart.Data<?, ?> data : plot.getData())
-                            data.getNode().lookup(".chart-area-symbol").setStyle("-fx-background-color: " + color + ",whitesmoke;");
-                }
-                else if(chartClass.equals(BarChart.class) || chartClass.equals(StackedBarChart.class)){
-                    for(XYChart.Data<?,?> data : plot.getData()) {
-                        data.getNode().lookup(".chart-bar").setStyle("-fx-bar-fill: " + color);
-                    }
-                }
-            }
-            chart.applyCss();               //generates legend
-            for (Node node : chart.lookupAll(".chart-legend-item-symbol")) {        //sets legend colors
-                for (String styleClass : node.getStyleClass()){
-                    if (styleClass.startsWith("series")) {
-                        final int index = Integer.parseInt(styleClass.substring(6));
-                        String inside  = ";";
-                        if(!chart.getClass().equals(BarChart.class) && !chart.getClass().equals(StackedBarChart.class))
-                            inside = ",whitesmoke;";
-                        node.setStyle("-fx-background-color: " + colors.get(index) + inside);
-                    }
-                }
-            }
-
-        }
-        else{
-            ((PieChart)chart).getData().clear();
-
-            String column = ySelectionBox.getValue();
-            Boolean discrete = null;
-            for (ColumnInfo info: columnInfo){
-                if(column.equals(info.name)){
-                    column = info.table+"."+column;
-                    discrete = info.discrete;
-                    break;
-                }
-            }
-            for(String category: seriesList.getItems()){
-                String comparator = "";
-                if(Boolean.FALSE.equals(discrete))
-                    comparator = category.substring(category.lastIndexOf(" ")+1,category.lastIndexOf("("));
-                String name = category.substring(0,category.lastIndexOf(":"));
-                String value = category.substring(category.indexOf(":") + 2, category.lastIndexOf(" "));
-                PieChart.Data data;
-
-                data = new PieChart.Data(name,dao.getPieValues(column,value,startDataTimestamp,endDataTimestamp, comparator));
-
-
-                ((PieChart)chart).getData().add(data);
-            }
-            if(relativeCheck.isSelected()){
-                double sum = 0f;
-                for(PieChart.Data data :((PieChart) chart).getData()){
-                    sum+=data.getPieValue();
-                }
-                double result = dao.getPieValues(column,"All",startDataTimestamp,endDataTimestamp,"")-sum;
-
-                if(result<=0) {
-                    result = 0f;
-                }
-                PieChart.Data rest = new PieChart.Data("REST", result);
-                ((PieChart) chart).getData().add(rest);
-
-            }
-
-            List<String> colors = new ArrayList<>();
-            for(PieChart.Data data:((PieChart) chart).getData()){
-                String color;
-                if(!data.getName().equals("REST")) {
-                    int index = ((PieChart) chart).getData().indexOf(data);
-                    String series = seriesList.getItems().get(index);
-                     color= series.substring(series.lastIndexOf("(") + 1, series.lastIndexOf(")"));
-                }
-                else {
-                    color = "#444444";
-                }
-                colors.add(color);
-                data.getNode().setStyle("-fx-pie-color: "+color+";");
-            }
-            chart.applyCss();
-            for (Node node:chart.lookupAll(".chart-legend-item-symbol")){
-                for (String styleClass : node.getStyleClass()){
-                    if (styleClass.startsWith("data")) {
-                        final int index = Integer.parseInt(styleClass.substring(4));
-
-                        node.setStyle("-fx-background-color: " + colors.get(index) + ";");
-                    }
-                }
+        for (ColumnInfo column : columnInfo) {
+            if (column.name.equals(xAxis)) {
+                discrete = column.discrete;
+                break;
             }
         }
 
+        if(!chartType.equals("Pie Chart")) {
+            if(Boolean.FALSE.equals(discrete)) {
+                if (!range.matches("[0-9]+[.]?[0-9]?+") || (xAxis.equals("timestamp") && !range.matches("[0-9]+"))) {
+                    rangeField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+                    cont = false;
+                }
+                else
+                    rangeField.setStyle("--fx-border-width: 0px;");
+            }
+            if (!yMin.matches("[-]?[0-9]+[.]?[0-9]?+") && !yMin.equals("")) {
+                yMinField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+                cont = false;
+            }
+            else
+                yMinField.setStyle("--fx-border-width: 0px;");
+            if (!yMax.matches("[-]?[0-9]+[.]?[0-9]?+") && !yMax.equals("")) {
+                yMaxField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+                cont = false;
+            }
+            else
+                yMaxField.setStyle("--fx-border-width: 0px;");
+            if(!xAxis.equals("timestamp")){
+                if (!xMin.matches("[-]?[0-9]+[.]?[0-9]?+") && !xMin.equals("")) {
+                    xMinField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+                    cont = false;
+                }
+                else
+                    xMinField.setStyle("--fx-border-width: 0px;");
+                if (!xMax.matches("[-]?[0-9]+[.]?[0-9]?+") && !xMax.equals("")) {
+                    xMaxField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+                    cont = false;
+                }
+                else
+                    xMaxField.setStyle("--fx-border-width: 0px;");
+            }
+            else {
+                xMin = checkDateBound(xMinField);
+                xMax = checkDateBound(xMaxField);
+            }
+
+        }
+        if(!cont || xMin.equals("false") || xMax.equals("false"))
+            return;
+        if(!chartType.equals("Pie Chart"))
+            stepSize = Integer.parseInt(range);
+        chartDescriptor = new ChartDescriptor("","","", chartType,fromDate,toDate,seriesList,showPoints,isRelative,xAxis,xMin,xMax,xType,yAxis,yMin,yMax,stepSize);
+        chart = singelton.generateChart(chartDescriptor);
+        chartPane.setCenter(chart);
+        singelton.setChartColors(chart,seriesList,showPoints);
+
+    }
+
+    private String checkDateBound(TextField field) {
+        String bound = field.getText();
+        if(!bound.equals("")) {
+            if (!bound.matches("[0-9]{4}-[0-9]{2}-[0-9]{2}")) {
+                field.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+                return "false";
+            }
+            /*
+            String substring = bound.substring(0, bound.indexOf("-"));
+            if (substring.length() == 3)
+                bound = "20" + bound;
+            else if (substring.length() == 4) {
+                bound = "2" + bound;
+            }
+            substring = bound.substring(bound.indexOf("-") + 1, bound.lastIndexOf("-"));
+            if (substring.length() == 1) {
+                bound = bound.substring(0, bound.indexOf("-") + 1) + "0" + substring + "-" + bound.substring(bound.lastIndexOf("-"));
+            }
+            substring = bound.substring(bound.lastIndexOf("-") + 1);
+            if (substring.length() == 1) {
+                bound = bound.substring(bound.lastIndexOf("-")) + "0" + substring;
+            }
+
+             */
+        }
+        field.setStyle("--fx-border-width: 0px;");
+        return bound;
     }
 
     private void addToSeries(String value,String color){
@@ -654,7 +504,17 @@ public class NewChartController implements Initializable {
     }
 
     public void onCreate() {
-        updateChart();
+
+        chartDescriptor.setTitle(titleField.getText());
+        if(!currentChartType.equals("Pie Chart")){
+            chartDescriptor.setxName(xNameField.getText());
+            chartDescriptor.setyName(yNameField.getText());
+        }
+        if(!update)
+            controller.addChart(chartDescriptor);
+        else
+            controller.setChart(chartDescriptor);
+        onCancel();
     }
 
     public void onSeriesListClick(MouseEvent mouseEvent) {

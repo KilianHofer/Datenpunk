@@ -192,7 +192,7 @@
                   </HBox>
                </bottom>
                <right>
-                  <VBox fx:id="seriesPane">
+                  <VBox>
                      <children>
                         <Label text="Series:" />
                         <TextField fx:id="seriesNameField" promptText="Name">
@@ -265,7 +265,7 @@
             <Button mnemonicParsing="false" onAction="#onCancel" text="Cancel" BorderPane.alignment="CENTER" />
          </left>
          <right>
-            <Button mnemonicParsing="false" onAction="#onCreate" text="Create" BorderPane.alignment="CENTER" />
+            <Button fx:id="createButton" mnemonicParsing="false" onAction="#onCreate" text="Create" BorderPane.alignment="CENTER" />
          </right>
          <VBox.margin>
             <Insets bottom="20.0" left="10.0" right="10.0" />

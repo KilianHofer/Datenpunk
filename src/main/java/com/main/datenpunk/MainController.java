@@ -1,6 +1,7 @@
 package com.main.datenpunk;
 
 import database.DAO;
+import enteties.ChartDescriptor;
 import enteties.ColoredObjectTableCell;
 import enteties.ObjectTableElement;
 import enteties.Status;
@@ -87,6 +88,9 @@ public class MainController implements Initializable {
 
     private ObservableList<ObjectTableElement> objectTableElements = FXCollections.observableArrayList();
 
+    List<ChartDescriptor> charts = new ArrayList<>();
+    int chartEditIndex;
+
     private void getStatuses(){
         statuses = dao.selectStatuses();
         Status status;
@@ -165,7 +169,7 @@ public class MainController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
-
+        singelton.setController(this);
 
         idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
@@ -512,7 +516,6 @@ public class MainController implements Initializable {
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("newChart-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
 
-
         Stage stage = new Stage();
 
         stage.setTitle("New Diagram");
@@ -524,11 +527,15 @@ public class MainController implements Initializable {
         stage.show();
     }
 
-    public void addChart() {
+    public void addChart(ChartDescriptor chartDescriptor) {
+
+        charts.add(chartDescriptor);
 
         HBox hBox = new HBox();
 
-        hBox.getChildren().add(new LineChart(new CategoryAxis(),new NumberAxis()));
+        Chart chart = singelton.generateChart(chartDescriptor);
+
+        hBox.getChildren().add(chart);
         hBox.setOnMouseEntered(this::showChartOptions);
         hBox.setOnMouseExited(this::hideChartOptions);
 
@@ -547,9 +554,43 @@ public class MainController implements Initializable {
 
         chartContainer.getChildren().add(hBox);
         chartContainer.setPrefWidth(Region.USE_COMPUTED_SIZE);
+
+        singelton.setChartColors(chart,chartDescriptor.seriesList,chartDescriptor.showPoints);
     }
 
-    private void onEditChart(ActionEvent event) {
+    public void setChart(ChartDescriptor chartDescriptor) {
+        charts.set(chartEditIndex,chartDescriptor);
+        Chart chart = singelton.generateChart(chartDescriptor);
+        ((HBox)chartContainer.getChildren().get(chartEditIndex)).getChildren().set(0,chart);
+        singelton.setChartColors(chart,chartDescriptor.seriesList,chartDescriptor.showPoints);
+    }
+
+    private void onEditChart(ActionEvent event){
+
+        try {
+
+            int index = chartContainer.getChildren().indexOf(((Button) event.getSource()).getParent().getParent());
+            chartEditIndex = index;
+            FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("newChart-view.fxml"));
+            Scene scene = new Scene(fxmlLoader.load());
+
+            Stage stage = new Stage();
+
+            stage.setTitle("Update Diagram");
+            stage.setScene(scene);
+            stage.initModality(Modality.WINDOW_MODAL);
+            stage.initOwner(objectTable.getScene().getWindow());
+
+            NewChartController newChartController = fxmlLoader.getController();
+            newChartController.loadChart(charts.get(index));
+
+            stage.setResizable(false);
+            stage.show();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+
     }
 
     private void onDeleteChart(ActionEvent event) {
