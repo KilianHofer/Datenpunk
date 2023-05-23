@@ -1,5 +1,6 @@
 package database;
 
+import enteties.ColumnInfo;
 import enteties.HistoryTableElement;
 import enteties.Status;
 import enteties.ObjectTableElement;
@@ -10,10 +11,9 @@ import javafx.scene.control.ListView;
 import java.sql.*;
 import java.text.Format;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.util.ArrayList;
+
 import java.util.List;
 
 public class DAO {
@@ -107,6 +107,23 @@ public class DAO {
         }
     }
 
+    public List<ColumnInfo> selectTableColumns(String table){
+        List<ColumnInfo> names = new ArrayList<>();
+        try{
+            String query = "SELECT column_name,data_type FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = N'"+table+"' AND column_name != 'id'";
+            PreparedStatement statement = connection.prepareStatement(query);
+            ResultSet resultSet = statement.executeQuery();
+            ColumnInfo columnInfo;
+            while (resultSet.next()){
+                columnInfo = new ColumnInfo(table,resultSet.getString("column_name"),resultSet.getString("data_type").contains("char"));
+                names.add(columnInfo);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return names;
+    }
+
 
     private void buildString(List<String> strings,ObservableList<ListView<String>> listViews,int id, String name){
         if(listViews.get(id).getItems().size() > 0) {
@@ -179,7 +196,6 @@ public class DAO {
             statement = connection.prepareStatement(query);
             statement.setLong(1,fromTimestamp);
             statement.setLong(2,toTimestamp);
-            System.out.println(statement);
             resultSet = statement.executeQuery();
 
             int id,sortOrder;
@@ -302,20 +318,20 @@ public class DAO {
         return null;
     }
 
-    public Status selectStatus(String planned) {
+    public Status selectStatus(String name) {
         try{
             String query = "SELECT * FROM status WHERE name = ?";
             PreparedStatement statement = connection.prepareStatement(query);
-            statement.setString(1,planned);
+            statement.setString(1,name);
             ResultSet resultSet = statement.executeQuery();
             int sortOrder;
-            String name, color;
+            String sName, color;
 
             if(resultSet.next()){
                 sortOrder = resultSet.getInt("sortOrder");
-                name = resultSet.getString("name");
+                sName = resultSet.getString("name");
                 color = resultSet.getString("colour");
-                return new Status(name,sortOrder,color);
+                return new Status(sName,sortOrder,color);
             }
 
 
@@ -342,11 +358,134 @@ public class DAO {
         return null;
     }
 
+    public String getFirstOrLastValue(boolean first, String source){
+        try{
+            String query;
+            if(first)
+                query = "SELECT "+source+ " FROM history,objects ORDER BY "+source+ " ASC LIMIT 1";
+            else
+                query = "SELECT "+source+ " FROM history,objects ORDER BY "+source+ " DESC LIMIT 1";
+
+            PreparedStatement statement = connection.prepareStatement(query);
+            ResultSet resultSet = statement.executeQuery();
+
+            if(resultSet.next()){
+                return String.valueOf(resultSet.getLong(source.substring(source.indexOf(".")+1)));
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
+    public Float getXYValues(Number start, Number end, String category, String yAxis, String value, long startDataTimestamp, long endDataTimestamp, String comparator, String xAxis){
+        try{
+            String subquery1 = "",subquery2 = "", subquery3, subquery4 = "";
+            switch (value) {
+                case "All" -> subquery1 = "COUNT";
+                case "value" -> subquery4 = " ORDER BY history.timestamp DESC LIMIT 1";
+                case "sum" -> subquery1 = "SUM";
+                case "average" -> subquery1 = "AVG";
+                case "greater than" -> {
+                    subquery1 = "COUNT";
+                    subquery4 = " AND " + yAxis + " > " + comparator + "";
+                }
+                case "greater or equal" -> {
+                    subquery1 = "COUNT";
+                    subquery4 = " AND " + yAxis + " >= '" + comparator + "'";
+                }
+                case "less than" -> {
+                    subquery1 = "COUNT";
+                    subquery4 = " AND " + yAxis + " < '" + comparator + "'";
+                }
+                case "less or equal" -> {
+                    subquery1 = "COUNT";
+                    subquery4 = " AND " + yAxis + " <= '" + comparator + "'";
+                }
+                case "equals" -> {
+                    subquery1 = "COUNT";
+                    subquery4 = " AND " + yAxis + " = " + comparator;
+                }
+                default -> {
+                    subquery1 = "COUNT";
+                    subquery4 = " AND " + yAxis + " = '" + value + "'";
+                }
+            }
+
+            if(xAxis.equals("timestamp")){
+                subquery2 = " AND timestamp < " + end;
+            }
+
+            if(category == null){
+                subquery3 = xAxis +" >= " + start + " AND " +xAxis + " < " + end;
+            }
+            else {
+                subquery3 = xAxis + " = '" + category + "'";
+            }
+
+            String query = "SELECT " + subquery1 + " (" + yAxis + ") FROM objects JOIN history ON objects.id = history.id JOIN (SELECT id,MAX(timestamp) AS t FROM history WHERE timestamp >= " + startDataTimestamp + subquery2 + " AND timestamp < " + endDataTimestamp + " GROUP BY id) AS i ON (i.id = objects.id AND i.t=history.timestamp) JOIN status ON status.name = history.status WHERE "+ subquery3 + subquery4;
+            PreparedStatement statement = connection.prepareStatement(query);
+            ResultSet resultSet = statement.executeQuery();
+            if (resultSet.next()) {
+                if(value.equals("value"))
+                    return resultSet.getFloat(yAxis.substring(yAxis.indexOf(".")+1));
+                return resultSet.getFloat(subquery1.toLowerCase());
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return 0f;
+
+    }
+
+    public Float getValuesByTime(LocalDate start, LocalDate end, String yAxis, String value, long startDataTimestamp, long endDataTimestamp, String comparator) {
+
+        long startTimestamp = ZonedDateTime.of(start.atStartOfDay(), ZoneId.systemDefault()).toInstant().toEpochMilli();
+        long endTimestamp = ZonedDateTime.of(end.atStartOfDay(), ZoneId.systemDefault()).toInstant().toEpochMilli();
+        return getXYValues(startTimestamp,endTimestamp,null,yAxis,value,startDataTimestamp,endDataTimestamp,comparator,"timestamp");
+
+    }
+    public Float getPieValues(String column ,String value,long startTimestamp,long endTimestamp, String comparator){
+        try{
+            String subquery1 = "COUNT(", subquery2;
+
+            switch (value) {
+                case "All" -> subquery2 = "";
+                case "value", "sum", "average" -> {
+                    return 0f;
+                }
+                case "greater than" -> subquery2 = " WHERE " + column + " > " + comparator;
+
+                case "greater or equal" -> subquery2 = " WHERE " + column + " >= " + comparator;
+
+                case "less than" -> subquery2 = " WHERE " + column + " < " + comparator;
+
+                case "less or equal" -> subquery2 = " WHERE " + column + " <= " + comparator;
+
+                case "equals" -> subquery2 = " WHERE " + column + " = " + comparator;
+                default -> subquery2 = " WHERE " + column + " = '" + value + "'";
+
+            }
+
+            String query = "SELECT "+subquery1+"*) FROM objects JOIN history ON objects.id=history.id JOIN (SELECT id, MAX(timestamp) t FROM history WHERE timestamp >= "+startTimestamp+" AND timestamp <= "+endTimestamp+" GROUP BY id) AS i ON (i.id = objects.id AND i.t=history.timestamp) JOIN status ON status.name = history.status"+subquery2;
+            PreparedStatement statement = connection.prepareStatement(query);
+            ResultSet resultSet = statement.executeQuery();
+            if(resultSet.next()){
+                return resultSet.getFloat("count");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
 
     public Integer insert(String name, String type){
 
         try {
-            String query = ( "INSERT INTO objects(name, type) VALUES(?,?);");
+            String query = "INSERT INTO objects(name, type) VALUES(?,?);";
             PreparedStatement statement = connection.prepareStatement(query,Statement.RETURN_GENERATED_KEYS);
             statement.setString(1,name);
             statement.setString(2,type);
@@ -356,8 +495,8 @@ public class DAO {
             if (generatedKeys.next()) {
                 id = generatedKeys.getInt(1);
             }
-            query = "INSERT INTO History(id, status, timestamp) VALUES(?,?,?)";
-            statement = connection.prepareStatement(query);
+            String historyQuery = "INSERT INTO History(id, status, timestamp) VALUES(?,?,?)";
+            statement = connection.prepareStatement(historyQuery);
             statement.setInt(1,id);
             statement.setString(2,"Planned");   //TODO: make default setting
             statement.setLong(3,System.currentTimeMillis());
@@ -416,4 +555,26 @@ public class DAO {
         }
     }
 
+    public List<String> selectColumnEntries(String name) {
+
+        List<String> series = new ArrayList<>();
+        try{
+            String query;                                     //TODO: only returns statuses that have already been in use
+            if(name.equals("name"))                           //TODO: temporary solution might have to be more complicated with dynamic database
+                query = "SELECT o."+name+" FROM objects o, history, status group by o."+name;
+            else
+                query = "SELECT "+name+" FROM objects, history, status group by "+name;
+            PreparedStatement statement = connection.prepareStatement(query);
+            ResultSet resultSet = statement.executeQuery();
+
+            if(name.contains("."))
+                name = name.substring(name.lastIndexOf(".")+1);
+            while (resultSet.next()){
+                series.add(resultSet.getString(name));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return series;
+    }
 }

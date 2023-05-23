@@ -90,6 +90,7 @@ public class NewProjectController implements Initializable {
                     if(dao.connectToDB("datenpunk_"+name,"postgres",password)){
                         dao.createTables();
                         singelton.setCurrentProject(name);
+                        singelton.setColumnInfo();
                         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
                         Stage stage = returnStage;
                         stage.setTitle("Datenpunk");
