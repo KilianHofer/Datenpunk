@@ -64,9 +64,7 @@ public class DatabaseConnectionController {
             stage.show();
         }
         else {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setContentText("Could not connect to Database");
-            alert.show();
+            passwordField.setStyle("-fx-border-color: red; -fx-border-width: 2px");
         }
 
     }

@@ -12,13 +12,19 @@ public class ChartDescriptor {
     public boolean showPoints, isRelative;
     public float stepSize;
 
-    public ChartDescriptor(String title,String xName,String yName,String chartType, LocalDate fromDate, LocalDate toDate, List<String> seriesList,boolean showPoints, boolean isRelative,String xAxis,String xMin,String xMax,String xType,String yAxis, String yMin,String yMax,float stepSize){
+    public ChartDescriptor(String title,String xName,String yName,String chartType, String fromDate, String toDate, List<String> seriesList,boolean showPoints, boolean isRelative,String xAxis,String xMin,String xMax,String xType,String yAxis, String yMin,String yMax,float stepSize){
         this.title = title;
         this.xName = xName;
         this.yName = yName;
         this.chartType = chartType;
-        this.fromDate = fromDate;
-        this.toDate = toDate;
+        if(fromDate.equals("null"))
+            this.fromDate = null;
+        else
+            this.fromDate = LocalDate.parse(fromDate);
+        if(toDate.equals("null"))
+            this.toDate = null;
+        else
+            this.toDate = LocalDate.parse(toDate);
         this.seriesList = seriesList;
         this.showPoints = showPoints;
         this.isRelative = isRelative;

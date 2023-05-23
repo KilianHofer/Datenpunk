@@ -94,7 +94,7 @@
                                                       <Button onAction="#updateTable" text="Refresh" BorderPane.alignment="CENTER" />
                                                    </right>
                                                    <bottom>
-                                                      <TableView fx:id="objectTable" onMouseClicked="#onTableClick" prefHeight="1000.0" BorderPane.alignment="CENTER">
+                                                      <TableView fx:id="objectTable" prefHeight="1000.0" BorderPane.alignment="CENTER">
                                                         <columns>
                                                             <TableColumn fx:id="idColumn" prefWidth="30.0" text="id" />
                                                           <TableColumn fx:id="nameColumn" minWidth="150.0" prefWidth="-1.0" text="Name" />
@@ -161,18 +161,18 @@
                                        <children>
                                           <HBox layoutX="28.0" layoutY="49.0">
                                              <children>
-                                                <ChoiceBox prefWidth="150.0">
+                                                <ChoiceBox fx:id="chartPresetBox" prefWidth="150.0">
                                                    <HBox.margin>
                                                       <Insets bottom="15.0" />
                                                    </HBox.margin>
                                                 </ChoiceBox>
-                                                <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="25.0" text="+">
+                                                <Button mnemonicParsing="false" onAction="#onAddChartPreset" prefHeight="25.0" prefWidth="25.0" text="+">
                                                    <HBox.margin>
                                                       <Insets left="3.0" right="3.0" />
                                                    </HBox.margin>
                                                 </Button>
-                                                <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="25.0" text="-" />
-                                                <Button mnemonicParsing="false" text="Reset">
+                                                <Button mnemonicParsing="false" onAction="#onDeleteChartPreset" prefHeight="25.0" prefWidth="25.0" text="-" />
+                                                <Button mnemonicParsing="false" onAction="#onResetCharts" text="Reset">
                                                    <HBox.margin>
                                                       <Insets left="3.0" />
                                                    </HBox.margin>

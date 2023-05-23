@@ -12,6 +12,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.MouseButton;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -226,6 +227,7 @@ public class ProjectSelectionController implements Initializable {
         File file = new File(System.getProperty("user.home")+"\\Datenpunk\\connection.dtpnk");
         if(checkSavedPasswordAndConnect(file,element.getName())){
             singelton.setCurrentProject(element.getName());
+            singelton.setColumnInfo();
             openProjectWindow();
         }
         else {
@@ -269,6 +271,27 @@ public class ProjectSelectionController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
+        projectTable.setRowFactory( tableView -> {
+            TableRow<ProjectTableElement> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if(event.getClickCount() == 2 && (!row.isEmpty())){
+                    if(event.getButton().equals(MouseButton.PRIMARY)) {
+                        if (event.getClickCount() == 2) {               //TODO: known issue: opens detail view of selected item even by double-click on table header
+
+                            try {
+                                openProject(projectTable.getSelectionModel().getSelectedItem());
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+
+                        }
+                    }
+                }
+            });
+            return row;
+        });
+
+
 
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         lastVisitedColumn.setCellValueFactory(new PropertyValueFactory<>("lastVisited"));
@@ -310,7 +333,7 @@ public class ProjectSelectionController implements Initializable {
         }
         getProjects(file);
 
-
+        projectTable.getSelectionModel().select(0);
 
     }
     public void getProjects(File file)  {

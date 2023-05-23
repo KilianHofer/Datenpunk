@@ -84,6 +84,7 @@ public class NewChartController implements Initializable {
         });
         chartSelectionList.getSelectionModel().select(0);
 
+        xSelectionBox.getItems().clear();
         for (ColumnInfo column : columnInfo) {
             ySelectionBox.getItems().add(column.name);
             if (!(column.discrete && xMinField.isVisible()))
@@ -179,7 +180,13 @@ public class NewChartController implements Initializable {
 
         seriesList.getItems().addAll(c.seriesList);
 
+        relativeCheck.setSelected(c.isRelative);
+        pointCheck.setSelected(c.showPoints);
 
+        xMinField.setText(c.xMin);
+        xMaxField.setText(c.xMax);
+        yMinField.setText(c.yMin);
+        yMaxField.setText(c.yMax);
 
         chart = singelton.generateChart(c);
 
@@ -299,6 +306,7 @@ public class NewChartController implements Initializable {
             chartPane.setCenter(chart);
 
             String previous = xSelectionBox.getValue();
+
             xSelectionBox.getItems().setAll(new ArrayList<>());
             for (ColumnInfo column : columnInfo) {
                 if (!(column.discrete && !(chart.getClass().equals(BarChart.class) || chart.getClass().equals(StackedBarChart.class))))
@@ -350,7 +358,7 @@ public class NewChartController implements Initializable {
 
         Boolean discrete = null;
 
-        int stepSize = 1;
+        float stepSize = 1;
 
         for (ColumnInfo column : columnInfo) {
             if (column.name.equals(xAxis)) {
@@ -402,9 +410,9 @@ public class NewChartController implements Initializable {
         }
         if(!cont || xMin.equals("false") || xMax.equals("false"))
             return;
-        if(!chartType.equals("Pie Chart"))
-            stepSize = Integer.parseInt(range);
-        chartDescriptor = new ChartDescriptor("","","", chartType,fromDate,toDate,seriesList,showPoints,isRelative,xAxis,xMin,xMax,xType,yAxis,yMin,yMax,stepSize);
+        if(!chartType.equals("Pie Chart") && !discrete)
+            stepSize = Float.parseFloat(range);
+        chartDescriptor = new ChartDescriptor("","","", chartType,String.valueOf(fromDate),String.valueOf(toDate),seriesList,showPoints,isRelative,xAxis,xMin,xMax,xType,yAxis,yMin,yMax,stepSize);
         chart = singelton.generateChart(chartDescriptor);
         chartPane.setCenter(chart);
         singelton.setChartColors(chart,seriesList,showPoints);
@@ -511,7 +519,7 @@ public class NewChartController implements Initializable {
             chartDescriptor.setyName(yNameField.getText());
         }
         if(!update)
-            controller.addChart(chartDescriptor);
+            controller.addNewChart(chartDescriptor);
         else
             controller.setChart(chartDescriptor);
         onCancel();

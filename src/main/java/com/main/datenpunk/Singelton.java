@@ -188,7 +188,7 @@ public class Singelton {
                             float xMinF = Float.parseFloat(xMinValue);
                             float xMaxF = Float.parseFloat(xMaxValue);
 
-                            for (float i = xMinF; i < xMaxF; i += c.stepSize) {
+                            for (float i = xMinF; i <= xMaxF; i += c.stepSize) {
 
                                 float total = 1;
                                 if (c.xType.equals("Accumulative")) {
