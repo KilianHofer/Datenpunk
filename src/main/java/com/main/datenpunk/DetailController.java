@@ -8,11 +8,9 @@ import enteties.ObjectTableElement;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.stage.Stage;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -100,6 +98,16 @@ public class DetailController implements Initializable {
         statusBox.getItems().addAll(statusNames);
 
 
+
+    }
+
+    public void onDelete() {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setContentText("Delete this Object?");
+        if(alert.showAndWait().get() == ButtonType.OK){
+            dao.deleteObject(currentElement.getId());
+            ((Stage)nameField.getScene().getWindow()).close();
+        }
 
     }
 }

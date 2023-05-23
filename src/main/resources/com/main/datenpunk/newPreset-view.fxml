@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.VBox?>
+
+
+<VBox xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.main.datenpunk.NewPresetController">
+   <children>
+      <Label text="Name:" />
+      <TextField fx:id="nameField" promptText="Name">
+         <VBox.margin>
+            <Insets bottom="10.0" top="5.0" />
+         </VBox.margin>
+      </TextField>
+      <CheckBox fx:id="dateRangeCheck" mnemonicParsing="false" text="Date range" />
+      <CheckBox fx:id="whitelistCheck" mnemonicParsing="false" selected="true" text="Whitelist">
+         <VBox.margin>
+            <Insets bottom="5.0" top="5.0" />
+         </VBox.margin>
+      </CheckBox>
+      <CheckBox fx:id="blacklistCheck" mnemonicParsing="false" selected="true" text="Blacklist" />
+      <BorderPane>
+         <left>
+            <Button mnemonicParsing="false" onAction="#onCancel" text="Cancel" BorderPane.alignment="CENTER" />
+         </left>
+         <right>
+            <Button mnemonicParsing="false" onAction="#onCreate" text="Create" BorderPane.alignment="CENTER" />
+         </right>
+         <VBox.margin>
+            <Insets top="15.0" />
+         </VBox.margin>
+      </BorderPane>
+   </children>
+   <padding>
+      <Insets bottom="25.0" left="25.0" right="25.0" top="25.0" />
+   </padding>
+</VBox>

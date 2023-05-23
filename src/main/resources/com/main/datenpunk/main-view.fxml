@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.CheckMenuItem?>
 <?import javafx.scene.control.ChoiceBox?>
@@ -10,19 +11,202 @@
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.SeparatorMenuItem?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane prefHeight="1280.0" prefWidth="1920.0" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.main.datenpunk.MainController">
-   <children>
-      <MenuBar layoutX="-245.0" layoutY="13.0" maxWidth="1.7976931348623157E308" prefHeight="25.0" prefWidth="1930.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+<BorderPane xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.main.datenpunk.MainController">
+   <center>
+      <TabPane nodeOrientation="LEFT_TO_RIGHT" tabClosingPolicy="UNAVAILABLE">
+         <tabs>
+            <Tab closable="false" text="Table">
+               <content>
+                  <ScrollPane>
+                     <content>
+                        <BorderPane>
+                           <center>
+                              <VBox>
+                                 <children>
+                                    <TitledPane expanded="false" text="Whitelist">
+                                       <content>
+                                          <AnchorPane prefHeight="240.0">
+                                             <children>
+                                                <TextField fx:id="whitelistNameField" layoutX="14.0" layoutY="35.0" onAction="#onAddToList" />
+                                                <ListView fx:id="whitelistNameList" layoutX="14.0" layoutY="108.0" onKeyReleased="#onListKey" onMouseClicked="#onListClick" prefHeight="97.0" prefWidth="149.0" />
+                                                <Label layoutX="14.0" layoutY="10.0" text="Name:" />
+                                                <TextField fx:id="whitelistTypeField" layoutX="181.0" layoutY="35.0" onAction="#onAddToList" />
+                                                <ListView fx:id="whitelistTypeList" layoutX="181.0" layoutY="108.0" onKeyReleased="#onListKey" onMouseClicked="#onListClick" prefHeight="97.0" prefWidth="149.0" />
+                                                <Label layoutX="181.0" layoutY="10.0" text="Type:" />
+                                                <ListView fx:id="whitelistStatusList" layoutX="353.0" layoutY="108.0" onKeyReleased="#onListKey" onMouseClicked="#onListClick" prefHeight="97.0" prefWidth="149.0" />
+                                                <Label layoutX="353.0" layoutY="10.0" text="Status:" />
+                                                <ChoiceBox fx:id="whitelistStatusBox" layoutX="353.0" layoutY="35.0" prefWidth="150.0" />
+                                                <Button fx:id="addToNameWhitelist" layoutX="14.0" layoutY="71.0" mnemonicParsing="false" onAction="#onAddToList" text="Add" />
+                                                <Button fx:id="removeFromNameWhitelist" layoutX="103.0" layoutY="71.0" mnemonicParsing="false" onAction="#onRemoveFromList" text="Remove" />
+                                                <Button fx:id="addToTypeWhitelist" layoutX="181.0" layoutY="71.0" mnemonicParsing="false" onAction="#onAddToList" text="Add" />
+                                                <Button fx:id="removeFromTypeWhitelist" layoutX="270.0" layoutY="71.0" mnemonicParsing="false" onAction="#onRemoveFromList" text="Remove" />
+                                                <Button fx:id="addToStatusWhitelist" layoutX="354.0" layoutY="71.0" mnemonicParsing="false" onAction="#onAddToList" text="Add" />
+                                                <Button fx:id="removeFromStatusWhitelist" layoutX="443.0" layoutY="71.0" mnemonicParsing="false" onAction="#onRemoveFromList" text="Remove" />
+                                             </children>
+                                          </AnchorPane>
+                                       </content>
+                                    </TitledPane>
+                                    <TitledPane expanded="false" text="Blacklist">
+                                       <content>
+                                          <AnchorPane prefHeight="207.0">
+                                             <children>
+                                                <TextField fx:id="blacklistNameField" layoutX="14.0" layoutY="35.0" onAction="#onAddToList" />
+                                                <ListView fx:id="blacklistNameList" layoutX="14.0" layoutY="108.0" onKeyReleased="#onListKey" onMouseClicked="#onListClick" prefHeight="97.0" prefWidth="149.0" />
+                                                <Label layoutX="14.0" layoutY="10.0" text="Name:" />
+                                                <TextField fx:id="blacklistTypeField" layoutX="181.0" layoutY="35.0" onAction="#onAddToList" />
+                                                <ListView fx:id="blacklistTypeList" layoutX="181.0" layoutY="108.0" onKeyReleased="#onListKey" onMouseClicked="#onListClick" prefHeight="97.0" prefWidth="149.0" />
+                                                <Label layoutX="181.0" layoutY="10.0" text="Type:" />
+                                                <ListView fx:id="blacklistStatusList" layoutX="353.0" layoutY="108.0" onKeyReleased="#onListKey" onMouseClicked="#onListClick" prefHeight="97.0" prefWidth="149.0" />
+                                                <Label layoutX="353.0" layoutY="10.0" text="Status:" />
+                                                <ChoiceBox fx:id="blacklistStatusBox" layoutX="353.0" layoutY="35.0" prefWidth="150.0" />
+                                                <Button fx:id="addToNameBlacklist" layoutX="14.0" layoutY="71.0" mnemonicParsing="false" onAction="#onAddToList" text="Add" />
+                                                <Button fx:id="removeFromNameBlacklist" layoutX="103.0" layoutY="71.0" mnemonicParsing="false" onAction="#onRemoveFromList" text="Remove" />
+                                                <Button fx:id="addToTypeBlacklist" layoutX="181.0" layoutY="71.0" mnemonicParsing="false" onAction="#onAddToList" text="Add" />
+                                                <Button fx:id="removeFromTypeBlacklist" layoutX="270.0" layoutY="71.0" mnemonicParsing="false" onAction="#onRemoveFromList" text="Remove" />
+                                                <Button fx:id="addToStatusBlacklist" layoutX="354.0" layoutY="71.0" mnemonicParsing="false" onAction="#onAddToList" text="Add" />
+                                                <Button fx:id="removeFromStatusBlacklist" layoutX="443.0" layoutY="71.0" mnemonicParsing="false" onAction="#onRemoveFromList" text="Remove" />
+                                             </children>
+                                          </AnchorPane>
+                                       </content>
+                                    </TitledPane>
+                                    <TitledPane text="Table">
+                                      <content>
+                                        <AnchorPane minHeight="0.0" minWidth="0.0">
+                                             <children>
+                                                <BorderPane layoutX="18.0" layoutY="8.0" prefHeight="43.0">
+                                                   <left>
+                                                       <Button onAction="#onNewObject" text="New Object" BorderPane.alignment="CENTER" />
+                                                   </left>
+                                                   <right>
+                                                      <Button onAction="#updateTable" text="Refresh" BorderPane.alignment="CENTER" />
+                                                   </right>
+                                                   <bottom>
+                                                      <TableView fx:id="objectTable" prefHeight="1000.0" BorderPane.alignment="CENTER">
+                                                        <columns>
+                                                            <TableColumn fx:id="idColumn" prefWidth="30.0" text="id" />
+                                                          <TableColumn fx:id="nameColumn" minWidth="150.0" prefWidth="-1.0" text="Name" />
+                                                          <TableColumn fx:id="typeColumn" minWidth="150.0" prefWidth="-1.0" text="Type" />
+                                                            <TableColumn fx:id="statusColumn" minWidth="150.0" prefWidth="-1.0" text="Status" />
+                                                            <TableColumn fx:id="dateColumn" minWidth="150.0" prefWidth="188.6666259765625" text="Date" />
+                                                        </columns>
+                                                         <BorderPane.margin>
+                                                            <Insets top="10.0" />
+                                                         </BorderPane.margin>
+                                                      </TableView>
+                                                   </bottom>
+                                                </BorderPane>
+                                             </children>
+                                          </AnchorPane>
+                                      </content>
+                                    </TitledPane>
+                                 </children>
+                              </VBox>
+                           </center>
+                           <top>
+                              <AnchorPane prefHeight="70.0" BorderPane.alignment="CENTER">
+                                 <children>
+                                    <DatePicker fx:id="fromDatePicker" layoutX="14.0" layoutY="32.0" onAction="#selectFromDate" onKeyPressed="#setCustom" onMouseClicked="#setCustom" />
+                                    <Label layoutX="14.0" layoutY="11.0" text="From:" />
+                                    <DatePicker fx:id="toDatePicker" layoutX="197.0" layoutY="32.0" onAction="#selectToDate" onKeyPressed="#setCustom" onMouseClicked="#setCustom" />
+                                    <Button layoutX="380.0" layoutY="33.0" onAction="#onResetDates" text="Reset" />
+                                    <Label layoutX="197.0" layoutY="11.0" text="To:" />
+                                    <HBox layoutX="458.0" layoutY="33.0">
+                                       <children>
+                                          <ChoiceBox fx:id="presetBox" prefWidth="150.0" />
+                                          <Button mnemonicParsing="false" onAction="#onNewPreset" prefHeight="25.0" prefWidth="25.0" text="+">
+                                             <HBox.margin>
+                                                <Insets left="3.0" right="3.0" />
+                                             </HBox.margin>
+                                          </Button>
+                                          <Button mnemonicParsing="false" onAction="#onDeletePreset" prefHeight="25.0" prefWidth="25.0" text="-" />
+                                          <Button mnemonicParsing="false" onAction="#onResetPresets" text="Reset">
+                                             <HBox.margin>
+                                                <Insets left="3.0" right="3.0" />
+                                             </HBox.margin>
+                                          </Button>
+                                       </children>
+                                    </HBox>
+                                    <Label layoutX="458.0" layoutY="11.0" text="Preset:" />
+                                    <Separator layoutX="439.0" orientation="VERTICAL" prefHeight="69.0" prefWidth="7.0" />
+                                 </children>
+                              </AnchorPane>
+                           </top>
+                        </BorderPane>
+                     </content>
+                  </ScrollPane>
+               </content>
+            </Tab>
+            <Tab closable="false" text="Diagram">
+              <content>
+                  <ScrollPane>
+                     <content>
+                      <AnchorPane minHeight="0.0" minWidth="0.0">
+                           <children>
+                              <VBox alignment="CENTER" layoutX="69.0" layoutY="62.0" prefWidth="474.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                 <children>
+                                    <AnchorPane prefWidth="200.0">
+                                       <children>
+                                          <HBox layoutX="28.0" layoutY="49.0">
+                                             <children>
+                                                <ChoiceBox fx:id="chartPresetBox" prefWidth="150.0">
+                                                   <HBox.margin>
+                                                      <Insets bottom="15.0" />
+                                                   </HBox.margin>
+                                                </ChoiceBox>
+                                                <Button mnemonicParsing="false" onAction="#onAddChartPreset" prefHeight="25.0" prefWidth="25.0" text="+">
+                                                   <HBox.margin>
+                                                      <Insets left="3.0" right="3.0" />
+                                                   </HBox.margin>
+                                                </Button>
+                                                <Button mnemonicParsing="false" onAction="#onDeleteChartPreset" prefHeight="25.0" prefWidth="25.0" text="-" />
+                                                <Button mnemonicParsing="false" onAction="#onResetCharts" text="Reset">
+                                                   <HBox.margin>
+                                                      <Insets left="3.0" />
+                                                   </HBox.margin>
+                                                </Button>
+                                             </children>
+                                          </HBox>
+                                          <Label layoutX="28.0" layoutY="31.0" text="Preset:" />
+                                          <Separator layoutY="87.0" prefHeight="6.0" prefWidth="706.0" />
+                                       </children>
+                                    </AnchorPane>
+                                    <VBox fx:id="chartContainer" />
+                                    <Button mnemonicParsing="false" onAction="#onAddChart" text="Add Diagram" />
+                                 </children>
+                                 <padding>
+                                    <Insets bottom="20.0" />
+                                 </padding>
+                              </VBox>
+                           </children>
+                        </AnchorPane>
+                     </content>
+                  </ScrollPane>
+              </content>
+            </Tab>
+         </tabs>
+      </TabPane>
+   </center>
+   <top>
+      <MenuBar BorderPane.alignment="CENTER">
          <menus>
             <Menu mnemonicParsing="false" text="File">
                <items>
+                  <MenuItem mnemonicParsing="false" onAction="#onNewProject" text="New Project" />
+                  <MenuItem mnemonicParsing="false" onAction="#onProjectSelection" text="Project Selection" />
+                  <SeparatorMenuItem mnemonicParsing="false" />
                   <MenuItem mnemonicParsing="false" onAction="#onCancel" text="Close" />
                </items>
             </Menu>
@@ -37,89 +221,10 @@
                   <CheckMenuItem fx:id="nameCheck" mnemonicParsing="false" onAction="#onCheckVisible" selected="true" text="Name" />
                   <CheckMenuItem fx:id="typeCheck" mnemonicParsing="false" onAction="#onCheckVisible" selected="true" text="Type" />
                   <CheckMenuItem fx:id="statusCheck" mnemonicParsing="false" onAction="#onCheckVisible" selected="true" text="Status" />
-                  <CheckMenuItem fx:id="dateCheck" mnemonicParsing="false" onAction="#onCheckVisible" text="Date" />
+                  <CheckMenuItem fx:id="dateCheck" mnemonicParsing="false" onAction="#onCheckVisible" selected="true" text="Date" />
                </items>
             </Menu>
          </menus>
       </MenuBar>
-      <ScrollPane layoutY="24.0" prefHeight="1364.0" prefWidth="1022.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="24.0">
-         <content>
-            <VBox prefHeight="1389.0" prefWidth="1916.0">
-               <children>
-                  <AnchorPane prefHeight="65.0" prefWidth="1007.0">
-                     <children>
-                        <DatePicker fx:id="datePicker" layoutX="14.0" layoutY="20.0" onAction="#getDate" />
-                        <Button layoutX="197.0" layoutY="20.0" onAction="#onReset" text="Reset" />
-                     </children>
-                  </AnchorPane>
-                  <TitledPane layoutX="10.0" layoutY="10.0" maxWidth="1.7976931348623157E308" prefHeight="18.0" prefWidth="1916.0" text="Whitelist">
-                     <content>
-                        <AnchorPane prefHeight="240.0" prefWidth="1914.0">
-                           <children>
-                              <TextField fx:id="whitelistNameField" layoutX="14.0" layoutY="35.0" onAction="#onAddToList" />
-                              <ListView fx:id="whitelistNameList" layoutX="14.0" layoutY="108.0" onKeyReleased="#onListKey" onMouseClicked="#onListClick" prefHeight="97.0" prefWidth="149.0" />
-                              <Label layoutX="14.0" layoutY="10.0" text="Name:" />
-                              <TextField fx:id="whitelistTypeField" layoutX="181.0" layoutY="35.0" onAction="#onAddToList" />
-                              <ListView fx:id="whitelistTypeList" layoutX="181.0" layoutY="108.0" onKeyReleased="#onListKey" onMouseClicked="#onListClick" prefHeight="97.0" prefWidth="149.0" />
-                              <Label layoutX="181.0" layoutY="10.0" text="Type:" />
-                              <ListView fx:id="whitelistStatusList" layoutX="353.0" layoutY="108.0" onKeyReleased="#onListKey" onMouseClicked="#onListClick" prefHeight="97.0" prefWidth="149.0" />
-                              <Label layoutX="353.0" layoutY="10.0" text="Status:" />
-                              <ChoiceBox fx:id="whitelistStatusBox" layoutX="353.0" layoutY="35.0" prefWidth="150.0" />
-                              <Button fx:id="addToNameWhitelist" layoutX="14.0" layoutY="71.0" mnemonicParsing="false" onAction="#onAddToList" text="Add" />
-                              <Button fx:id="removeFromNameWhitelist" layoutX="103.0" layoutY="71.0" mnemonicParsing="false" onAction="#onRemoveFromList" text="Remove" />
-                              <Button fx:id="addToTypeWhitelist" layoutX="181.0" layoutY="71.0" mnemonicParsing="false" onAction="#onAddToList" text="Add" />
-                              <Button fx:id="removeFromTypeWhitelist" layoutX="270.0" layoutY="71.0" mnemonicParsing="false" onAction="#onRemoveFromList" text="Remove" />
-                              <Button fx:id="addToStatusWhitelist" layoutX="354.0" layoutY="71.0" mnemonicParsing="false" onAction="#onAddToList" text="Add" />
-                              <Button fx:id="removeFromStatusWhitelist" layoutX="443.0" layoutY="71.0" mnemonicParsing="false" onAction="#onRemoveFromList" text="Remove" />
-                           </children>
-                        </AnchorPane>
-                     </content>
-                  </TitledPane>
-                  <TitledPane maxWidth="1.7976931348623157E308" prefHeight="18.0" prefWidth="1916.0" text="Blacklist">
-                     <content>
-                        <AnchorPane prefHeight="207.0" prefWidth="1005.0">
-                           <children>
-                              <TextField fx:id="blacklistNameField" layoutX="14.0" layoutY="35.0" onAction="#onAddToList" />
-                              <ListView fx:id="blacklistNameList" layoutX="14.0" layoutY="108.0" onKeyReleased="#onListKey" onMouseClicked="#onListClick" prefHeight="97.0" prefWidth="149.0" />
-                              <Label layoutX="14.0" layoutY="10.0" text="Name:" />
-                              <TextField fx:id="blacklistTypeField" layoutX="181.0" layoutY="35.0" onAction="#onAddToList" />
-                              <ListView fx:id="blacklistTypeList" layoutX="181.0" layoutY="108.0" onKeyReleased="#onListKey" onMouseClicked="#onListClick" prefHeight="97.0" prefWidth="149.0" />
-                              <Label layoutX="181.0" layoutY="10.0" text="Type:" />
-                              <ListView fx:id="blacklistStatusList" layoutX="353.0" layoutY="108.0" onKeyReleased="#onListKey" onMouseClicked="#onListClick" prefHeight="97.0" prefWidth="149.0" />
-                              <Label layoutX="353.0" layoutY="10.0" text="Status:" />
-                              <ChoiceBox fx:id="blacklistStatusBox" layoutX="353.0" layoutY="35.0" prefWidth="150.0" />
-                              <Button fx:id="addToNameBlacklist" layoutX="14.0" layoutY="71.0" mnemonicParsing="false" onAction="#onAddToList" text="Add" />
-                              <Button fx:id="removeFromNameBlacklist" layoutX="103.0" layoutY="71.0" mnemonicParsing="false" onAction="#onRemoveFromList" text="Remove" />
-                              <Button fx:id="addToTypeBlacklist" layoutX="181.0" layoutY="71.0" mnemonicParsing="false" onAction="#onAddToList" text="Add" />
-                              <Button fx:id="removeFromTypeBlacklist" layoutX="270.0" layoutY="71.0" mnemonicParsing="false" onAction="#onRemoveFromList" text="Remove" />
-                              <Button fx:id="addToStatusBlacklist" layoutX="354.0" layoutY="71.0" mnemonicParsing="false" onAction="#onAddToList" text="Add" />
-                              <Button fx:id="removeFromStatusBlacklist" layoutX="443.0" layoutY="71.0" mnemonicParsing="false" onAction="#onRemoveFromList" text="Remove" />
-                           </children>
-                        </AnchorPane>
-                     </content>
-                  </TitledPane>
-                  <TitledPane maxWidth="1.7976931348623157E308" prefHeight="1249.0" prefWidth="1007.0" text="Table">
-                    <content>
-                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="395.0" prefWidth="927.0">
-                           <children>
-                              <TableView fx:id="objectTable" layoutX="18.0" layoutY="52.0" onMouseClicked="#onTableClick" prefHeight="1223.0" prefWidth="1863.0">
-                                <columns>
-                                    <TableColumn fx:id="idColumn" prefWidth="30.0" text="id" />
-                                  <TableColumn fx:id="nameColumn" minWidth="150.0" prefWidth="-1.0" text="Name" />
-                                  <TableColumn fx:id="typeColumn" minWidth="150.0" prefWidth="-1.0" text="Type" />
-                                    <TableColumn fx:id="statusColumn" minWidth="150.0" prefWidth="-1.0" text="Status" />
-                                    <TableColumn fx:id="dateColumn" minWidth="150.0" prefWidth="188.6666259765625" text="Date" />
-                                </columns>
-                              </TableView>
-                              <Button layoutX="1825.0" layoutY="14.0" onAction="#updateTable" text="Refresh" />
-                               <Button layoutX="18.0" layoutY="14.0" onAction="#onNewObject" text="New Object" />
-                           </children>
-                        </AnchorPane>
-                    </content>
-                  </TitledPane>
-               </children>
-            </VBox>
-         </content>
-      </ScrollPane>
-   </children>
-</AnchorPane>
+   </top>
+</BorderPane>
