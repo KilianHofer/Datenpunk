@@ -143,9 +143,9 @@ public class ChartService extends Service<Chart> {
 
     @Override
     protected Task<Chart> createTask() {
-        return new Task<Chart>() {
+        return new Task<>() {
             @Override
-            protected Chart call() throws Exception {
+            protected Chart call() {
 
                 chart = setChartByType(c.chartType);
                 chart.setTitle(c.title);
@@ -167,22 +167,22 @@ public class ChartService extends Service<Chart> {
 
                 if (!chart.getClass().equals(PieChart.class)) {
                     ((XYChart) chart).getData().clear();
-                    ((XYChart)chart).getXAxis().setLabel(c.xName);
-                    ((XYChart)chart).getYAxis().setLabel(c.yName);
+                    ((XYChart) chart).getXAxis().setLabel(c.xName);
+                    ((XYChart) chart).getYAxis().setLabel(c.yName);
 
-                    if(chart.getClass().equals(LineChart.class))
-                        ((LineChart)chart).setCreateSymbols(c.showPoints);
-                    else if(chart.getClass().equals(AreaChart.class))
-                        ((AreaChart)chart).setCreateSymbols(c.showPoints);
-                    else if(chart.getClass().equals(StackedAreaChart.class))
-                        ((StackedAreaChart)chart).setCreateSymbols(c.showPoints);
+                    if (chart.getClass().equals(LineChart.class))
+                        ((LineChart) chart).setCreateSymbols(c.showPoints);
+                    else if (chart.getClass().equals(AreaChart.class))
+                        ((AreaChart) chart).setCreateSymbols(c.showPoints);
+                    else if (chart.getClass().equals(StackedAreaChart.class))
+                        ((StackedAreaChart) chart).setCreateSymbols(c.showPoints);
 
                     for (String series : c.seriesList) {
 
                         String value = series.substring(series.indexOf(":") + 2, series.lastIndexOf(" "));
 
                         Boolean discrete = null;
-                        String seriesX = c.xAxis,seriesY = c.yAxis;
+                        String seriesX = c.xAxis, seriesY = c.yAxis;
                         for (ColumnInfo column : columnInfo) {
 
                             if (column.name.equals(c.xAxis)) {
@@ -208,7 +208,7 @@ public class ChartService extends Service<Chart> {
                                 }
                             } else {
 
-                                String xMinValue = c.xMin,xMaxValue = c.xMax;
+                                String xMinValue = c.xMin, xMaxValue = c.xMax;
                                 if (c.xMin.equals(""))
                                     xMinValue = dao.getFirstOrLastValue(true, seriesX);
                                 if (c.xMax.equals(""))
@@ -278,7 +278,7 @@ public class ChartService extends Service<Chart> {
                             }
                             ((XYChart<String, Float>) chart).getData().add(plot);
                             chart.setAnimated(false);
-                            setChartBounds((XYChart)chart,c.yMin,c.yMax);
+                            setChartBounds((XYChart) chart, c.yMin, c.yMax);
                         }
 
                     }

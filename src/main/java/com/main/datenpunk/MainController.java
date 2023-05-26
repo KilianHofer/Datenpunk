@@ -157,19 +157,12 @@ public class MainController implements Initializable {
     }
 
     @FXML
-    private void updateTable() {
-        objectTableElements = dao.selectMain(fromDate,toDate,listViews);
+    public void updateTable() {
 
-        ObservableList<TableColumn<ObjectTableElement,?>> sortColumns = FXCollections.observableArrayList();
-        if(objectTable.getSortOrder().size()>0) {
-             sortColumns = FXCollections.observableArrayList(objectTable.getSortOrder());
-        }
-        else{
-            sortColumns.add(statusColumn);
-        }
+        objectTable.getItems().clear();
 
-        objectTable.setItems(objectTableElements);
-        objectTable.getSortOrder().addAll(sortColumns);
+        new TableService(objectTable,fromDate,toDate,listViews,statusColumn).start();
+
     }
 
     @Override
@@ -264,7 +257,6 @@ public class MainController implements Initializable {
         stage.initOwner(objectTable.getScene().getWindow());
 
         AddElementController addElementController = fxmlLoader.getController();
-        addElementController.setTableReference(objectTableElements);      //TODO: better data transfer
         stage.setResizable(false);
         stage.show();
     }
@@ -580,9 +572,8 @@ public class MainController implements Initializable {
     public void setChart(ChartDescriptor chartDescriptor) {
         setChartPreset("Custom");
         charts.set(chartEditIndex,chartDescriptor);
-        Chart chart = singelton.generateChart(chartDescriptor);
-        ((HBox)chartContainer.getChildren().get(chartEditIndex)).getChildren().set(0,chart);
-        singelton.setChartColors(chart,chartDescriptor.seriesList,chartDescriptor.showPoints);
+        VBox vBox = ((VBox)((HBox)(chartContainer.getChildren().get(chartEditIndex))).getChildren().get(0));
+        singelton.threadGenerateChart(vBox,chartDescriptor);
     }
 
     private void onEditChart(ActionEvent event){
