@@ -550,9 +550,10 @@ public class MainController implements Initializable {
 
         HBox hBox = new HBox();
 
-        Chart chart = singelton.generateChart(chartDescriptor);
+        VBox chartVBox = new VBox();
+        chartVBox.getChildren().add(new PieChart());
 
-        hBox.getChildren().add(chart);
+        hBox.getChildren().add(chartVBox);
         hBox.setOnMouseEntered(this::showChartOptions);
         hBox.setOnMouseExited(this::hideChartOptions);
 
@@ -572,7 +573,8 @@ public class MainController implements Initializable {
         chartContainer.getChildren().add(hBox);
         chartContainer.setPrefWidth(Region.USE_COMPUTED_SIZE);
 
-        singelton.setChartColors(chart,chartDescriptor.seriesList,chartDescriptor.showPoints);
+        singelton.threadGenerateChart(chartVBox,chartDescriptor);
+
     }
 
     public void setChart(ChartDescriptor chartDescriptor) {
@@ -617,7 +619,7 @@ public class MainController implements Initializable {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         Button button = (Button)event.getSource();
         HBox hBox = (HBox) button.getParent().getParent();
-        alert.setContentText("Do you want to delete this Diagram: \n"+((Chart)hBox.getChildren().get(0)).getTitle());
+        alert.setContentText("Do you want to delete this Diagram: \n"+((Chart)((VBox)hBox.getChildren().get(0)).getChildren().get(0)).getTitle());
         if(alert.showAndWait().get() == ButtonType.OK) {
             int index = chartContainer.getChildren().indexOf(hBox);
             VBox vBox = (VBox) hBox.getParent();

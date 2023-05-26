@@ -5,6 +5,7 @@ import enteties.ChartDescriptor;
 import enteties.ColumnInfo;
 import javafx.scene.Node;
 import javafx.scene.chart.*;
+import javafx.scene.layout.VBox;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -77,6 +78,11 @@ public class Singelton {
 
         }
         return chart;
+    }
+
+
+    public void threadGenerateChart(VBox box, ChartDescriptor chartDescriptor) {
+        new ChartService(box,chartDescriptor).start();
     }
 
     public Chart generateChart(ChartDescriptor c) {
