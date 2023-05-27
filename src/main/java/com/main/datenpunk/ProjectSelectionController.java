@@ -32,7 +32,7 @@ public class ProjectSelectionController implements Initializable {
     public TableView<ProjectTableElement> projectTable;
 
     @FXML
-    public TableColumn<ProjectTableElement,String> nameColumn, lastVisitedColumn,createdAtColumn, locationColumn;
+    public TableColumn<ProjectTableElement,String> nameColumn, lastVisitedColumn,createdAtColumn, hostColumn, locationColumn;
 
 
 
@@ -86,7 +86,15 @@ public class ProjectSelectionController implements Initializable {
 
             BasicFileAttributes attributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
             boolean local = path.charAt(path.length() - 1) != 'r';
-            openProject(new ProjectTableElement(name,attributes.lastAccessTime().toString(),attributes.creationTime().toString(),file.getAbsolutePath(),local));
+
+            String host;
+            if(local)
+                host = "localhost";
+            else
+                host = "";  //TODO: implement!
+
+
+            openProject(new ProjectTableElement(name,attributes.lastAccessTime().toString(),attributes.creationTime().toString(),file.getAbsolutePath(),host,local));
         }
 
 
@@ -123,31 +131,14 @@ public class ProjectSelectionController implements Initializable {
 
     public void deleteProject(String name, String location) throws IOException {
 
-            String subString = System.getProperty("user.home")+"\\Datenpunk";
-            File file = new File(subString+"\\Projects\\"+name);
+            File file = new File(singelton.getWorkingDirectory()+"\\Projects\\"+name);
             file.delete();
 
             file = new File(location);
             file.delete();
 
-
-            if (!checkSavedPasswordAndConnect(new File(subString + "\\connection.dtpnk"), "")) {
-
-                FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("databaseConnection-view.fxml"));
-                Scene scene = new Scene(fxmlLoader.load());
-
-                Stage stage = new Stage();
-
-                stage.setTitle("Connect to Database");
-                stage.setScene(scene);
-
-                DatabaseConnectionController databaseConnectionController = fxmlLoader.getController();
-                databaseConnectionController.setName("");      //TODO: better data transfer
-                databaseConnectionController.setRetrunStage((Stage) searchBar.getScene().getWindow());
-                databaseConnectionController.setDeletion(true);
-                databaseConnectionController.setName(name);
-                stage.setResizable(false);
-                stage.show();
+            if (!singelton.checkSavedPasswordAndConnect("")) {
+                singelton.openDatabaseConnectionWindow(new Stage(),name,false,true);
             }
             else {
                 dao.dropDatabase(name);
@@ -193,28 +184,6 @@ public class ProjectSelectionController implements Initializable {
     }
 
 
-    public boolean checkSavedPasswordAndConnect(File file, String dbName){
-        String password;
-        if(!dbName.equals("")){
-            dbName = "datenpunk_" +dbName;
-        }
-
-        try {
-            if (file.exists()) {
-                Scanner scanner = new Scanner(file);
-                if (scanner.hasNext()) {
-                    password = scanner.next();
-                    dao.connectToDB(dbName,"postgres",password);
-                    return true;
-                }
-                scanner.close();
-            }
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-        return false;
-
-    }
 
     public void onOpen() throws IOException {
         if(projectTable.getSelectionModel().getSelectedItem() != null){
@@ -224,52 +193,21 @@ public class ProjectSelectionController implements Initializable {
     }
 
     private void openProject(ProjectTableElement element) throws IOException {
-        File file = new File(System.getProperty("user.home")+"\\Datenpunk\\connection.dtpnk");
-        if(checkSavedPasswordAndConnect(file,element.getName())){
-            singelton.setCurrentProject(element.getName());
-            singelton.setColumnInfo();
-            openProjectWindow();
+
+        if(singelton.checkSavedPasswordAndConnect(element.getName())){
+
+            singelton.openProjectWindow(element.getName());
         }
         else {
-
-            FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("databaseConnection-view.fxml"));
-            Scene scene = new Scene(fxmlLoader.load());
-
-
-            Stage stage = new Stage();
-
-            stage.initModality(Modality.WINDOW_MODAL);
-            stage.initOwner(projectTable.getScene().getWindow());
-
-            stage.setTitle("Connect to Database");
-            stage.setScene(scene);
-
-            DatabaseConnectionController databaseConnectionController = fxmlLoader.getController();
-            databaseConnectionController.setName(element.getName());      //TODO: better data transfer
-            databaseConnectionController.setRetrunStage((Stage) stage.getOwner());
-            databaseConnectionController.setNew(false);
-            stage.setResizable(false);
-            stage.show();
+            singelton.openDatabaseConnectionWindow(new Stage(), element.getName(),false,false);
         }
     }
 
-    private void openProjectWindow() throws IOException {
-
-
-
-        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
-        Stage stage = (Stage) projectTable.getScene().getWindow();
-        stage.setTitle("Datenpunk");
-        stage.setScene( new Scene(fxmlLoader.load()));
-        stage.setMaximized(true);
-        stage.setResizable(true);
-        stage.show();
-
-
-    }
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+
+        singelton.setPrimaryStage((Stage)projectTable.getScene().getWindow());
 
         projectTable.setRowFactory( tableView -> {
             TableRow<ProjectTableElement> row = new TableRow<>();
@@ -296,6 +234,7 @@ public class ProjectSelectionController implements Initializable {
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         lastVisitedColumn.setCellValueFactory(new PropertyValueFactory<>("lastVisited"));
         createdAtColumn.setCellValueFactory(new PropertyValueFactory<>("createdAt"));
+        hostColumn.setCellValueFactory(new PropertyValueFactory<>("host"));
         locationColumn.setCellValueFactory(new PropertyValueFactory<>("location"));
 
         String path = System.getProperty("user.home")+"\\Datenpunk";
@@ -375,9 +314,16 @@ public class ProjectSelectionController implements Initializable {
 
             boolean local = path.charAt(path.length() - 1) != 'r';
 
+            String host;
+            if(local)
+                host = "localhost";
+            else {
+                host= "";    //TODO: implement;
+            }
+
             BasicFileAttributes attributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
 
-            projectTableElements.add(new ProjectTableElement(name,attributes.lastAccessTime().toString(),attributes.creationTime().toString(),path,local));
+            projectTableElements.add(new ProjectTableElement(name,attributes.lastAccessTime().toString(),attributes.creationTime().toString(),path,host,local));
         } catch (IOException ignore) {
             FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("fileNotFound-view.fxml"));
             Stage stage = new Stage();

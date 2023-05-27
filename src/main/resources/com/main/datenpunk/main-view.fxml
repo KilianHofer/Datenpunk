@@ -10,6 +10,7 @@
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.RadioMenuItem?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.SeparatorMenuItem?>
@@ -19,6 +20,7 @@
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
@@ -223,6 +225,25 @@
                   <CheckMenuItem fx:id="statusCheck" mnemonicParsing="false" onAction="#onCheckVisible" selected="true" text="Status" />
                   <CheckMenuItem fx:id="dateCheck" mnemonicParsing="false" onAction="#onCheckVisible" selected="true" text="Date" />
                </items>
+            </Menu>
+            <Menu mnemonicParsing="false" text="Server">
+              <items>
+                  <CheckMenuItem mnemonicParsing="false" onAction="#onStartStopServer" text="StartServer" />
+                  <SeparatorMenuItem mnemonicParsing="false" />
+                  <Menu mnemonicParsing="false" text="Connection Options">
+                    <items>
+                      <MenuItem mnemonicParsing="false" onAction="#onOpenConnectionList" text="Connection List" />
+                        <SeparatorMenuItem mnemonicParsing="false" />
+                        <RadioMenuItem mnemonicParsing="false" text="Accept Unknown">
+                           <toggleGroup>
+                              <ToggleGroup fx:id="connectionGroup" />
+                           </toggleGroup>
+                        </RadioMenuItem>
+                        <RadioMenuItem mnemonicParsing="false" selected="true" text="Ask Everytime" toggleGroup="$connectionGroup" />
+                        <RadioMenuItem mnemonicParsing="false" text="Reject Unknown" toggleGroup="$connectionGroup" />
+                    </items>
+                  </Menu>
+              </items>
             </Menu>
          </menus>
       </MenuBar>

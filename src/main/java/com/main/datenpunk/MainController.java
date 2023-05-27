@@ -261,7 +261,7 @@ public class MainController implements Initializable {
         stage.show();
     }
 
-    public void onCheckVisible(){               //TODO: known issue: when table columns are switched the wrong column gets hidden
+    public void onCheckVisible(){
 
         List<String> columnNames = new ArrayList<>();
         for (TableColumn column: objectTable.getColumns()) {
@@ -358,7 +358,7 @@ public class MainController implements Initializable {
 
     public void onListClick(MouseEvent event) {
         if(event.getButton().equals(MouseButton.PRIMARY)) {
-            if (event.getClickCount() == 2) {               //TODO: known issue: opens detail view of selected item even by double-click on table header
+            if (event.getClickCount() == 2) {
                 removeFromList(listViews.indexOf(event.getSource()));
             }
         }
@@ -739,5 +739,13 @@ public class MainController implements Initializable {
     private void resetCharts(){
         charts.clear();
         chartContainer.getChildren().clear();
+    }
+
+    public void onStartStopServer() {
+        //TODO: start server
+    }
+
+    public void onOpenConnectionList() {
+        //TODO: connection list
     }
 }

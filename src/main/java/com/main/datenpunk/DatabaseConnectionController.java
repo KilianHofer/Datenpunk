@@ -19,7 +19,6 @@ public class DatabaseConnectionController {
     public PasswordField passwordField;
     public CheckBox remenberMe;
     private String name;
-    private Stage returnStage;
     private boolean newProject = false;
     private boolean deletion = false;
 
@@ -54,7 +53,7 @@ public class DatabaseConnectionController {
             singelton.setCurrentProject(name);
             FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
             Scene scene = new Scene(fxmlLoader.load());
-            Stage stage = returnStage;
+            Stage stage = singelton.getPrimaryStage();
             stage.setTitle("Datenpunk");
             stage.setScene(scene);
             stage.setMaximized(true);
@@ -100,10 +99,6 @@ public class DatabaseConnectionController {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public void setRetrunStage(Stage returnStage) {
-        this.returnStage = returnStage;
     }
 
     public void setNew(boolean newProject) {

@@ -75,6 +75,7 @@
                       <TableColumn fx:id="nameColumn" minWidth="50.0" prefWidth="150.0" text="Name" />
                       <TableColumn fx:id="lastVisitedColumn" minWidth="50.0" prefWidth="150.0" text="Last Visited" />
                         <TableColumn fx:id="createdAtColumn" prefWidth="150.0" text="Created At" />
+                        <TableColumn fx:id="hostColumn" prefWidth="125.0" text="Host" />
                         <TableColumn fx:id="locationColumn" prefWidth="300.0" text="Location" />
                     </columns>
                      <columnResizePolicy>

@@ -19,12 +19,13 @@ import java.util.Scanner;
 public class NewProjectController implements Initializable {
 
 
+
     DAO dao = DAO.getInstance();
     Singelton singelton = Singelton.getInstance();
 
     Stage returnStage;
     @FXML
-    public TextField nameField,pathField;
+    public TextField nameField,hostField,pathField;
 
 
     @FXML
@@ -37,7 +38,21 @@ public class NewProjectController implements Initializable {
             if (!file.exists()) {
                 Files.createDirectory(file.toPath());
             }
-            path += "\\" + name + ".dtpnkl";
+
+            String ending;
+            boolean local;
+
+            if(hostField.getText().equals("localhost") || hostField.getText().matches("0?127.0{1,4}.0{1,4}.0{0,3}1")) {
+                ending = ".dtpnkl";
+                local = true;
+            }
+            else{
+                ending = ".dtpnkr";
+                local = false;
+            }
+
+
+            path += "\\" + name + ending;
             file = new File(path);
             if (!file.exists()) {
                 try {
@@ -46,6 +61,10 @@ public class NewProjectController implements Initializable {
                         alert.setContentText("could not create file");
                         alert.show();
                         return;
+                    }
+
+                    if(!local){
+                        //TODO: write host into project file
                     }
 
                     File projectFile = new File(System.getProperty("user.home")+"\\Datenpunk\\projects.dtpnk");
@@ -76,51 +95,20 @@ public class NewProjectController implements Initializable {
         }
     }
 
-    private void connectToDatabase() {
+    private void connectToDatabase(){
         String name = nameField.getText();
-        File file = new File(System.getProperty("user.home")+"\\Datenpunk\\connection.dtpnk");
+
         try {
-            if (file.exists()) {
-                Scanner scanner = new Scanner(file);
-                if(scanner.hasNext()){
-                    String password = scanner.next();
-                    if(dao.connectToDB("","postgres",password)){
-                        dao.createDatabase(name);
-                    }
-                    if(dao.connectToDB("datenpunk_"+name,"postgres",password)){
-                        dao.createTables();
-                        singelton.setCurrentProject(name);
-                        singelton.setColumnInfo();
-                        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
-                        Stage stage = returnStage;
-                        stage.setTitle("Datenpunk");
-                        stage.setScene( new Scene(fxmlLoader.load()));
-                        stage.setMaximized(true);
-                        stage.setResizable(true);
-                        stage.show();
-
-                        stage = (Stage) nameField.getScene().getWindow();
-                        stage.close();
-                        return;
-
-                    }
-                }
+            if(singelton.checkSavedPasswordAndConnect("")){
+                dao.createDatabase(name);
+                singelton.checkSavedPasswordAndConnect(name);
+                dao.createTables();
+                singelton.openProjectWindow(name);
+                ((Stage) nameField.getScene().getWindow()).close();
             }
-            FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("databaseConnection-view.fxml"));
-            Scene scene = new Scene(fxmlLoader.load());
-
-
-            Stage stage = (Stage) nameField.getScene().getWindow();
-
-            stage.setTitle("Connect to Database");
-            stage.setScene(scene);
-
-            DatabaseConnectionController databaseConnectionController = fxmlLoader.getController();
-            databaseConnectionController.setName(name);      //TODO: better data transfer
-            databaseConnectionController.setRetrunStage(returnStage);
-            databaseConnectionController.setNew(true);
-            stage.setResizable(false);
-            stage.show();
+            else {
+                singelton.openDatabaseConnectionWindow((Stage) nameField.getScene().getWindow(),name,true,false);
+            }
         } catch (IOException e) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setContentText(e.getMessage());

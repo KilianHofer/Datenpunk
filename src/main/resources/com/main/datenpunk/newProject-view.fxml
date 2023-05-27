@@ -15,7 +15,13 @@
             <Label text="Name:" />
             <TextField fx:id="nameField" onAction="#onCreate" promptText="Project Name">
                <VBox.margin>
-                  <Insets bottom="10.0" />
+                  <Insets bottom="5.0" />
+               </VBox.margin>
+            </TextField>
+            <Label text="Host:" />
+            <TextField fx:id="hostField" onAction="#onCreate" promptText="Host IP" text="localhost">
+               <VBox.margin>
+                  <Insets bottom="5.0" />
                </VBox.margin>
             </TextField>
             <Label text="Directory:" />

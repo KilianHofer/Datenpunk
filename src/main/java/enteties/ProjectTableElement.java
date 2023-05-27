@@ -7,13 +7,14 @@ import javafx.beans.property.StringProperty;
 public class ProjectTableElement {
 
 
-    private final StringProperty name,lastVisited,createdAt,location;
+    private final StringProperty name,lastVisited,createdAt,host,location;
     boolean local;
 
-    public ProjectTableElement(String name, String lastVisited, String createdAt, String location, boolean local){
+    public ProjectTableElement(String name, String lastVisited, String createdAt,String host, String location, boolean local){
         this.name = new SimpleStringProperty(name);
         this.lastVisited = new SimpleStringProperty(lastVisited.substring(0,9));
         this.createdAt = new SimpleStringProperty(createdAt.substring(0,9));
+        this.host = new SimpleStringProperty(host);
         this.location = new SimpleStringProperty(location);
         this.local = local;
     }
@@ -26,6 +27,9 @@ public class ProjectTableElement {
     }
     public StringProperty createdAtProperty(){
         return createdAt;
+    }
+    public StringProperty hostProperty(){
+        return host;
     }
     public StringProperty locationProperty(){
         return location;
