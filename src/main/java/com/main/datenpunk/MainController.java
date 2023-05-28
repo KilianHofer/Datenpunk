@@ -157,19 +157,12 @@ public class MainController implements Initializable {
     }
 
     @FXML
-    private void updateTable() {
-        objectTableElements = dao.selectMain(fromDate,toDate,listViews);
+    public void updateTable() {
 
-        ObservableList<TableColumn<ObjectTableElement,?>> sortColumns = FXCollections.observableArrayList();
-        if(objectTable.getSortOrder().size()>0) {
-             sortColumns = FXCollections.observableArrayList(objectTable.getSortOrder());
-        }
-        else{
-            sortColumns.add(statusColumn);
-        }
+        objectTable.getItems().clear();
 
-        objectTable.setItems(objectTableElements);
-        objectTable.getSortOrder().addAll(sortColumns);
+        new TableService(objectTable,fromDate,toDate,listViews,statusColumn).start();
+
     }
 
     @Override
@@ -264,7 +257,6 @@ public class MainController implements Initializable {
         stage.initOwner(objectTable.getScene().getWindow());
 
         AddElementController addElementController = fxmlLoader.getController();
-        addElementController.setTableReference(objectTableElements);      //TODO: better data transfer
         stage.setResizable(false);
         stage.show();
     }
@@ -550,9 +542,10 @@ public class MainController implements Initializable {
 
         HBox hBox = new HBox();
 
-        Chart chart = singelton.generateChart(chartDescriptor);
+        VBox chartVBox = new VBox();
+        chartVBox.getChildren().add(new PieChart());
 
-        hBox.getChildren().add(chart);
+        hBox.getChildren().add(chartVBox);
         hBox.setOnMouseEntered(this::showChartOptions);
         hBox.setOnMouseExited(this::hideChartOptions);
 
@@ -572,15 +565,15 @@ public class MainController implements Initializable {
         chartContainer.getChildren().add(hBox);
         chartContainer.setPrefWidth(Region.USE_COMPUTED_SIZE);
 
-        singelton.setChartColors(chart,chartDescriptor.seriesList,chartDescriptor.showPoints);
+        singelton.threadGenerateChart(chartVBox,chartDescriptor);
+
     }
 
     public void setChart(ChartDescriptor chartDescriptor) {
         setChartPreset("Custom");
         charts.set(chartEditIndex,chartDescriptor);
-        Chart chart = singelton.generateChart(chartDescriptor);
-        ((HBox)chartContainer.getChildren().get(chartEditIndex)).getChildren().set(0,chart);
-        singelton.setChartColors(chart,chartDescriptor.seriesList,chartDescriptor.showPoints);
+        VBox vBox = ((VBox)((HBox)(chartContainer.getChildren().get(chartEditIndex))).getChildren().get(0));
+        singelton.threadGenerateChart(vBox,chartDescriptor);
     }
 
     private void onEditChart(ActionEvent event){
@@ -617,7 +610,7 @@ public class MainController implements Initializable {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         Button button = (Button)event.getSource();
         HBox hBox = (HBox) button.getParent().getParent();
-        alert.setContentText("Do you want to delete this Diagram: \n"+((Chart)hBox.getChildren().get(0)).getTitle());
+        alert.setContentText("Do you want to delete this Diagram: \n"+((Chart)((VBox)hBox.getChildren().get(0)).getChildren().get(0)).getTitle());
         if(alert.showAndWait().get() == ButtonType.OK) {
             int index = chartContainer.getChildren().indexOf(hBox);
             VBox vBox = (VBox) hBox.getParent();
