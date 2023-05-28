@@ -1,0 +1,18 @@
+syntax = "proto3";
+package your.pkg;
+option java_multiple_files = true;
+import "google/protobuf/timestamp.proto";
+
+
+message ip{
+    string test = 1;
+}
+message accepted{
+    string accept = 1;
+}
+
+
+
+service ConnectionService{
+    rpc connect(ip) returns(accepted);
+}

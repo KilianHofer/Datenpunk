@@ -3,6 +3,7 @@ package com.main.datenpunk;
 import database.DAO;
 import enteties.ChartDescriptor;
 import enteties.ColumnInfo;
+import io.grpc.Server;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.chart.*;
@@ -18,6 +19,11 @@ import java.util.List;
 import java.util.Scanner;
 
 public class Singelton {
+
+    Server server;
+
+    public String host = "localhost";
+    public int port = 1234;
 
     DAO dao = DAO.getInstance();
     MainController controller;

@@ -207,8 +207,6 @@ public class ProjectSelectionController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
-        singelton.setPrimaryStage((Stage)projectTable.getScene().getWindow());
-
         projectTable.setRowFactory( tableView -> {
             TableRow<ProjectTableElement> row = new TableRow<>();
             row.setOnMouseClicked(event -> {
@@ -229,9 +227,7 @@ public class ProjectSelectionController implements Initializable {
             return row;
         });
 
-
-
-        nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
+                nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         lastVisitedColumn.setCellValueFactory(new PropertyValueFactory<>("lastVisited"));
         createdAtColumn.setCellValueFactory(new PropertyValueFactory<>("createdAt"));
         hostColumn.setCellValueFactory(new PropertyValueFactory<>("host"));
@@ -254,7 +250,10 @@ public class ProjectSelectionController implements Initializable {
         }
     }
 
-    public void initalizeTable(){
+
+    public void initializeTable(){
+
+        singelton.setPrimaryStage((Stage)projectTable.getScene().getWindow());
         String path = System.getProperty("user.home")+"\\Datenpunk";
         File file = new File(path);
         try {

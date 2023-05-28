@@ -5,6 +5,8 @@ import enteties.ChartDescriptor;
 import enteties.ColoredObjectTableCell;
 import enteties.ObjectTableElement;
 import enteties.Status;
+import io.grpc.Server;
+import io.grpc.ServerBuilder;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -47,6 +49,8 @@ import java.util.Scanner;
 import java.util.stream.Stream;
 
 public class MainController implements Initializable {
+
+
 
 
     private final DAO dao = DAO.getInstance();
@@ -397,7 +401,7 @@ public class MainController implements Initializable {
         stage.setScene(scene);
 
         ProjectSelectionController controller = fxmlLoader.getController();
-        controller.initalizeTable();
+        controller.initializeTable();
         stage.show();
 
     }
@@ -741,8 +745,18 @@ public class MainController implements Initializable {
         chartContainer.getChildren().clear();
     }
 
-    public void onStartStopServer() {
-        //TODO: start server
+    public void onStartStopServer(ActionEvent event) throws IOException, InterruptedException {
+
+        if(!((CheckMenuItem)event.getSource()).isSelected()){
+            singelton.server.shutdown();
+            System.out.println("Server shutdown");
+        }
+        else {
+            singelton.server = ServerBuilder.forPort(singelton.port).build();
+            singelton.server.start();
+            System.out.println("Server started");
+            singelton.server.awaitTermination();
+        }
     }
 
     public void onOpenConnectionList() {
