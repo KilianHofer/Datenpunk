@@ -35,6 +35,7 @@ public class TableService extends Service<List<ObjectTableElement>> {
 
         setOnSucceeded(workerStateEvent -> {
             table.getItems().setAll(elements);
+
             ObservableList<TableColumn<ObjectTableElement,?>> sortColumns = FXCollections.observableArrayList();
             if(table.getSortOrder().size()>0) {
                 sortColumns = FXCollections.observableArrayList(table.getSortOrder());
@@ -42,7 +43,8 @@ public class TableService extends Service<List<ObjectTableElement>> {
             else{
                 sortColumns.add(column);
             }
-            table.getSortOrder().addAll(sortColumns);
+            table.getSortOrder().setAll(sortColumns);
+
         });
     }
 

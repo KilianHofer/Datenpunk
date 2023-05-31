@@ -28,7 +28,7 @@ public class Singelton {
 
     public void setColumnInfo(){
         columnInfo = new ArrayList<>();
-        columnInfo.add(new ColumnInfo("objects","id", false));
+        columnInfo.add(new ColumnInfo("objects","id", false,false));
         columnInfo.addAll(dao.selectTableColumns("objects"));
         columnInfo.addAll(dao.selectTableColumns("history"));
     }

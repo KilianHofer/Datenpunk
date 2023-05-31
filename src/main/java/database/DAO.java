@@ -115,7 +115,23 @@ public class DAO {
             ResultSet resultSet = statement.executeQuery();
             ColumnInfo columnInfo;
             while (resultSet.next()){
-                columnInfo = new ColumnInfo(table,resultSet.getString("column_name"),resultSet.getString("data_type").contains("char"));
+                boolean colored = false;
+                String coloredQuery = "select rel_kcu.table_name as primary_table " +
+                        "from information_schema.table_constraints tco " +
+                        "join information_schema.referential_constraints rco " +
+                        "          on tco.constraint_schema = rco.constraint_schema " +
+                        "          and tco.constraint_name = rco.constraint_name " +
+                        "join information_schema.key_column_usage rel_kcu " +
+                        "          on rco.unique_constraint_schema = rel_kcu.constraint_schema " +
+                        "          and rco.unique_constraint_name = rel_kcu.constraint_name " +
+                        "where tco.constraint_type = 'FOREIGN KEY'";
+                PreparedStatement coloredStatement = connection.prepareStatement(coloredQuery);
+                ResultSet coloredResultSet = coloredStatement.executeQuery();
+                while (coloredResultSet.next()){
+                    if(!coloredResultSet.getString("primary_table").equals("objects"))
+                        colored = true;
+                }
+                columnInfo = new ColumnInfo(table,resultSet.getString("column_name"),resultSet.getString("data_type").contains("char"),colored);
                 names.add(columnInfo);
             }
         } catch (SQLException e) {

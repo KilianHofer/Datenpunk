@@ -97,6 +97,10 @@ public class MainController implements Initializable {
     List<ChartDescriptor> charts = new ArrayList<>();
     int chartEditIndex;
 
+    boolean changingPresets = false;
+    List<TableService> threads = new ArrayList<>();
+
+
     private void getStatuses(){
         List<Status> statuses = dao.selectStatuses();
         Status status;
@@ -158,10 +162,15 @@ public class MainController implements Initializable {
 
     @FXML
     public void updateTable() {
+        for(TableService thread: threads){
+            thread.cancel();
+        }
+        threads.clear();
 
         objectTable.getItems().clear();
-
-        new TableService(objectTable,fromDate,toDate,listViews,statusColumn).start();
+        TableService ts = new TableService(objectTable,fromDate,toDate,listViews,statusColumn);
+        threads.add(ts);
+        ts.start();
 
     }
 
@@ -277,16 +286,18 @@ public class MainController implements Initializable {
     @FXML
     public void selectToDate() {
 
-        toDate = toDatePicker.getValue();
-        //presetBox.setValue("Custom");
-        updateTable();
+        if(!changingPresets) {
+            toDate = toDatePicker.getValue();
+            //presetBox.setValue("Custom");
+            updateTable();
+        }
     }
     @FXML
     public void selectFromDate() {
-
-        fromDate = fromDatePicker.getValue();
-        //presetBox.setValue("Custom");
-        updateTable();
+        if(!changingPresets) {
+            fromDate = fromDatePicker.getValue();
+            updateTable();
+        }
     }
 
     public String getFromDate(){
@@ -306,11 +317,14 @@ public class MainController implements Initializable {
         resetDates();
     }
     private void resetDates(){
+
         toDate = LocalDate.now();
         fromDate = null;
         toDatePicker.setValue(toDate);
         fromDatePicker.setValue(fromDate);
-        updateTable();
+        if(!changingPresets)
+            updateTable();
+
     }
 
     public void onCancel() {
@@ -321,24 +335,25 @@ public class MainController implements Initializable {
     @FXML
     public void onAddToList(ActionEvent actionEvent) {
 
-        int i;
-        if(actionEvent.getSource().getClass() == Button.class)
-            i = addButtons.indexOf(actionEvent.getSource());
-        else
-            i = controlList.indexOf(actionEvent.getSource());
+        if(!changingPresets) {
+            int i;
+            if (actionEvent.getSource().getClass() == Button.class)
+                i = addButtons.indexOf(actionEvent.getSource());
+            else
+                i = controlList.indexOf(actionEvent.getSource());
 
-        Control control = controlList.get(i);
-        String text;
-        if(control.getClass() == TextField.class) {
-            text = ((TextField) control).getText();
-            ((TextField) control).setText("");
+            Control control = controlList.get(i);
+            String text;
+            if (control.getClass() == TextField.class) {
+                text = ((TextField) control).getText();
+                ((TextField) control).setText("");
+            } else
+                text = ((ChoiceBox<String>) control).getValue();
+
+            presetBox.setValue("Custom");
+            listViews.get(i).getItems().add(text);
+            updateTable();
         }
-        else
-            text = ((ChoiceBox<String>) control).getValue();
-
-        presetBox.setValue("Custom");
-        listViews.get(i).getItems().add(text);
-        updateTable();
     }
 
     @FXML
@@ -348,11 +363,13 @@ public class MainController implements Initializable {
 
 
     private void removeFromList(int id){
-        ListView<String> listView = listViews.get(id);
-        if(listView.getSelectionModel().getSelectedItem() != null){
-            listView.getItems().remove(listView.getSelectionModel().getSelectedItem());
-            presetBox.setValue("Custom");
-            updateTable();
+        if(!changingPresets) {
+            ListView<String> listView = listViews.get(id);
+            if (listView.getSelectionModel().getSelectedItem() != null) {
+                listView.getItems().remove(listView.getSelectionModel().getSelectedItem());
+                presetBox.setValue("Custom");
+                updateTable();
+            }
         }
     }
 
@@ -384,7 +401,6 @@ public class MainController implements Initializable {
 
         NewProjectController newProjectController = fxmlLoader.getController();
         newProjectController.setReturnStage((Stage)objectTable.getScene().getWindow());      //TODO: better data transfer
-        stage.setResizable(false);
         stage.show();
     }
 
@@ -443,13 +459,13 @@ public class MainController implements Initializable {
             list.getItems().setAll(new ArrayList<>());
         }
         onResetDates();
-        updateTable();
 
     }
 
     public void onPresetChange(ActionEvent event) {
         String preset = presetBox.getValue();
         if(!preset.equals("Custom")){
+            changingPresets = true;
             try {
                 String path = singelton.getWorkingDirectory() + "\\Projects\\" + singelton.getCurrentProject() + "\\Presets\\" + preset;
                 Scanner scanner = new Scanner(new File(path+"\\dateRange.dtpnk"));
@@ -498,6 +514,7 @@ public class MainController implements Initializable {
             } catch (FileNotFoundException e) {
                 throw new RuntimeException(e);
             }
+            changingPresets= false;
             updateTable();
         }
     }
@@ -616,12 +633,6 @@ public class MainController implements Initializable {
             VBox vBox = (VBox) hBox.getParent();
             vBox.getChildren().remove(hBox);
             charts.remove(index);
-        }
-    }
-
-    public void refreshCharts(){
-        for(ChartDescriptor chartDescriptor: charts){
-            addChart(chartDescriptor);
         }
     }
 

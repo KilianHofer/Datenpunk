@@ -58,7 +58,6 @@ public class ProjectSelectionController implements Initializable {
 
         NewProjectController newProjectController = fxmlLoader.getController();
         newProjectController.setReturnStage((Stage)searchBar.getScene().getWindow());      //TODO: better data transfer
-        stage.setResizable(false);
         stage.show();
     }
 
