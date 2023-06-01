@@ -118,6 +118,11 @@
                                                 <Insets right="5.0" />
                                              </VBox.margin>
                                           </ChoiceBox>
+                                          <TextField fx:id="nameMaxLengthField" promptText="Max. Length" text="200">
+                                             <VBox.margin>
+                                                <Insets top="5.0" />
+                                             </VBox.margin>
+                                          </TextField>
                                        </children>
                                        <HBox.margin>
                                           <Insets bottom="5.0" />
@@ -172,8 +177,8 @@
                                                 <Insets bottom="5.0" right="5.0" />
                                              </VBox.margin>
                                           </ChoiceBox>
-                                          <TextField prefHeight="25.0" prefWidth="150.0" />
-                                          <ColorPicker prefHeight="25.0" prefWidth="150.0">
+                                          <TextField prefHeight="25.0" prefWidth="150.0" promptText="Name" />
+                                          <ColorPicker prefHeight="25.0" prefWidth="155.0">
                                              <VBox.margin>
                                                 <Insets top="5.0" />
                                              </VBox.margin>

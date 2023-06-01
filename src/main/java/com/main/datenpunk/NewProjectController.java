@@ -1,7 +1,6 @@
 package com.main.datenpunk;
 
 import database.DAO;
-import javafx.beans.Observable;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -11,33 +10,36 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
+import javafx.util.Callback;
 
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Scanner;
 
 public class NewProjectController implements Initializable {
 
 
-    public VBox columnContainer;
+    @FXML
+    VBox columnContainer;
+
+    @FXML
+    TextField nameMaxLengthField;
     DAO dao = DAO.getInstance();
     Singelton singelton = Singelton.getInstance();
 
     ObservableList<String> choices = FXCollections.observableArrayList("Text","Integer","Decimal","Choice");
     Stage returnStage;
     @FXML
-    public TextField nameField,pathField;
+    TextField nameField,pathField;
 
     boolean changingOrder = false;
 
@@ -48,7 +50,7 @@ public class NewProjectController implements Initializable {
         public void changed(ObservableValue<? extends String> observableValue, String s, String t1) {
             if (!changingOrder) {
                     TextField changedField = (TextField) nameField.getScene().focusOwnerProperty().get();
-                    if (t1.matches("[1-9]+") && Integer.parseInt(t1) <= columnContainer.getChildren().size()) {
+                    if (t1.matches("[1-9][0-9]?+") && Integer.parseInt(t1) <= columnContainer.getChildren().size()) {
                         changedField.setStyle("-fx-border-width: 0px;");
                         if (!t1.equals(s))
                             changeColumnOrder(columnContainer.getChildren().indexOf(changedField.getParent().getParent().getParent()), Integer.parseInt(t1));
@@ -60,7 +62,7 @@ public class NewProjectController implements Initializable {
         }
     };
 
-    ChangeListener<String> emptyListener = new ChangeListener<String>() {
+    ChangeListener<String> emptyListener = new ChangeListener<>() {
         @Override
         public void changed(ObservableValue<? extends String> observableValue, String s, String t1) {
             if(t1.equals("")){
@@ -72,21 +74,104 @@ public class NewProjectController implements Initializable {
         }
     };
 
-    ChangeListener<String> choiceListener = new ChangeListener<String>() {
+    ChangeListener<String> numberListener = new ChangeListener<>() {
         @Override
-        public void changed(ObservableValue<? extends String> observableValue, String s, String t1) {           //TODO: implement
-
+        public void changed(ObservableValue<? extends String> observableValue, String s, String t1) {
+            TextField changedField = (TextField) nameField.getScene().focusOwnerProperty().get();
+            if (t1.matches("[1-9][0-9]+?")) {
+                changedField.setStyle("-fx-border-width: 0px;");
+            } else {
+                changedField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+            }
         }
     };
 
+    ChangeListener<String> choiceListener = new ChangeListener<>() {
+        @Override
+        public void changed(ObservableValue<? extends String> observableValue, String s, String t1) {           //TODO: implement
 
+            ChoiceBox choiceBox = (ChoiceBox) nameField.getScene().focusOwnerProperty().get();
+            VBox vBox = (VBox) choiceBox.getParent();
+
+            for(int i = 2 ; i<vBox.getChildren().size();i++){
+                vBox.getChildren().remove(i);
+            }
+
+            switch (t1){
+                case "Text"->{
+                    TextField textField = new TextField();
+                    textField.setPromptText("Max. Length");
+                    textField.textProperty().addListener(numberListener);
+                    vBox.getChildren().add(textField);
+                    VBox.setMargin(textField,new Insets(5,0,0,0));}
+                case "Choice"->{
+                    TextField textField = new TextField();
+                    textField.setPromptText("Name");
+                    vBox.getChildren().add(textField);
+
+                    ColorPicker colorPicker = new ColorPicker();
+                    colorPicker.setPrefWidth(150);
+                    vBox.getChildren().add(colorPicker);
+
+                    BorderPane borderPane = new BorderPane();
+                    Button removeButton = new Button("Remove");
+                    removeButton.setOnAction(NewProjectController::removeFromList);
+                    borderPane.setLeft(removeButton);
+                    Button addButton = new Button("Add");
+                    addButton.setOnAction(NewProjectController::addToList);
+                    borderPane.setRight(addButton);
+                    vBox.getChildren().add(borderPane);
+
+                    ListView<String> listView = new ListView<>();
+                    listView.setPrefSize(150,150);
+                    listView.setCellFactory(cellfactory);
+                    vBox.getChildren().add(listView);
+
+                    Insets insets = new Insets(5,0,5,0);
+
+                    VBox.setMargin(textField,insets);
+                    VBox.setMargin(borderPane,insets);
+                }
+            }
+        }
+    };
+
+    Callback<ListView<String>,ListCell<String>> cellfactory = new Callback<>() {
+        @Override
+        public ListCell<String> call(ListView<String> stringListView) {
+            return new ListCell<>(){
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (item == null || empty) {
+                        setText(null);
+                        setStyle("-fx-control-opacity: 0;");
+                    } else {
+                        setText(item);
+
+                        setStyle("-fx-control-inner-background: " + item.substring(item.lastIndexOf("(")+1,item.lastIndexOf(")")) + ";");
+                    }
+                }
+            };
+        }
+    };
 
     @FXML
     public void onCreate() throws IOException {
         String name = nameField.getText();
         String path = pathField.getText();
         File file = new File(path);
-        if(!name.equals("") && !path.equals("")) {
+        if(name.equals("")){
+            nameField.setStyle("-fx-border-color: red; -fx-border-width: 2px");
+            return;
+        }
+        if(path.equals("")){
+            pathField.setStyle("-fx-border-color: red; -fx-border-width: 2px");
+            return;
+        }
+        nameField.setStyle(" -fx-border-width: 0px");
+        pathField.setStyle(" -fx-border-width: 0px");
+
             if (!file.exists()) {
                 Files.createDirectory(file.toPath());
             }
@@ -113,6 +198,8 @@ public class NewProjectController implements Initializable {
                     Files.createDirectory(file.toPath());
                     file = new File(path+"\\Presets");
                     Files.createDirectory(file.toPath());
+                    file = new File(path+"\\DiagramPresets");
+                    Files.createDirectory(file.toPath());
                     connectToDatabase();
 
                 } catch (IOException e) {
@@ -126,7 +213,7 @@ public class NewProjectController implements Initializable {
                 alert.setContentText("A project with this name already exists in this directory!");
                 alert.showAndWait();
             }
-        }
+
 
     }
 
@@ -210,7 +297,11 @@ public class NewProjectController implements Initializable {
         getColumnChoiceBox(2).setValue("Choice");
         getColumnChoiceBox(3).setValue("DATE");
 
-        getColumnSelectionList(2).getItems().addAll("Planned","In-Progress","Complete");
+        nameMaxLengthField.textProperty().addListener(numberListener);
+
+        getColumnSelectionList(2).setCellFactory(cellfactory);
+
+        getColumnSelectionList(2).getItems().addAll("Complete(#009900)","In-Progress(#ffcc00)","Planned(#990000)");
 
 
         for(int i = 0; i<4; i++){
@@ -254,7 +345,7 @@ public class NewProjectController implements Initializable {
         return (ChoiceBox)((VBox)getColumnContainer(id).getChildren().get(2)).getChildren().get(1);
     }
     private ListView<String> getColumnSelectionList(int id){
-        return (ListView) ((VBox)getColumnContainer(id).getChildren().get(2)).getChildren().get(5);
+        return (ListView)((VBox)getColumnContainer(id).getChildren().get(2)).getChildren().get(5);
     }
 
     public void onAdd() {
@@ -274,8 +365,10 @@ public class NewProjectController implements Initializable {
         Label nameLabel = new Label("Name:");
 
         TextField nameField = new TextField();
+        nameField.setStyle("-fx-border-color: red;-fx-border-width: 2px");
         nameField.promptTextProperty().addListener(emptyListener);
         nameField.setPrefWidth(149);
+        nameField.textProperty().addListener(emptyListener);
 
         CheckBox trackHistory = new CheckBox("Track History");
 
@@ -289,14 +382,19 @@ public class NewProjectController implements Initializable {
         typeBox.valueProperty().addListener(choiceListener);
         typeBox.setPrefWidth(150);
 
-        VBox third = new VBox(typeLabel,typeBox);
+        TextField textField = new TextField();
+        textField.setPromptText("Max. Length");
+        textField.setStyle("-fx-border-color: red;-fx-border-width: 2px");
+        textField.textProperty().addListener(numberListener);
+
+        VBox third = new VBox(typeLabel,typeBox,textField);
         VBox.setMargin(typeBox,new Insets(0,0,5,0));
 
 
         Label padding2 = new Label();
 
         Button removeButton = new Button("⛌");
-        removeButton.setOnAction(this::onRemoveFromList);
+        removeButton.setOnAction(this::onRemoveColumn);
 
         VBox fourth = new VBox(padding2,removeButton);
 
@@ -314,10 +412,36 @@ public class NewProjectController implements Initializable {
 
     }
 
-    public void onRemoveFromList(ActionEvent event) {
+    private void onRemoveColumn(ActionEvent event) {
         columnContainer.getChildren().remove(((Button) event.getSource()).getParent().getParent().getParent());
     }
 
-    public void onAddToList(ActionEvent event) {
+    public static void removeFromList(ActionEvent event) {
+        ListView<String> list = (ListView<String>)((VBox)((Button)event.getSource()).getParent().getParent()).getChildren().get(5);
+        list.getItems().remove(list.getSelectionModel().getSelectedItem());
+
+    }
+
+    public static void addToList(ActionEvent event) {
+        VBox vBox = (VBox)((Button)event.getSource()).getParent().getParent();
+        TextField textField = (TextField) vBox.getChildren().get(2);
+        if(textField.getText().equals("")){
+            textField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+            return;
+        }
+        textField.setStyle("-fx-border-width: 0px;");
+        ColorPicker colorPicker = (ColorPicker) vBox.getChildren().get(3);
+        ListView<String> list = (ListView<String>)(vBox).getChildren().get(5);
+        String color = colorPicker.getValue().toString();
+        String string = textField.getText()+"(#"+color.substring(2,8)+")";
+        list.getItems().add(string);
+        textField.setText("");
+    }
+
+    public void onRemoveFromList(ActionEvent event) {
+        removeFromList(event);
+    }
+    public void  onAddToList(ActionEvent event){
+        addToList(event);
     }
 }
