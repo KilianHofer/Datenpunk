@@ -71,6 +71,77 @@ public class DAO {
         }
     }
 
+    public void createTable(String tableName,List<String> names,List<String> types,List<String> categoryNames,List<List<Status>> categoryLists){
+
+        try {
+            StringBuilder subquery = new StringBuilder();
+            for (int i = 0; i < names.size(); i++) {
+                String name = names.get(i);
+                subquery.append(name).append(" ").append(types.get(i));
+                if(name.equals("id"))
+                    subquery.append(" PRIMARY KEY");
+
+                if(i != names.size()-1)
+                    subquery.append(",");
+            }
+            for (int i = 0; i < categoryLists.size(); i++) {
+                String categoryName = categoryNames.get(i);
+                createAuxTable(categoryName, categoryLists.get(i));
+                if(i == 0)
+                    subquery.append(",");
+                subquery.append("FOREIGN KEY(").append(categoryName).append(") REFERENCES ").append(categoryName).append("(name)").append(",");
+            }
+            String query;
+            if(tableName.equals("objects"))
+                query = "CREATE TABLE objects(" + subquery + ")";
+            else
+                query = "CREATE TABLE history(id INT,"+subquery+"FOREIGN KEY(id) REFERENCES objects(id))";
+            PreparedStatement statement = connection.prepareStatement(query);
+            System.out.println(statement);
+            statement.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+    private void createAuxTable(String name,List<Status> categories){
+        try {
+            String query = "CREATE TABLE " + name + "(id SERIAL,sortorder INT,name VARCHAR(200) UNIQUE,colour char(7))";
+            PreparedStatement statement = connection.prepareStatement(query);
+            System.out.println(statement);
+            statement.executeUpdate();
+
+            for(Status category:categories){
+                String insertQuery = "INSERT INTO " + name + "(sortorder,name,colour) VALUES("+category.getSortOrder()+",'"+category.getName()+"','"+category.getColor()+"')";
+                PreparedStatement insertStatement = connection.prepareStatement(insertQuery);
+                System.out.println(insertStatement);
+                insertStatement.executeUpdate();
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void createColumnTable(List<String> names,List<String> types, List<String> tables, List<Integer> positions){
+        try{
+            String query = "CREATE TABLE columns(name VARCHAR(200),type VARCHAR (100),tables VARCHAR (100),position INT)";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.executeUpdate();
+
+            for (int i = 0; i < names.size(); i++) {
+                String insertQuery = "INSERT INTO columns VALUES('"+names.get(i)+"','"+types.get(i)+"','"+tables.get(i)+"','"+positions.get(i)+"')";
+                PreparedStatement insertStatement = connection.prepareStatement(insertQuery);
+                insertStatement.executeUpdate();
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
     public void createTables(){
         try{
             //Create objects Table
@@ -85,7 +156,7 @@ public class DAO {
             fillStatusTable();
 
             //create history Table
-            query = "CREATE TABLE history(id INT,status VARCHAR(200),timestamp BIGINT,PRIMARY KEY(id,timestamp),FOREIGN KEY(id) REFERENCES objects(id), FOREIGN KEY (status) REFERENCES status(name))";
+            query = "CREATE TABLE history(id INT,status VARCHAR(200),date BIGINT,PRIMARY KEY(id,date),FOREIGN KEY(id) REFERENCES objects(id), FOREIGN KEY (status) REFERENCES status(name))";
             statement = connection.prepareStatement(query);
             statement.executeUpdate();
 
@@ -107,37 +178,26 @@ public class DAO {
         }
     }
 
-    public List<ColumnInfo> selectTableColumns(String table){
-        List<ColumnInfo> names = new ArrayList<>();
+    public List<ColumnInfo> selectTableColumns(){
+        List<ColumnInfo> columnInfo = new ArrayList<>();
         try{
-            String query = "SELECT column_name,data_type FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = N'"+table+"' AND column_name != 'id'";
+            String query = "SELECT * FROM columns ORDER BY position";
             PreparedStatement statement = connection.prepareStatement(query);
             ResultSet resultSet = statement.executeQuery();
-            ColumnInfo columnInfo;
-            while (resultSet.next()){
-                boolean colored = false;
-                String coloredQuery = "select rel_kcu.table_name as primary_table " +
-                        "from information_schema.table_constraints tco " +
-                        "join information_schema.referential_constraints rco " +
-                        "          on tco.constraint_schema = rco.constraint_schema " +
-                        "          and tco.constraint_name = rco.constraint_name " +
-                        "join information_schema.key_column_usage rel_kcu " +
-                        "          on rco.unique_constraint_schema = rel_kcu.constraint_schema " +
-                        "          and rco.unique_constraint_name = rel_kcu.constraint_name " +
-                        "where tco.constraint_type = 'FOREIGN KEY'";
-                PreparedStatement coloredStatement = connection.prepareStatement(coloredQuery);
-                ResultSet coloredResultSet = coloredStatement.executeQuery();
-                while (coloredResultSet.next()){
-                    if(!coloredResultSet.getString("primary_table").equals("objects"))
-                        colored = true;
-                }
-                columnInfo = new ColumnInfo(table,resultSet.getString("column_name"),resultSet.getString("data_type").contains("char"),colored);
-                names.add(columnInfo);
+            while(resultSet.next()){
+                String name = resultSet.getString("name");
+                String table = resultSet.getString("tables");
+                boolean colored = (resultSet.getString("type").equals("choice"));
+                boolean discrete = (colored || resultSet.getString("type").equals("Text"));
+                Integer position = resultSet.getInt("position");
+                columnInfo.add(new ColumnInfo(table,name,discrete,colored,position));
             }
+
+
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        return names;
+        return columnInfo;
     }
 
 
@@ -152,9 +212,9 @@ public class DAO {
                     strings.set(id, strings.get(id).concat(" NOT"));
                 }
                 strings.set(id, strings.get(id).concat(" LIKE "));
-                strings.set(id, strings.get(id).concat("'%"));
+                strings.set(id, strings.get(id).concat("'"));
                 strings.set(id, strings.get(id).concat(stringList.get(i).toLowerCase()));
-                strings.set(id, strings.get(id).concat("%'"));
+                strings.set(id, strings.get(id).concat("'"));
                 if(i <= stringList.size()-2){
                     strings.set(id, strings.get(id).concat(" OR "));
                 }
@@ -163,20 +223,22 @@ public class DAO {
     }
 
 
-    public ObservableList<ObjectTableElement> selectMain(LocalDate fromDate,LocalDate toDate, ObservableList<ListView<String>> listViews){
+    public List<String> selectMain(LocalDate fromDate,LocalDate toDate, ObservableList<ListView<String>> listViews,String column,String sortColumn,String sortType){
 
-        ObservableList<ObjectTableElement> objectTableElements = FXCollections.observableArrayList();
+        List<String> objectTableElements = new ArrayList<>();
+        if(column.equals(""))
+            return objectTableElements;
 
         List<String> lists = new ArrayList<>();
         for (int i = 0; i < listViews.size(); i++) {
             lists.add("");
         }
-        buildString(lists,listViews,0,"o.name");                //TODO: this will have to be dynamic in the future
-        buildString(lists,listViews,1,"o.type");
-        buildString(lists,listViews,2,"h.status");
-        buildString(lists,listViews,3,"o.name");
-        buildString(lists,listViews,4,"o.type");
-        buildString(lists,listViews,5,"h.status");
+        buildString(lists,listViews,0,"objects.name");                //TODO: this will have to be dynamic in the future
+        buildString(lists,listViews,1,"objects.type");
+        buildString(lists,listViews,2,"history.status");
+        buildString(lists,listViews,3,"objects.name");
+        buildString(lists,listViews,4,"objects.type");
+        buildString(lists,listViews,5,"history.status");
 
 
         StringBuilder subquery = new StringBuilder();
@@ -185,12 +247,13 @@ public class DAO {
 
             if (!list.equals("")) {
                 if (first) {
-                    subquery.append(" WHERE ");
+                    subquery.append(" WHERE (");
                     first = false;
                 } else {
-                    subquery.append(" AND ");
+                    subquery.append(" AND (");
                 }
                 subquery.append(list);
+                subquery.append(")");
             }
         }
 
@@ -208,25 +271,19 @@ public class DAO {
         PreparedStatement statement;
         ResultSet resultSet;
         try {
-            String query = "SELECT o.id, o.name, o.type, h.status, s.sortOrder, s.colour, i.t  FROM objects o JOIN history h ON (o.id = h.id) JOIN (SELECT id,max(timestamp) AS t FROM history WHERE timestamp >= ? AND timestamp <= ? GROUP BY id) AS i ON (i.id = o.id AND i.t=h.timestamp) JOIN status s ON s.name=h.status" + subquery; //TODO: fix SQL-Injection
+            String query =
+                    "SELECT "+column+"  FROM objects " +
+                    "JOIN history ON (objects.id = history.id) " +
+                    "JOIN (SELECT id,max(date) AS t FROM history WHERE date >= ? AND date <= ? GROUP BY id) AS i ON (i.id = objects.id AND i.t=history.date) " +
+                    "JOIN status ON status.name=history.status" + subquery + " ORDER BY "+sortColumn+ " "+sortType; //TODO: fix SQL-Injection
             statement = connection.prepareStatement(query);
             statement.setLong(1,fromTimestamp);
             statement.setLong(2,toTimestamp);
+            System.out.println(statement);
             resultSet = statement.executeQuery();
 
-            int id,sortOrder;
-            String name, type, status, color;
-            long timestampOut;
-
             while(resultSet.next()){
-                id = resultSet.getInt("id");
-                name = resultSet.getString("name");
-                type = resultSet.getString("type");
-                status = resultSet.getString("status");
-                sortOrder = resultSet.getInt("sortOrder");
-                color = resultSet.getString("colour");
-                timestampOut = resultSet.getLong("t");
-                objectTableElements.add(new ObjectTableElement(id,name,type,new Status(status,sortOrder,color),format.format(timestampOut)));
+                objectTableElements.add(resultSet.getString(column.substring(column.lastIndexOf(".")+1)));
             }
             return objectTableElements;
         }catch (Exception e){
@@ -237,7 +294,7 @@ public class DAO {
 
     public ObjectTableElement selectElement(int id){
         try {
-            String query = "SELECT o.id, o.name, o.type, h.status, s.sortOrder, s.colour, i.t  FROM objects o JOIN history h ON (o.id = h.id) JOIN (SELECT id,max(timestamp) AS t FROM history GROUP BY id) AS i ON (i.id = o.id AND i.t=h.timestamp) JOIN status s ON s.name=h.status WHERE o.id = ?";
+            String query = "SELECT o.id, o.name, o.type, h.status, s.sortOrder, s.colour, i.t  FROM objects o JOIN history h ON (o.id = h.id) JOIN (SELECT id,max(date) AS t FROM history GROUP BY id) AS i ON (i.id = o.id AND i.t=h.date) JOIN status s ON s.name=h.status WHERE o.id = ?";
             PreparedStatement statement =  connection.prepareStatement(query);
             statement.setInt(1,id);
             ResultSet resultSet = statement.executeQuery();
@@ -279,7 +336,7 @@ public class DAO {
 
             while(resultSet.next()){
                 status = resultSet.getString("status");
-                long time = resultSet.getLong("timestamp");
+                long time = resultSet.getLong("date");
                 Date date = new Date(time);
                 timestamp = format.format(date);
 
@@ -310,10 +367,10 @@ public class DAO {
         return null;
     }
 
-    public List<Status> selectStatuses(){
+    public List<Status> selectStatuses(String table){
         try{
             List<Status> statuses = new ArrayList<>();
-            String query = "SELECT * FROM status";
+            String query = "SELECT * FROM " + table;
             PreparedStatement statement = connection.prepareStatement(query);
             ResultSet resultSet = statement.executeQuery();
             int sortOrder;
@@ -400,7 +457,7 @@ public class DAO {
             String subquery1 = "",subquery2 = "", subquery3, subquery4 = "";
             switch (value) {
                 case "All" -> subquery1 = "COUNT";
-                case "value" -> subquery4 = " ORDER BY history.timestamp DESC LIMIT 1";
+                case "value" -> subquery4 = " ORDER BY history.date DESC LIMIT 1";
                 case "sum" -> subquery1 = "SUM";
                 case "average" -> subquery1 = "AVG";
                 case "greater than" -> {
@@ -429,8 +486,8 @@ public class DAO {
                 }
             }
 
-            if(xAxis.equals("timestamp")){
-                subquery2 = " AND timestamp < " + end;
+            if(xAxis.equals("date")){
+                subquery2 = " AND date < " + end;
             }
 
             if(category == null){
@@ -440,7 +497,7 @@ public class DAO {
                 subquery3 = xAxis + " = '" + category + "'";
             }
 
-            String query = "SELECT " + subquery1 + " (" + yAxis + ") FROM objects JOIN history ON objects.id = history.id JOIN (SELECT id,MAX(timestamp) AS t FROM history WHERE timestamp >= " + startDataTimestamp + subquery2 + " AND timestamp < " + endDataTimestamp + " GROUP BY id) AS i ON (i.id = objects.id AND i.t=history.timestamp) JOIN status ON status.name = history.status WHERE "+ subquery3 + subquery4;
+            String query = "SELECT " + subquery1 + " (" + yAxis + ") FROM objects JOIN history ON objects.id = history.id JOIN (SELECT id,MAX(date) AS t FROM history WHERE date >= " + startDataTimestamp + subquery2 + " AND date < " + endDataTimestamp + " GROUP BY id) AS i ON (i.id = objects.id AND i.t=history.date) JOIN status ON status.name = history.status WHERE "+ subquery3 + subquery4;
             PreparedStatement statement = connection.prepareStatement(query);
             ResultSet resultSet = statement.executeQuery();
             if (resultSet.next()) {
@@ -460,7 +517,7 @@ public class DAO {
 
         long startTimestamp = ZonedDateTime.of(start.atStartOfDay(), ZoneId.systemDefault()).toInstant().toEpochMilli();
         long endTimestamp = ZonedDateTime.of(end.atStartOfDay(), ZoneId.systemDefault()).toInstant().toEpochMilli();
-        return getXYValues(startTimestamp,endTimestamp,null,yAxis,value,startDataTimestamp,endDataTimestamp,comparator,"timestamp");
+        return getXYValues(startTimestamp,endTimestamp,null,yAxis,value,startDataTimestamp,endDataTimestamp,comparator,"date");
 
     }
     public Float getPieValues(String column ,String value,long startTimestamp,long endTimestamp, String comparator){
@@ -485,7 +542,7 @@ public class DAO {
 
             }
 
-            String query = "SELECT "+subquery1+"*) FROM objects JOIN history ON objects.id=history.id JOIN (SELECT id, MAX(timestamp) t FROM history WHERE timestamp >= "+startTimestamp+" AND timestamp <= "+endTimestamp+" GROUP BY id) AS i ON (i.id = objects.id AND i.t=history.timestamp) JOIN status ON status.name = history.status"+subquery2;
+            String query = "SELECT "+subquery1+"*) FROM objects JOIN history ON objects.id=history.id JOIN (SELECT id, MAX(date) t FROM history WHERE date >= "+startTimestamp+" AND date <= "+endTimestamp+" GROUP BY id) AS i ON (i.id = objects.id AND i.t=history.date) JOIN status ON status.name = history.status"+subquery2;
             PreparedStatement statement = connection.prepareStatement(query);
             ResultSet resultSet = statement.executeQuery();
             if(resultSet.next()){
@@ -511,7 +568,7 @@ public class DAO {
             if (generatedKeys.next()) {
                 id = generatedKeys.getInt(1);
             }
-            String historyQuery = "INSERT INTO History(id, status, timestamp) VALUES(?,?,?)";
+            String historyQuery = "INSERT INTO History(id, status, date) VALUES(?,?,?)";
             statement = connection.prepareStatement(historyQuery);
             statement.setInt(1,id);
             statement.setString(2,"Planned");   //TODO: make default setting

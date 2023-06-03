@@ -231,7 +231,7 @@
                                        <children>
                                           <Label text="Name:" />
                                           <TextField disable="true" editable="false" text="Date" />
-                                          <CheckBox disable="true" mnemonicParsing="false" text="Track History">
+                                          <CheckBox disable="true" mnemonicParsing="false" selected="true" text="Track History">
                                              <VBox.margin>
                                                 <Insets top="5.0" />
                                              </VBox.margin>

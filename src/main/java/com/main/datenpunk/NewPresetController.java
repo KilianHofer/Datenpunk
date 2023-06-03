@@ -20,7 +20,7 @@ public class NewPresetController {
     @FXML
     public CheckBox dateRangeCheck, whitelistCheck, blacklistCheck;
 
-    Singelton singelton = Singelton.getInstance();
+    Singleton singleton = Singleton.getInstance();
     MainController controller;
 
     private List<String> presets;
@@ -45,7 +45,7 @@ public class NewPresetController {
             alert.showAndWait();
         }
         else {
-            String path = singelton.getWorkingDirectory() + "\\Projects\\" + singelton.getCurrentProject() + "\\Presets\\" + nameField.getText();
+            String path = singleton.getWorkingDirectory() + "\\Projects\\" + singleton.getCurrentProject() + "\\Presets\\" + nameField.getText();
             System.out.println(path);
 
             try {

@@ -26,7 +26,7 @@ public class DatabaseConnectionController {
     public void onConnect() throws IOException {
 
         DAO dao = DAO.getInstance();
-        Singelton singelton = Singelton.getInstance();
+        Singleton singleton = Singleton.getInstance();
 
         if(deletion){
             dao.connectToDB("","postgres",passwordField.getText());
@@ -47,21 +47,24 @@ public class DatabaseConnectionController {
         }
         if (dao.connectToDB("datenpunk_" + name, "postgres", passwordField.getText())) {
             if(newProject)
-                dao.createTables();
+                dao.createTables();         //TODO: create dynamic database!!!
 
             checkRememberMe();
 
-            singelton.setCurrentProject(name);
+            singleton.setCurrentProject(name);
             FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
             Scene scene = new Scene(fxmlLoader.load());
             Stage stage = returnStage;
             stage.setTitle("Datenpunk");
             stage.setScene(scene);
+            MainController controller = fxmlLoader.getController();
+            singleton.setController(controller);
             stage.setMaximized(true);
             stage.setResizable(true);
             onCancel();
             System.out.println("test");
             stage.show();
+            controller.initializeCellFactories();
         }
         else {
             passwordField.setStyle("-fx-border-color: red; -fx-border-width: 2px");

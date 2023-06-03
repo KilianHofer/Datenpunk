@@ -24,6 +24,8 @@ public class TableService extends Service<List<ObjectTableElement>> {
     LocalDate fromDate,toDate;
     ObservableList<ListView<String>> listViews;
 
+    Singleton singleton = Singleton.getInstance();
+
     public TableService(TableView<ObjectTableElement> table, LocalDate fromDate, LocalDate toDate, ObservableList<ListView<String>> listViews,TableColumn<ObjectTableElement,String> column){
 
         this.table = table;
@@ -45,6 +47,8 @@ public class TableService extends Service<List<ObjectTableElement>> {
             }
             table.getSortOrder().setAll(sortColumns);
 
+            singleton.sorting = false;
+
         });
     }
 
@@ -53,8 +57,8 @@ public class TableService extends Service<List<ObjectTableElement>> {
         return new Task<>() {
             @Override
             protected List<ObjectTableElement> call() {
-                elements = dao.selectMain(fromDate, toDate, listViews);
-                return elements;
+                //elements = dao.selectMain(fromDate, toDate, listViews);
+                return null;//elements;
             }
         };
     }

@@ -23,8 +23,8 @@ public class ChartService extends Service<Chart> {
     Chart chart;
 
     DAO dao = DAO.getInstance();
-    Singelton singelton = Singelton.getInstance();
-    List<ColumnInfo> columnInfo = singelton.getColumnInfo();
+    Singleton singleton = Singleton.getInstance();
+    List<ColumnInfo> columnInfo = singleton.getColumnInfo();
 
     public ChartService(VBox box, ChartDescriptor chartDescriptor) {
         this.box = box;

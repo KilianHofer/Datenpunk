@@ -22,7 +22,7 @@ import java.util.ResourceBundle;
 public class DetailController implements Initializable {
 
     private DAO dao;
-    private final Singelton singelton = Singelton.getInstance();
+    private final Singleton singleton = Singleton.getInstance();
     private ObjectTableElement currentElement;
 
     @FXML
@@ -69,7 +69,7 @@ public class DetailController implements Initializable {
             dao.updateHistory(currentElement.getId(), statusBox.getValue());
             updateTable();
         }
-        singelton.getController().updateTable();
+        singleton.getController().updateTable();
 
 
 
@@ -79,7 +79,7 @@ public class DetailController implements Initializable {
     List<Integer>   statusSortOrder = new ArrayList<>();
 
     private void getStatuses(){
-        statuses = dao.selectStatuses();
+        statuses = dao.selectStatuses("status");
         Status status;
         for (Status value : statuses) {
             status = value;
@@ -108,7 +108,7 @@ public class DetailController implements Initializable {
         alert.setContentText("Delete this Object?");
         if(alert.showAndWait().get() == ButtonType.OK){
             dao.deleteObject(currentElement.getId());
-            singelton.getController().updateTable();
+            singleton.getController().updateTable();
             ((Stage)nameField.getScene().getWindow()).close();
         }
 

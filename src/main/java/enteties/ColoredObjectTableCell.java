@@ -16,8 +16,12 @@ public class ColoredObjectTableCell extends TableCell<ObjectTableElement, String
         else{
             setText(item);
             DAO dao = DAO.getInstance();
-
-            setStyle("-fx-background-color: " + dao.selectStatus(item).getColor());
+            try {
+                setStyle("-fx-background-color: " + dao.selectStatus(item).getColor());
+            }catch (Exception e){
+                System.out.println(item);
+                System.out.println(e.getMessage());
+            }
         }
     }
 }

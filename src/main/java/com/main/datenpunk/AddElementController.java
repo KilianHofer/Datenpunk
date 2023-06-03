@@ -12,7 +12,7 @@ import java.util.ResourceBundle;
 public class AddElementController implements Initializable {
 
     private DAO dao;
-    Singelton singelton = Singelton.getInstance();
+    Singleton singleton = Singleton.getInstance();
 
     @FXML
     public TextField nameField, typeField;
@@ -31,7 +31,7 @@ public class AddElementController implements Initializable {
         if(!name.isEmpty() && !type.isEmpty()) {
             dao.insert(nameField.getText(), typeField.getText());
 
-            singelton.getController().updateTable();
+            singleton.getController().updateTable();
             onCancel();
         }
 

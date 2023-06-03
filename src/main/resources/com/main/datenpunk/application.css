@@ -1,0 +1,9 @@
+.list-view .scroll-bar{
+    -fx-scale-x: 0;
+    -fx-background-color: transparent;
+    -fx-padding: -10;
+}
+
+.split-pane-divider {
+  -fx-padding: .5;
+}

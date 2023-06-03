@@ -1,22 +1,21 @@
 package com.main.datenpunk;
 
 import database.DAO;
-import enteties.ChartDescriptor;
-import enteties.ColoredObjectTableCell;
-import enteties.ObjectTableElement;
-import enteties.Status;
-import javafx.beans.property.StringProperty;
+import enteties.*;
+import javafx.beans.InvalidationListener;
+import javafx.beans.Observable;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
@@ -26,6 +25,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.util.Callback;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -40,27 +40,27 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ResourceBundle;
-import java.util.Scanner;
+import java.util.*;
 import java.util.stream.Stream;
 
 public class MainController implements Initializable {
 
 
     private final DAO dao = DAO.getInstance();
-    private final Singelton singelton = Singelton.getInstance();
+    private final Singleton singleton = Singleton.getInstance();
     @FXML
     public VBox chartContainer;
     public ChoiceBox chartPresetBox;
+    @FXML
+    private Menu showHideMenu;
 
 
     @FXML
     private DatePicker toDatePicker,fromDatePicker;
 
+    /*
     @FXML
-    private TableView<ObjectTableElement> objectTable;
+    public TableView<ObjectTableElement> objectTable;
     @FXML
     private TableColumn<ObjectTableElement, StringProperty> nameColumn;
     @FXML
@@ -68,9 +68,12 @@ public class MainController implements Initializable {
     @FXML
     private TableColumn<ObjectTableElement, String> idColumn,statusColumn, dateColumn;
 
+
+     */
     @FXML
-    private CheckMenuItem idCheck,nameCheck,typeCheck,statusCheck,dateCheck;
-    private final ObservableList<CheckMenuItem> checkMenus = FXCollections.observableArrayList();
+    SplitPane objectTable;
+
+    List<VBox> columns = new ArrayList<>();
 
     @FXML
     private TextField whitelistNameField, whitelistTypeField, blacklistNameField, blacklistTypeField;
@@ -92,21 +95,33 @@ public class MainController implements Initializable {
     private List<String> presets = new ArrayList<>();
     private final List<String> statusNames = new ArrayList<>();
 
+    List<List<Status>> choices = new ArrayList<>();
+    List<String> choiceNames = new ArrayList<>();
+
     private ObservableList<ObjectTableElement> objectTableElements = FXCollections.observableArrayList();
 
     List<ChartDescriptor> charts = new ArrayList<>();
     int chartEditIndex;
 
     boolean changingPresets = false;
-    List<TableService> threads = new ArrayList<>();
+
+    private String sortType = "ASC";
+    private String sortColumn = "Status";
+    List<TableService> threads = new ArrayList<>(); //TODO
 
 
     private void getStatuses(){
-        List<Status> statuses = dao.selectStatuses();
-        Status status;
-        for (Status value : statuses) {
-            status = value;
+        List<Status> statuses = dao.selectStatuses("status");
+        for (Status status : statuses) {
             statusNames.add(status.getName());
+        }
+        for(ColumnInfo columnInfo:singleton.getColumnInfo()){
+            List<Status> list = new ArrayList<>();
+            if(columnInfo.colored){
+                list.addAll(dao.selectStatuses(columnInfo.name));
+            }
+            choices.add(list);
+            choiceNames.add(columnInfo.name);
         }
     }
 
@@ -136,7 +151,7 @@ public class MainController implements Initializable {
 
         List<Path> paths;
         try{
-            Stream<Path> files = Files.list(Paths.get(singelton.getWorkingDirectory()+"\\Projects\\"+singelton.getCurrentProject()+"\\Presets"));
+            Stream<Path> files = Files.list(Paths.get(singleton.getWorkingDirectory()+"\\Projects\\"+ singleton.getCurrentProject()+"\\Presets"));
             paths = files.toList();
 
         } catch (IOException e) {
@@ -162,49 +177,71 @@ public class MainController implements Initializable {
 
     @FXML
     public void updateTable() {
-        for(TableService thread: threads){
-            thread.cancel();
+
+        String sortColumnName = sortColumn;
+        for(Node column:objectTable.getItems()){
+            Button button = (Button)((VBox)column).getChildren().get(0);
+            String columnName = "";
+            for(ColumnInfo columnInfo:singleton.getColumnInfo()){
+                if(columnInfo.name.equals(button.getText().toLowerCase()))
+                    columnName= columnInfo.table+"."+columnInfo.name;
+                if(columnInfo.name.equals(sortColumnName.toLowerCase()))
+                    sortColumnName= columnInfo.table+"."+sortColumnName;
+
+            }
+            ListView<String> listView = (ListView<String>)((VBox)column).getChildren().get(1);
+            listView.getItems().setAll(dao.selectMain(fromDate,toDate,listViews,columnName,sortColumnName,sortType));
         }
-        threads.clear();
-
-        objectTable.getItems().clear();
-        TableService ts = new TableService(objectTable,fromDate,toDate,listViews,statusColumn);
-        threads.add(ts);
-        ts.start();
-
     }
+
+    InvalidationListener dividerListender = new InvalidationListener() {
+        @Override
+        public void invalidated(Observable observable) {
+            setTableHeaderWidths();
+        }
+    };
+
+    private void setTableHeaderWidths() {
+        for (int i = 0; i < objectTable.getItems().size(); i++) {
+            VBox vBox = (VBox)objectTable.getItems().get(i);
+            Button headerButton = (Button)vBox.getChildren().get(0);
+            headerButton.setPrefWidth(9999);
+        }
+    }
+
+    ListChangeListener listChangeListener = change -> {
+        for (VBox column:columns){
+            int ROW_HEIGHT = 24;
+            ListView<String> listView = (ListView<String>) column.getChildren().get(1);
+            listView.setPrefHeight(listView.getItems().size()*ROW_HEIGHT+2);
+        }
+    };
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
-        singelton.setController(this);
+        for(int i = 0; i< singleton.getColumnInfo().size(); i++){
+            String name = singleton.getColumnInfo().get(i).name.substring(0,1).toUpperCase()+ singleton.getColumnInfo().get(i).name.substring(1);
+            Button button = new Button(name);
+            button.setStyle("-fx-background-radius: 0px");
+            button.setOnAction(this::changeTableSortOrder);
+            ListView<String> listView = new ListView<>();
+            listView.getItems().addListener(listChangeListener);
+            VBox vBox = new VBox(button,listView);
+            objectTable.getItems().add(i,vBox);
+            columns.add(vBox);
+            CheckMenuItem checkMenuItem = new CheckMenuItem(name);
+            checkMenuItem.setSelected(true);
+            checkMenuItem.setOnAction(this::onCheckVisible);
+            showHideMenu.getItems().add(checkMenuItem);
 
-        objectTable.setRowFactory( tableView -> {
-            TableRow<ObjectTableElement> row = new TableRow<>();
-            row.setOnMouseClicked(event -> {
-                if(event.getClickCount() == 2 && (!row.isEmpty())){
-                    try {
-                        openDetailView();
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            });
-            return row;
-        });
+        }
 
-        idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
-        nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
-        typeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
-        statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
-        statusColumn.setCellFactory(factory -> new ColoredObjectTableCell());
-        dateColumn.setCellValueFactory(new PropertyValueFactory<>("timestamp"));
+        resizeColumns();
 
         toDate = LocalDate.now();
         toDatePicker.setValue(toDate);
 
-        checkMenus.addAll(idCheck,nameCheck,typeCheck,statusCheck,dateCheck);
-        onCheckVisible();
 
         controlList.addAll(whitelistNameField,whitelistTypeField,whitelistStatusBox,blacklistNameField,blacklistTypeField,blacklistStatusBox);
         listViews.addAll(whitelistNameList,whitelistTypeList,whitelistStatusList,blacklistNameList,blacklistTypeList, blacklistStatusList);
@@ -227,9 +264,69 @@ public class MainController implements Initializable {
 
     }
 
+    public void initializeCellFactories() {
+        for (int i = 0; i < singleton.getColumnInfo().size(); i++) {
+            ListView<String> listView = (ListView<String>) columns.get(i).getChildren().get(1);
+            if (singleton.getColumnInfo().get(i).colored) {
+                listView.setCellFactory(new Callback<>() {
+                    @Override
+                    public ListCell<String> call(ListView<String> stringListView) {
+                        return new ListCell<>() {
+                            @Override
+                            protected void updateItem(String item, boolean empty) {
+                                super.updateItem(item, empty);
+                                if (item == null || empty) {
+                                    setText(null);
+                                    setStyle("-fx-control-opacity: 0;");
+                                } else {
+                                    setText(item);
+                                    for (int i = 0; i<choices.size();i++)
+                                        if (((Button) ((VBox) getParent().getParent().getParent().getParent().getParent()).getChildren().get(0)).getText().toLowerCase().equals(choiceNames.get(i))) {
+                                            for(Status status:choices.get(i)){
+                                                if(item.equals(status.getName())){
+                                                    setStyle("-fx-control-inner-background: "+status.getColor());
+                                                }
+                                            }
+                                        }
+                                }
+                            }
+                        };
+                    }
+                });
+            }
+        }
+    }
+
+    private void changeTableSortOrder(ActionEvent event) {
+        Button button = (Button) event.getSource();
+        if(button.getText().equals(sortColumn)){
+            if(sortType.equals("ASC"))
+                sortType = "DESC";
+            else
+                sortType = "ASC";
+        }
+        else{
+            sortColumn=button.getText();
+            sortType = "ASC";
+        }
+        updateTable();
+    }
+
+    private void resizeColumns() {
+        float sum = 0;
+        float toAdd = 1/((float)objectTable.getItems().size()-1);
+        for(int i = 0; i<objectTable.getDividers().size();i++) {
+            SplitPane.Divider divider = objectTable.getDividers().get(i);
+            divider.positionProperty().addListener(dividerListender);
+            sum+=toAdd;
+            divider.setPosition(sum);
+        }
+        setTableHeaderWidths();
+    }
 
     private void openDetailView() throws IOException {
-        if(objectTable.getSelectionModel().getSelectedItem() != null) {
+        /*
+        if(objectTable.getSelectionModel().getSelectedItem() != null) {             //TODO
             ObjectTableElement currentElement = objectTable.getSelectionModel().getSelectedItem();
 
             FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("detail-view.fxml"));
@@ -248,11 +345,15 @@ public class MainController implements Initializable {
 
             stage.setResizable(false);
             stage.show();
+
+
         }
+        */
     }
 
     @FXML
     public void onNewObject() throws IOException {
+        /*              TODO
 
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("addElement-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
@@ -268,19 +369,32 @@ public class MainController implements Initializable {
         AddElementController addElementController = fxmlLoader.getController();
         stage.setResizable(false);
         stage.show();
+
+         */
     }
 
-    public void onCheckVisible(){               //TODO: known issue: when table columns are switched the wrong column gets hidden
+    public void onCheckVisible(Event event){
 
-        List<String> columnNames = new ArrayList<>();
-        for (TableColumn column: objectTable.getColumns()) {
-            columnNames.add(column.getText());
+        objectTable.getItems().clear();
+        for (int i = 0; i < columns.size();i++) {
+            CheckMenuItem menuItem = (CheckMenuItem)showHideMenu.getItems().get(i);
+            if(menuItem.isSelected()){
+                objectTable.getItems().add(columns.get(i));
+            }
         }
+        addBufferColumn();
+        resizeColumns();
+    }
 
-        for (CheckMenuItem checkMenu:checkMenus) {
-            int index = columnNames.indexOf(checkMenu.getText());
-            objectTable.getColumns().get(index).setVisible(checkMenu.isSelected());
-        }
+    private void addBufferColumn() {
+        Button button = new Button("");
+        button.setStyle("-fx-background-radius: 0px");
+        button.setMinWidth(0);
+        ListView<String> listView = new ListView<>();
+        listView.setMinWidth(0);
+        VBox vBox = new VBox(button,listView);
+        vBox.setMinWidth(0);
+        objectTable.getItems().add(vBox);
     }
 
     @FXML
@@ -328,7 +442,7 @@ public class MainController implements Initializable {
     }
 
     public void onCancel() {
-        Stage stage = (Stage) objectTable.getScene().getWindow();
+        Stage stage = (Stage) fromDatePicker.getScene().getWindow();
         stage.close();
     }
 
@@ -375,7 +489,7 @@ public class MainController implements Initializable {
 
     public void onListClick(MouseEvent event) {
         if(event.getButton().equals(MouseButton.PRIMARY)) {
-            if (event.getClickCount() == 2) {               //TODO: known issue: opens detail view of selected item even by double-click on table header
+            if (event.getClickCount() == 2) {
                 removeFromList(listViews.indexOf(event.getSource()));
             }
         }
@@ -397,10 +511,10 @@ public class MainController implements Initializable {
         stage.setTitle("New Project");
         stage.setScene(scene);
         stage.initModality(Modality.WINDOW_MODAL);
-        stage.initOwner(objectTable.getScene().getWindow());
+        stage.initOwner(fromDatePicker.getScene().getWindow());
 
         NewProjectController newProjectController = fxmlLoader.getController();
-        newProjectController.setReturnStage((Stage)objectTable.getScene().getWindow());      //TODO: better data transfer
+        newProjectController.setReturnStage((Stage)fromDatePicker.getScene().getWindow());      //TODO: better data transfer
         stage.show();
     }
 
@@ -409,7 +523,7 @@ public class MainController implements Initializable {
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("projectSelection-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
 
-        Stage stage = (Stage)objectTable.getScene().getWindow();
+        Stage stage = (Stage)fromDatePicker.getScene().getWindow();
         stage.setScene(scene);
 
         ProjectSelectionController controller = fxmlLoader.getController();
@@ -426,7 +540,7 @@ public class MainController implements Initializable {
         stage.setTitle("New preset");
         stage.setScene(scene);
         stage.initModality(Modality.WINDOW_MODAL);
-        stage.initOwner(objectTable.getScene().getWindow());
+        stage.initOwner(fromDatePicker.getScene().getWindow());
         stage.setResizable(false);
 
         NewPresetController controller = fxmlLoader.getController();
@@ -444,7 +558,7 @@ public class MainController implements Initializable {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
             alert.setContentText("Delete Prefab: " + name);
             if (alert.showAndWait().get() == ButtonType.OK) {
-                File file = new File(singelton.getWorkingDirectory() + "\\Projects\\" + singelton.getCurrentProject() + "\\Presets\\" + name);
+                File file = new File(singleton.getWorkingDirectory() + "\\Projects\\" + singleton.getCurrentProject() + "\\Presets\\" + name);
                 file.delete();
                 selectPresets();
             }
@@ -467,7 +581,7 @@ public class MainController implements Initializable {
         if(!preset.equals("Custom")){
             changingPresets = true;
             try {
-                String path = singelton.getWorkingDirectory() + "\\Projects\\" + singelton.getCurrentProject() + "\\Presets\\" + preset;
+                String path = singleton.getWorkingDirectory() + "\\Projects\\" + singleton.getCurrentProject() + "\\Presets\\" + preset;
                 Scanner scanner = new Scanner(new File(path+"\\dateRange.dtpnk"));
 
                 String next;
@@ -542,7 +656,7 @@ public class MainController implements Initializable {
         stage.setTitle("New Diagram");
         stage.setScene(scene);
         stage.initModality(Modality.WINDOW_MODAL);
-        stage.initOwner(objectTable.getScene().getWindow());
+        stage.initOwner(fromDatePicker.getScene().getWindow());
 
         stage.setResizable(false);
         stage.show();
@@ -582,7 +696,7 @@ public class MainController implements Initializable {
         chartContainer.getChildren().add(hBox);
         chartContainer.setPrefWidth(Region.USE_COMPUTED_SIZE);
 
-        singelton.threadGenerateChart(chartVBox,chartDescriptor);
+        singleton.threadGenerateChart(chartVBox,chartDescriptor);
 
     }
 
@@ -590,7 +704,7 @@ public class MainController implements Initializable {
         setChartPreset("Custom");
         charts.set(chartEditIndex,chartDescriptor);
         VBox vBox = ((VBox)((HBox)(chartContainer.getChildren().get(chartEditIndex))).getChildren().get(0));
-        singelton.threadGenerateChart(vBox,chartDescriptor);
+        singleton.threadGenerateChart(vBox,chartDescriptor);
     }
 
     private void onEditChart(ActionEvent event){
@@ -607,7 +721,7 @@ public class MainController implements Initializable {
             stage.setTitle("Update Diagram");
             stage.setScene(scene);
             stage.initModality(Modality.WINDOW_MODAL);
-            stage.initOwner(objectTable.getScene().getWindow());
+            stage.initOwner(fromDatePicker.getScene().getWindow());
 
             NewChartController newChartController = fxmlLoader.getController();
             newChartController.loadChart(charts.get(index));
@@ -641,7 +755,7 @@ public class MainController implements Initializable {
 
         List<Path> paths;
         try{
-            Stream<Path> files = Files.list(Paths.get(singelton.getWorkingDirectory()+"\\Projects\\"+singelton.getCurrentProject()+"\\DiagramPresets"));
+            Stream<Path> files = Files.list(Paths.get(singleton.getWorkingDirectory()+"\\Projects\\"+ singleton.getCurrentProject()+"\\DiagramPresets"));
             paths = files.toList();
 
         } catch (IOException e) {
@@ -674,7 +788,7 @@ public class MainController implements Initializable {
         stage.setTitle("New Diagram Preset");
         stage.setScene(scene);
         stage.initModality(Modality.WINDOW_MODAL);
-        stage.initOwner(objectTable.getScene().getWindow());
+        stage.initOwner(fromDatePicker.getScene().getWindow());
 
         stage.setResizable(false);
         stage.show();
@@ -684,7 +798,7 @@ public class MainController implements Initializable {
 
 
         try{
-            File file = new File(singelton.getWorkingDirectory()+"\\Projects\\"+singelton.getCurrentProject()+"\\DiagramPresets\\"+chartPresetBox.getValue()+".json");
+            File file = new File(singleton.getWorkingDirectory()+"\\Projects\\"+ singleton.getCurrentProject()+"\\DiagramPresets\\"+chartPresetBox.getValue()+".json");
             Files.delete(file.toPath());
         }catch (IOException e) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -704,7 +818,7 @@ public class MainController implements Initializable {
 
         JSONParser jsonParser = new JSONParser();
 
-        try(FileReader reader = new FileReader(singelton.getWorkingDirectory()+"\\Projects\\"+singelton.getCurrentProject()+"\\DiagramPresets\\"+chartPresetBox.getValue()+".json")){
+        try(FileReader reader = new FileReader(singleton.getWorkingDirectory()+"\\Projects\\"+ singleton.getCurrentProject()+"\\DiagramPresets\\"+chartPresetBox.getValue()+".json")){
             Object obj = jsonParser.parse(reader);
             JSONArray chartList = (JSONArray)obj;
 

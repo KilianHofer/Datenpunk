@@ -67,15 +67,15 @@ public class NewChartController implements Initializable {
     boolean update = false;
     boolean updating = false;
 
-    Singelton singelton = Singelton.getInstance();
+    Singleton singleton = Singleton.getInstance();
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
-        controller = singelton.getController();
+        controller = singleton.getController();
 
-        singelton.setColumnInfo();          //TODO: move to on project open
-        columnInfo = singelton.getColumnInfo();
+        singleton.setColumnInfo();          //TODO: move to on project open
+        columnInfo = singleton.getColumnInfo();
 
         textFields.addAll(xMinField, xMaxField, xNameField, yMinField, yMaxField, yNameField);
 
@@ -423,7 +423,7 @@ public class NewChartController implements Initializable {
             chartPane.setCenter(chartContainer);
             chartContainer.getChildren().add(chart);
 
-            singelton.threadGenerateChart(chartContainer, chartDescriptor);
+            singleton.threadGenerateChart(chartContainer, chartDescriptor);
         }
 
     }

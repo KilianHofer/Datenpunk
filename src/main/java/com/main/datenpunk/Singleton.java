@@ -3,21 +3,23 @@ package com.main.datenpunk;
 import database.DAO;
 import enteties.ChartDescriptor;
 import enteties.ColumnInfo;
-import javafx.scene.chart.*;
 import javafx.scene.layout.VBox;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Singelton {
+public class Singleton {
 
     DAO dao = DAO.getInstance();
     MainController controller;
 
+    public boolean sorting = false;
+
     private String currentProject;
     private final String workingDirectory = System.getProperty("user.home") + "\\Datenpunk";
-    private static Singelton instance = null;
+    private static Singleton instance = null;
 
     private List<ColumnInfo> columnInfo;
+
 
     public void setController(MainController controller){
         this.controller = controller;
@@ -28,9 +30,7 @@ public class Singelton {
 
     public void setColumnInfo(){
         columnInfo = new ArrayList<>();
-        columnInfo.add(new ColumnInfo("objects","id", false,false));
-        columnInfo.addAll(dao.selectTableColumns("objects"));
-        columnInfo.addAll(dao.selectTableColumns("history"));
+        columnInfo.addAll(dao.selectTableColumns());
     }
 
     public List<ColumnInfo> getColumnInfo(){
@@ -38,12 +38,12 @@ public class Singelton {
     }
 
 
-    private Singelton() {
+    private Singleton() {
     }
 
-    public static Singelton getInstance() {
+    public static Singleton getInstance() {
         if (instance == null)
-            instance = new Singelton();
+            instance = new Singleton();
         return instance;
     }
 

@@ -41,7 +41,7 @@ public class ProjectSelectionController implements Initializable {
 
 
     DAO dao = DAO.getInstance();
-    Singelton singelton = Singelton.getInstance();
+    Singleton singleton = Singleton.getInstance();
 
     @FXML
     public void onNew() throws IOException {
@@ -225,8 +225,8 @@ public class ProjectSelectionController implements Initializable {
     private void openProject(ProjectTableElement element) throws IOException {
         File file = new File(System.getProperty("user.home")+"\\Datenpunk\\connection.dtpnk");
         if(checkSavedPasswordAndConnect(file,element.getName())){
-            singelton.setCurrentProject(element.getName());
-            singelton.setColumnInfo();
+            singleton.setCurrentProject(element.getName());
+            singleton.setColumnInfo();
             openProjectWindow();
         }
         else {
@@ -259,10 +259,15 @@ public class ProjectSelectionController implements Initializable {
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
         Stage stage = (Stage) projectTable.getScene().getWindow();
         stage.setTitle("Datenpunk");
-        stage.setScene( new Scene(fxmlLoader.load()));
+        Scene scene = new Scene(fxmlLoader.load());
+        scene.getStylesheets().add(getClass().getResource("/com/main/datenpunk/application.css").toExternalForm());
+        MainController controller = fxmlLoader.getController();
+        singleton.setController(controller);
+        stage.setScene(scene);
         stage.setMaximized(true);
         stage.setResizable(true);
         stage.show();
+        controller.initializeCellFactories();
 
 
     }

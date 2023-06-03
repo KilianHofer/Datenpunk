@@ -1,6 +1,7 @@
 package com.main.datenpunk;
 
 import database.DAO;
+import enteties.Status;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -10,6 +11,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
@@ -22,6 +24,8 @@ import javafx.util.Callback;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Scanner;
 
@@ -34,7 +38,7 @@ public class NewProjectController implements Initializable {
     @FXML
     TextField nameMaxLengthField;
     DAO dao = DAO.getInstance();
-    Singelton singelton = Singelton.getInstance();
+    Singleton singleton = Singleton.getInstance();
 
     ObservableList<String> choices = FXCollections.observableArrayList("Text","Integer","Decimal","Choice");
     Stage returnStage;
@@ -88,9 +92,9 @@ public class NewProjectController implements Initializable {
 
     ChangeListener<String> choiceListener = new ChangeListener<>() {
         @Override
-        public void changed(ObservableValue<? extends String> observableValue, String s, String t1) {           //TODO: implement
+        public void changed(ObservableValue<? extends String> observableValue, String s, String t1) {
 
-            ChoiceBox choiceBox = (ChoiceBox) nameField.getScene().focusOwnerProperty().get();
+            ChoiceBox<String> choiceBox = (ChoiceBox<String>) nameField.getScene().focusOwnerProperty().get();
             VBox vBox = (VBox) choiceBox.getParent();
 
             for(int i = 2 ; i<vBox.getChildren().size();i++){
@@ -217,6 +221,83 @@ public class NewProjectController implements Initializable {
 
     }
 
+    private void createTables() {
+        List<Node> columns = columnContainer.getChildren();
+        List<Integer> objects = new ArrayList<>();
+        List<Integer> history = new ArrayList<>();
+        for(int i = 0;i<columns.size();i++){
+            if(getColumnHistoryCheck(i).isSelected())
+                history.add(i);
+            else
+                objects.add(i);
+        }
+        createColumnTable();
+        createTable(objects,false);
+        createTable(history,true);
+    }
+
+    private void createColumnTable() {
+        List<Node> columns = columnContainer.getChildren();
+        List<String> names = new ArrayList<>();
+        List<String> types = new ArrayList<>();
+        List<String> tables = new ArrayList<>();
+        List<Integer> positions = new ArrayList<>();
+
+        for(int i = 0; i< columns.size();i++){
+            names.add(getColumnNameField(i).getText().toLowerCase());
+            types.add(getColumnChoiceBox(i).getValue().toLowerCase());
+            if(getColumnHistoryCheck(i).isSelected())
+                tables.add("history");
+            else
+                tables.add("objects");
+            positions.add(Integer.parseInt(getColumnPositionField(i).getText()));
+        }
+
+        dao.createColumnTable(names,types,tables,positions);
+    }
+
+    private void createTable(List<Integer> list,boolean history){
+        List<String> names = new ArrayList<>();
+        List<String> types = new ArrayList<>();
+        List<String> foreignNames = new ArrayList<>();
+        List<List<Status>> foreignLists = new ArrayList<>();
+        List<Integer> positions = new ArrayList<>();
+        for (int id : list) {
+            String type = "";
+            names.add(getColumnNameField(id).getText());
+            positions.add(Integer.parseInt(getColumnPositionField(id).getText()));
+            switch (getColumnChoiceBox(id).getValue()) {
+                case "Text" -> type = "VARCHAR(" + getColumnMaxLengthField(id).getText() + ")";
+                case "Integer" -> type = "INT";
+                case "Decimal" -> type = "FLOAT";
+                case "Choice" -> {
+                    type = "VARCHAR(200)";
+                    foreignNames.add(getColumnNameField(id).getText());
+                    ObservableList<String> categoryList = getColumnSelectionList(id).getItems();
+                    List<Status> statuses = new ArrayList<>();
+                    for (int j = 0; j < categoryList.size(); j++) {
+                        String line = categoryList.get(j);
+                        String name = line.substring(0, line.lastIndexOf("("));
+                        String color = line.substring(line.lastIndexOf("(") + 1, line.lastIndexOf(")"));
+
+                        statuses.add(new Status(name, j, color));
+                    }
+                    foreignLists.add(statuses);
+
+                }
+                case "SERIAL" -> type = "SERIAL";
+                case "DATE" -> type = "BIGINT";
+            }
+            types.add(type);
+        }
+        if(!history){
+            dao.createTable("objects",names,types,foreignNames,foreignLists);
+        }
+        else {
+            dao.createTable("history",names,types,foreignNames,foreignLists);
+        }
+    }
+
     private void connectToDatabase() {
         String name = nameField.getText();
         File file = new File(System.getProperty("user.home")+"\\Datenpunk\\connection.dtpnk");
@@ -229,16 +310,20 @@ public class NewProjectController implements Initializable {
                         dao.createDatabase(name);
                     }
                     if(dao.connectToDB("datenpunk_"+name,"postgres",password)){
-                        dao.createTables();
-                        singelton.setCurrentProject(name);
-                        singelton.setColumnInfo();
+                        createTables();
+                        singleton.setCurrentProject(name);
+                        singleton.setColumnInfo();
                         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
                         Stage stage = returnStage;
                         stage.setTitle("Datenpunk");
-                        stage.setScene( new Scene(fxmlLoader.load()));
+                        Scene scene = new Scene(fxmlLoader.load());
+                        stage.setScene(scene);
+                        MainController controller = fxmlLoader.getController();
+                        singleton.setController(controller);
                         stage.setMaximized(true);
                         stage.setResizable(true);
                         stage.show();
+                        controller.initializeCellFactories();
 
                         stage = (Stage) nameField.getScene().getWindow();
                         stage.close();
@@ -343,6 +428,9 @@ public class NewProjectController implements Initializable {
     }
     private ChoiceBox<String> getColumnChoiceBox(int id){
         return (ChoiceBox)((VBox)getColumnContainer(id).getChildren().get(2)).getChildren().get(1);
+    }
+    private TextField getColumnMaxLengthField(int id){
+        return (TextField)((VBox)getColumnContainer(id).getChildren().get(2)).getChildren().get(2);
     }
     private ListView<String> getColumnSelectionList(int id){
         return (ListView)((VBox)getColumnContainer(id).getChildren().get(2)).getChildren().get(5);
