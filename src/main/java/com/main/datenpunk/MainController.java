@@ -3,7 +3,6 @@ package com.main.datenpunk;
 import database.DAO;
 import enteties.*;
 import javafx.beans.InvalidationListener;
-import javafx.beans.Observable;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -12,7 +11,6 @@ import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
@@ -30,7 +28,6 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -50,7 +47,7 @@ public class MainController implements Initializable {
     private final Singleton singleton = Singleton.getInstance();
     @FXML
     public VBox chartContainer;
-    public ChoiceBox chartPresetBox;
+    public ChoiceBox<String> chartPresetBox;
     @FXML
     private Menu showHideMenu;
 
@@ -73,8 +70,6 @@ public class MainController implements Initializable {
     @FXML
     SplitPane objectTable;
 
-    List<VBox> columns = new ArrayList<>();
-
     @FXML
     private TextField whitelistNameField, whitelistTypeField, blacklistNameField, blacklistTypeField;
     @FXML
@@ -94,16 +89,12 @@ public class MainController implements Initializable {
 
     private List<String> presets = new ArrayList<>();
     private final List<String> statusNames = new ArrayList<>();
-
-    List<List<Status>> choices = new ArrayList<>();
-    List<String> choiceNames = new ArrayList<>();
-
-    private ObservableList<ObjectTableElement> objectTableElements = FXCollections.observableArrayList();
-
     List<ChartDescriptor> charts = new ArrayList<>();
     int chartEditIndex;
 
     boolean changingPresets = false;
+    boolean switchSelection = false;
+    Integer selectedIndex = null;
 
     private String sortType = "ASC";
     private String sortColumn = "Status";
@@ -120,8 +111,8 @@ public class MainController implements Initializable {
             if(columnInfo.colored){
                 list.addAll(dao.selectStatuses(columnInfo.name));
             }
-            choices.add(list);
-            choiceNames.add(columnInfo.name);
+            singleton.choices.add(list);
+            singleton.choiceNames.add(columnInfo.name);
         }
     }
 
@@ -179,8 +170,8 @@ public class MainController implements Initializable {
     public void updateTable() {
 
         String sortColumnName = sortColumn;
-        for(Node column:objectTable.getItems()){
-            Button button = (Button)((VBox)column).getChildren().get(0);
+        for(VBox column:singleton.getColumns()){
+            Button button = (Button)column.getChildren().get(0);
             String columnName = "";
             for(ColumnInfo columnInfo:singleton.getColumnInfo()){
                 if(columnInfo.name.equals(button.getText().toLowerCase()))
@@ -189,17 +180,11 @@ public class MainController implements Initializable {
                     sortColumnName= columnInfo.table+"."+sortColumnName;
 
             }
-            ListView<String> listView = (ListView<String>)((VBox)column).getChildren().get(1);
+            ListView<String> listView = (ListView<String>)column.getChildren().get(1);
             listView.getItems().setAll(dao.selectMain(fromDate,toDate,listViews,columnName,sortColumnName,sortType));
         }
     }
-
-    InvalidationListener dividerListender = new InvalidationListener() {
-        @Override
-        public void invalidated(Observable observable) {
-            setTableHeaderWidths();
-        }
-    };
+    InvalidationListener dividerListender = observable -> setTableHeaderWidths();
 
     private void setTableHeaderWidths() {
         for (int i = 0; i < objectTable.getItems().size(); i++) {
@@ -209,8 +194,8 @@ public class MainController implements Initializable {
         }
     }
 
-    ListChangeListener listChangeListener = change -> {
-        for (VBox column:columns){
+    ListChangeListener<String> listChangeListener = change -> {
+        for (VBox column:singleton.getColumns()){
             int ROW_HEIGHT = 24;
             ListView<String> listView = (ListView<String>) column.getChildren().get(1);
             listView.setPrefHeight(listView.getItems().size()*ROW_HEIGHT+2);
@@ -220,16 +205,35 @@ public class MainController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
+
         for(int i = 0; i< singleton.getColumnInfo().size(); i++){
             String name = singleton.getColumnInfo().get(i).name.substring(0,1).toUpperCase()+ singleton.getColumnInfo().get(i).name.substring(1);
             Button button = new Button(name);
             button.setStyle("-fx-background-radius: 0px");
             button.setOnAction(this::changeTableSortOrder);
             ListView<String> listView = new ListView<>();
+            listView.getSelectionModel().selectedIndexProperty().addListener((observableValue, s, t1) -> {
+                if(!switchSelection) {
+                    switchSelection = true;
+                    for(VBox column:singleton.getColumns()){
+                        int index = ((ListView<String>)column.getChildren().get(1)).getSelectionModel().getSelectedIndex();
+                        if((selectedIndex == null || index != selectedIndex)&&index!=-1){
+                            selectedIndex = index;
+                            break;
+                        }
+                    }
+                    for(VBox column:singleton.getColumns()){
+                        ((ListView<String>)column.getChildren().get(1)).getSelectionModel().select(selectedIndex);
+                    }
+                    switchSelection = false;
+                }
+
+            });
+            listView.setOnMouseClicked(this::openDetailView);
             listView.getItems().addListener(listChangeListener);
             VBox vBox = new VBox(button,listView);
             objectTable.getItems().add(i,vBox);
-            columns.add(vBox);
+            singleton.getColumns().add(vBox);
             CheckMenuItem checkMenuItem = new CheckMenuItem(name);
             checkMenuItem.setSelected(true);
             checkMenuItem.setOnAction(this::onCheckVisible);
@@ -266,7 +270,7 @@ public class MainController implements Initializable {
 
     public void initializeCellFactories() {
         for (int i = 0; i < singleton.getColumnInfo().size(); i++) {
-            ListView<String> listView = (ListView<String>) columns.get(i).getChildren().get(1);
+            ListView<String> listView = (ListView<String>) singleton.getColumns().get(i).getChildren().get(1);
             if (singleton.getColumnInfo().get(i).colored) {
                 listView.setCellFactory(new Callback<>() {
                     @Override
@@ -280,9 +284,9 @@ public class MainController implements Initializable {
                                     setStyle("-fx-control-opacity: 0;");
                                 } else {
                                     setText(item);
-                                    for (int i = 0; i<choices.size();i++)
-                                        if (((Button) ((VBox) getParent().getParent().getParent().getParent().getParent()).getChildren().get(0)).getText().toLowerCase().equals(choiceNames.get(i))) {
-                                            for(Status status:choices.get(i)){
+                                    for (int i = 0; i<singleton.choices.size();i++)
+                                        if (((Button) ((VBox) getParent().getParent().getParent().getParent().getParent()).getChildren().get(0)).getText().toLowerCase().equals(singleton.choiceNames.get(i))) {
+                                            for(Status status:singleton.choices.get(i)){
                                                 if(item.equals(status.getName())){
                                                     setStyle("-fx-control-inner-background: "+status.getColor());
                                                 }
@@ -324,31 +328,44 @@ public class MainController implements Initializable {
         setTableHeaderWidths();
     }
 
-    private void openDetailView() throws IOException {
-        /*
-        if(objectTable.getSelectionModel().getSelectedItem() != null) {             //TODO
-            ObjectTableElement currentElement = objectTable.getSelectionModel().getSelectedItem();
+    private void openDetailView(MouseEvent event){
 
-            FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("detail-view.fxml"));
-            Scene scene = new Scene(fxmlLoader.load());
+        if(event.getClickCount() == 2) {
 
-
-            Stage stage = new Stage();
-
-            stage.setTitle(currentElement.getName());
-            stage.setScene(scene);
-            stage.initModality(Modality.WINDOW_MODAL);
-            stage.initOwner(objectTable.getScene().getWindow());
-
-            DetailController detailController = fxmlLoader.getController();
-            detailController.setCurrentElement(currentElement.getId());     //TODO: Better data transfer
-
-            stage.setResizable(false);
-            stage.show();
+            ListView<String> idList = null;
+            for (VBox column : singleton.getColumns()) {
+                if (((Button) column.getChildren().get(0)).getText().equals("Id"))
+                    idList = (ListView<String>) column.getChildren().get(1);
+            }
 
 
+            assert idList != null;
+            if (idList.getSelectionModel().getSelectedItem() != null) {
+                try {
+                    String currentElement = idList.getSelectionModel().getSelectedItem();
+
+                    FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("detail-view.fxml"));
+                    Scene scene = new Scene(fxmlLoader.load());
+                    scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/com/main/datenpunk/application.css")).toExternalForm());
+
+                    Stage stage = new Stage();
+
+                    stage.setTitle("Details");
+                    stage.setScene(scene);
+                    stage.initModality(Modality.WINDOW_MODAL);
+                    stage.initOwner(objectTable.getScene().getWindow());
+
+                    DetailController detailController = fxmlLoader.getController();
+                    detailController.setCurrentElement(Integer.parseInt(currentElement));     //TODO: Better data transfer
+                    stage.setResizable(false);
+                    stage.show();
+                    detailController.initializeCellFactories();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+            }
         }
-        */
     }
 
     @FXML
@@ -376,10 +393,10 @@ public class MainController implements Initializable {
     public void onCheckVisible(Event event){
 
         objectTable.getItems().clear();
-        for (int i = 0; i < columns.size();i++) {
+        for (int i = 0; i < singleton.getColumns().size();i++) {
             CheckMenuItem menuItem = (CheckMenuItem)showHideMenu.getItems().get(i);
             if(menuItem.isSelected()){
-                objectTable.getItems().add(columns.get(i));
+                objectTable.getItems().add(singleton.getColumns().get(i));
             }
         }
         addBufferColumn();

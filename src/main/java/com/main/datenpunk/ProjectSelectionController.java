@@ -21,6 +21,7 @@ import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Scanner;
 
@@ -217,14 +218,21 @@ public class ProjectSelectionController implements Initializable {
 
     public void onOpen() throws IOException {
         if(projectTable.getSelectionModel().getSelectedItem() != null){
-            ProjectTableElement element = projectTable.getSelectionModel().getSelectedItem();
-             openProject(element);
+                        ProjectTableElement element = projectTable.getSelectionModel().getSelectedItem();
+            openProject(element);
         }
     }
 
     private void openProject(ProjectTableElement element) throws IOException {
         File file = new File(System.getProperty("user.home")+"\\Datenpunk\\connection.dtpnk");
         if(checkSavedPasswordAndConnect(file,element.getName())){
+            if(singleton.getColumns() != null)
+                singleton.getColumns().clear();
+            if(singleton.getColumnInfo() != null)
+                singleton.getColumnInfo().clear();
+            singleton.choices.clear();
+            singleton.choiceNames.clear();
+
             singleton.setCurrentProject(element.getName());
             singleton.setColumnInfo();
             openProjectWindow();
@@ -260,7 +268,7 @@ public class ProjectSelectionController implements Initializable {
         Stage stage = (Stage) projectTable.getScene().getWindow();
         stage.setTitle("Datenpunk");
         Scene scene = new Scene(fxmlLoader.load());
-        scene.getStylesheets().add(getClass().getResource("/com/main/datenpunk/application.css").toExternalForm());
+        scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/com/main/datenpunk/application.css")).toExternalForm());
         MainController controller = fxmlLoader.getController();
         singleton.setController(controller);
         stage.setScene(scene);

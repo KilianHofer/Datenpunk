@@ -24,10 +24,7 @@ import javafx.util.Callback;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ResourceBundle;
-import java.util.Scanner;
+import java.util.*;
 
 public class NewProjectController implements Initializable {
 
@@ -311,12 +308,23 @@ public class NewProjectController implements Initializable {
                     }
                     if(dao.connectToDB("datenpunk_"+name,"postgres",password)){
                         createTables();
+
+                        if(singleton.getColumns() != null)
+                            singleton.getColumns().clear();
+                        if(singleton.getColumnInfo() != null)
+                            singleton.getColumnInfo().clear();
+                        singleton.choices.clear();
+                        singleton.choiceNames.clear();
+
                         singleton.setCurrentProject(name);
                         singleton.setColumnInfo();
+
+
                         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
                         Stage stage = returnStage;
                         stage.setTitle("Datenpunk");
                         Scene scene = new Scene(fxmlLoader.load());
+                        scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/com/main/datenpunk/application.css")).toExternalForm());
                         stage.setScene(scene);
                         MainController controller = fxmlLoader.getController();
                         singleton.setController(controller);
@@ -427,13 +435,13 @@ public class NewProjectController implements Initializable {
         return (CheckBox)((VBox)getColumnContainer(id).getChildren().get(1)).getChildren().get(2);
     }
     private ChoiceBox<String> getColumnChoiceBox(int id){
-        return (ChoiceBox)((VBox)getColumnContainer(id).getChildren().get(2)).getChildren().get(1);
+        return (ChoiceBox<String>)((VBox)getColumnContainer(id).getChildren().get(2)).getChildren().get(1);
     }
     private TextField getColumnMaxLengthField(int id){
         return (TextField)((VBox)getColumnContainer(id).getChildren().get(2)).getChildren().get(2);
     }
     private ListView<String> getColumnSelectionList(int id){
-        return (ListView)((VBox)getColumnContainer(id).getChildren().get(2)).getChildren().get(5);
+        return (ListView<String>)((VBox)getColumnContainer(id).getChildren().get(2)).getChildren().get(5);
     }
 
     public void onAdd() {

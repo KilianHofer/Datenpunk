@@ -3,6 +3,7 @@ package com.main.datenpunk;
 import database.DAO;
 import enteties.ChartDescriptor;
 import enteties.ColumnInfo;
+import enteties.Status;
 import javafx.scene.layout.VBox;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +21,9 @@ public class Singleton {
 
     private List<ColumnInfo> columnInfo;
 
+    private final List<VBox> columns = new ArrayList<>();
+    List<List<Status>> choices = new ArrayList<>();
+    List<String> choiceNames = new ArrayList<>();
 
     public void setController(MainController controller){
         this.controller = controller;
@@ -37,6 +41,9 @@ public class Singleton {
         return columnInfo;
     }
 
+    public List<VBox> getColumns() {
+        return columns;
+    }
 
     private Singleton() {
     }

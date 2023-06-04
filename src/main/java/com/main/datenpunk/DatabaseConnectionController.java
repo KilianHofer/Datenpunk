@@ -13,6 +13,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Objects;
 
 public class DatabaseConnectionController {
         @FXML
@@ -51,9 +52,19 @@ public class DatabaseConnectionController {
 
             checkRememberMe();
 
+            if(singleton.getColumns() != null)
+                singleton.getColumns().clear();
+            if(singleton.getColumnInfo() != null)
+                singleton.getColumnInfo().clear();
+            singleton.choices.clear();
+            singleton.choiceNames.clear();
+
             singleton.setCurrentProject(name);
+            singleton.setColumnInfo();
+
             FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
             Scene scene = new Scene(fxmlLoader.load());
+            scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/com/main/datenpunk/application.css")).toExternalForm());
             Stage stage = returnStage;
             stage.setTitle("Datenpunk");
             stage.setScene(scene);
