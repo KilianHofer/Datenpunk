@@ -2,7 +2,6 @@ package com.main.datenpunk;
 
 import database.DAO;
 import enteties.*;
-import javafx.beans.InvalidationListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -14,10 +13,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.Scene;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
+import javafx.scene.input.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
@@ -184,21 +180,12 @@ public class MainController implements Initializable {
             listView.getItems().setAll(dao.selectMain(fromDate,toDate,listViews,columnName,sortColumnName,sortType));
         }
     }
-    InvalidationListener dividerListender = observable -> setTableHeaderWidths();
-
-    private void setTableHeaderWidths() {
-        for (int i = 0; i < objectTable.getItems().size(); i++) {
-            VBox vBox = (VBox)objectTable.getItems().get(i);
-            Button headerButton = (Button)vBox.getChildren().get(0);
-            headerButton.setPrefWidth(9999);
-        }
-    }
 
     ListChangeListener<String> listChangeListener = change -> {
         for (VBox column:singleton.getColumns()){
             int ROW_HEIGHT = 24;
             ListView<String> listView = (ListView<String>) column.getChildren().get(1);
-            listView.setPrefHeight(listView.getItems().size()*ROW_HEIGHT+2);
+            listView.setPrefHeight(listView.getItems().size()*ROW_HEIGHT+2+ROW_HEIGHT);
         }
     };
 
@@ -209,6 +196,7 @@ public class MainController implements Initializable {
         for(int i = 0; i< singleton.getColumnInfo().size(); i++){
             String name = singleton.getColumnInfo().get(i).name.substring(0,1).toUpperCase()+ singleton.getColumnInfo().get(i).name.substring(1);
             Button button = new Button(name);
+            button.setPrefWidth(9999);
             button.setStyle("-fx-background-radius: 0px");
             button.setOnAction(this::changeTableSortOrder);
             ListView<String> listView = new ListView<>();
@@ -321,11 +309,9 @@ public class MainController implements Initializable {
         float toAdd = 1/((float)objectTable.getItems().size()-1);
         for(int i = 0; i<objectTable.getDividers().size();i++) {
             SplitPane.Divider divider = objectTable.getDividers().get(i);
-            divider.positionProperty().addListener(dividerListender);
             sum+=toAdd;
             divider.setPosition(sum);
         }
-        setTableHeaderWidths();
     }
 
     private void openDetailView(MouseEvent event){
@@ -370,8 +356,6 @@ public class MainController implements Initializable {
 
     @FXML
     public void onNewObject() throws IOException {
-        /*              TODO
-
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("addElement-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
 
@@ -386,8 +370,6 @@ public class MainController implements Initializable {
         AddElementController addElementController = fxmlLoader.getController();
         stage.setResizable(false);
         stage.show();
-
-         */
     }
 
     public void onCheckVisible(Event event){

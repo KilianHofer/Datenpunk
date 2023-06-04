@@ -26,6 +26,7 @@ public class DetailController implements Initializable {
 
     boolean switchSelection = false;
     boolean updated = false;
+
     Integer selectedIndex;
 
     @FXML

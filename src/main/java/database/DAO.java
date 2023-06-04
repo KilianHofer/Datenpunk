@@ -324,7 +324,7 @@ public class DAO {
             while(resultSet.next()){
                 String result = resultSet.getString(name);
                 if(name.equals("date"))
-                    result = LocalDateTime.ofInstant(Instant.ofEpochMilli(Long.parseLong(result)), TimeZone.getDefault().toZoneId()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss"));
+                    result = LocalDateTime.ofInstant(Instant.ofEpochMilli(Long.parseLong(result)), TimeZone.getDefault().toZoneId()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
                 history.add(result);
             }
@@ -538,25 +538,49 @@ public class DAO {
     }
 
 
-    public void insert(String name, String type,String status){
+    public void insert(List<String> objectColumns, List<String> objectValues,List<String>historyColumns, List<String> historyValues){
 
         try {
-            String query = "INSERT INTO objects(name, type) VALUES(?,?);";
+
+            StringBuilder objectColumnsSubquery = new StringBuilder();
+            StringBuilder objectValuesSubquery = new StringBuilder();
+            for(int i = 0; i<objectColumns.size();i++){
+                objectColumnsSubquery.append(objectColumns.get(i));
+                objectValuesSubquery.append("'").append(objectValues.get(i)).append("'");
+                if(i<objectColumns.size()-1){
+                    objectColumnsSubquery.append(",");
+                    objectValuesSubquery.append(",");
+                }
+            }
+
+            String query = "INSERT INTO objects("+objectColumnsSubquery+") VALUES("+objectValuesSubquery+");";
             PreparedStatement statement = connection.prepareStatement(query,Statement.RETURN_GENERATED_KEYS);
-            statement.setString(1,name);
-            statement.setString(2,type);
+            System.out.println(statement);
             statement.execute();
             int id = -1;
             ResultSet generatedKeys = statement.getGeneratedKeys();
             if (generatedKeys.next()) {
                 id = generatedKeys.getInt(1);
             }
-            String historyQuery = "INSERT INTO History(id, status, date) VALUES(?,?,?)";
-            statement = connection.prepareStatement(historyQuery);
-            statement.setInt(1,id);
-            statement.setString(2,status);   //TODO: make default setting
-            statement.setLong(3,System.currentTimeMillis());
-            statement.execute();
+
+
+            StringBuilder historyColumnsSubquery = new StringBuilder();
+            StringBuilder historyValuesSubquery = new StringBuilder();
+            for(int i = 0; i<historyColumns.size();i++){
+                historyColumnsSubquery.append(historyColumns.get(i));
+                historyValuesSubquery.append("'").append(historyValues.get(i)).append("'");
+                if(i<historyColumns.size()-1){
+                    historyColumnsSubquery.append(",");
+                    historyValuesSubquery.append(",");
+                }
+            }
+
+            String historyQuery = "INSERT INTO History(id, date,"+historyColumnsSubquery+") VALUES(?,?,"+historyValuesSubquery+")";
+            PreparedStatement historyStatement = connection.prepareStatement(historyQuery);
+            historyStatement.setInt(1,id);
+            historyStatement.setLong(2,System.currentTimeMillis());
+            System.out.println(historyStatement);
+            historyStatement.execute();
 
 
         }catch (Exception e){
