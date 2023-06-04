@@ -577,7 +577,7 @@ public class MainController implements Initializable {
 
     }
 
-    public void onDeletePreset() {
+    public void onDeletePreset() throws IOException {
 
         String name = presetBox.getValue();
         if(!name.equals("Custom")) {
@@ -585,7 +585,10 @@ public class MainController implements Initializable {
             alert.setContentText("Delete Prefab: " + name);
             if (alert.showAndWait().get() == ButtonType.OK) {
                 File file = new File(singleton.getWorkingDirectory() + "\\Projects\\" + singleton.getCurrentProject() + "\\Presets\\" + name);
-                file.delete();
+                for(File pFile: Objects.requireNonNull(file.listFiles())){
+                    Files.delete(pFile.toPath());
+                }
+                Files.delete(file.toPath());
                 selectPresets();
             }
         }
@@ -824,14 +827,18 @@ public class MainController implements Initializable {
 
 
         try{
-            File file = new File(singleton.getWorkingDirectory()+"\\Projects\\"+ singleton.getCurrentProject()+"\\DiagramPresets\\"+chartPresetBox.getValue()+".json");
-            Files.delete(file.toPath());
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setContentText("Do you really want to delete this Preset?\n"+chartPresetBox.getValue());
+            if(alert.showAndWait().get() == ButtonType.OK) {
+                File file = new File(singleton.getWorkingDirectory() + "\\Projects\\" + singleton.getCurrentProject() + "\\DiagramPresets\\" + chartPresetBox.getValue() + ".json");
+                Files.delete(file.toPath());
+            }
         }catch (IOException e) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setContentText("Could not delete chart preset: "+chartPresetBox.getValue());
             alert.show();
         }
-        onResetCharts();
+        chartPresetBox.setValue("Custom");
         selectChartPresets();
 
     }

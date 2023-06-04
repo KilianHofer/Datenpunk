@@ -182,7 +182,7 @@ public class DAO {
                 String table = resultSet.getString("tables");
                 String type = resultSet.getString("type");
                 boolean colored = type.equals("choice");
-                boolean discrete = (colored || type.equals("Text"));
+                boolean discrete = (colored || type.equals("text"));
                 Integer position = resultSet.getInt("position");
                 columnInfo.add(new ColumnInfo(table,name,discrete,colored,position,type));
             }
@@ -504,7 +504,7 @@ public class DAO {
             }
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            System.out.println(e.getMessage());
         }
         return 0f;
 
@@ -569,7 +569,6 @@ public class DAO {
 
             String query = "INSERT INTO objects("+objectColumnsSubquery+") VALUES("+objectValuesSubquery+");";
             PreparedStatement statement = connection.prepareStatement(query,Statement.RETURN_GENERATED_KEYS);
-            System.out.println(statement);
             statement.execute();
             int id = -1;
             ResultSet generatedKeys = statement.getGeneratedKeys();

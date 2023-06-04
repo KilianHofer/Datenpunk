@@ -214,7 +214,7 @@ public class ChartService extends Service<Chart> {
                                 if (c.xMax.equals(""))
                                     xMaxValue = dao.getFirstOrLastValue(false, seriesX);
 
-                                if (seriesX.equals("history.timestamp")) {
+                                if (seriesX.equals("history.date")) {
 
                                     if (c.xMin.equals(""))
                                         xMinValue = Instant.ofEpochMilli(Long.parseLong(xMinValue)).atZone(ZoneId.systemDefault()).toLocalDate().toString();

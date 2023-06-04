@@ -57,7 +57,6 @@ public class NewChartController implements Initializable {
     private ChartDescriptor chartDescriptor;
     private String currentChartType;
 
-    List<ColumnInfo> columnInfo;
 
     ObservableList<TextField> textFields = FXCollections.observableArrayList();
 
@@ -74,8 +73,6 @@ public class NewChartController implements Initializable {
 
         controller = singleton.getController();
 
-        singleton.setColumnInfo();          //TODO: move to on project open
-        columnInfo = singleton.getColumnInfo();
 
         textFields.addAll(xMinField, xMaxField, xNameField, yMinField, yMaxField, yNameField);
 
@@ -88,7 +85,7 @@ public class NewChartController implements Initializable {
         chartSelectionList.getSelectionModel().select(0);
 
         xSelectionBox.getItems().clear();
-        for (ColumnInfo column : columnInfo) {
+        for (ColumnInfo column : singleton.getColumnInfo()) {
             ySelectionBox.getItems().add(column.name);
             if (!(column.discrete && xMinField.isVisible()))
                 xSelectionBox.getItems().add(column.name);
@@ -180,7 +177,7 @@ public class NewChartController implements Initializable {
 
         String range;
         if(!c.chartType.equals("Pie Chart")) {
-            if (c.xAxis.equals("timestamp"))
+            if (c.xAxis.equals("date"))
                 range = String.valueOf((int) c.stepSize);
             else
                 range = String.valueOf(c.stepSize);
@@ -213,7 +210,7 @@ public class NewChartController implements Initializable {
     private void hideContinuousOptions() {
         String name = xSelectionBox.getValue();
         Boolean discrete = null;
-        for (ColumnInfo column : columnInfo) {
+        for (ColumnInfo column : singleton.getColumnInfo()) {
             if (column.name.equals(name))
                 discrete = column.discrete;
         }
@@ -238,7 +235,7 @@ public class NewChartController implements Initializable {
 
         String name = ySelectionBox.getValue();
         Boolean discrete = null;
-        for (ColumnInfo column : columnInfo) {
+        for (ColumnInfo column :singleton.getColumnInfo()) {
             if (column.name.equals(name))
                 discrete = column.discrete;
         }
@@ -253,7 +250,7 @@ public class NewChartController implements Initializable {
         seriesSelectionBox.setValue(null);
         String name = ySelectionBox.getValue();
         Boolean discrete = null;
-        for (ColumnInfo column : columnInfo) {
+        for (ColumnInfo column : singleton.getColumnInfo()) {
             if (column.name.equals(name))
                 discrete = column.discrete;
         }
@@ -317,7 +314,7 @@ public class NewChartController implements Initializable {
             String previous = xSelectionBox.getValue();
 
             xSelectionBox.getItems().setAll(new ArrayList<>());
-            for (ColumnInfo column : columnInfo) {
+            for (ColumnInfo column : singleton.getColumnInfo()) {
                 if (!(column.discrete && !(chart.getClass().equals(BarChart.class) || chart.getClass().equals(StackedBarChart.class))))
                     xSelectionBox.getItems().add(column.name);
             }
@@ -371,7 +368,7 @@ public class NewChartController implements Initializable {
 
             float stepSize = 1;
 
-            for (ColumnInfo column : columnInfo) {
+            for (ColumnInfo column : singleton.getColumnInfo()) {
                 if (column.name.equals(xAxis)) {
                     discrete = column.discrete;
                     break;
@@ -380,7 +377,7 @@ public class NewChartController implements Initializable {
 
             if (!chartType.equals("Pie Chart")) {
                 if (Boolean.FALSE.equals(discrete)) {
-                    if (!range.matches("[1-9][0-9]?+[.]?[0-9]?+") || (xAxis.equals("timestamp") && !range.matches("[1-9][0-9]?+"))) {
+                    if (!range.matches("[1-9][0-9]?+[.]?[0-9]?+") || (xAxis.equals("date") && !range.matches("[1-9][0-9]?+"))) {
                         rangeField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
                         cont = false;
                     } else
@@ -396,7 +393,7 @@ public class NewChartController implements Initializable {
                     cont = false;
                 } else
                     yMaxField.setStyle("--fx-border-width: 0px;");
-                if (!xAxis.equals("timestamp")) {
+                if (!xAxis.equals("date")) {
                     if (!xMin.matches("[-]?[0-9]+[.]?[0-9]?+") && !xMin.equals("")) {
                         xMinField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
                         cont = false;
