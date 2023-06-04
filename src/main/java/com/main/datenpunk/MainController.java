@@ -10,13 +10,12 @@ import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.input.*;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
@@ -45,39 +44,24 @@ public class MainController implements Initializable {
     public VBox chartContainer;
     public ChoiceBox<String> chartPresetBox;
     @FXML
+    private TilePane whiteListContainer, blackListContainer;
+    @FXML
     private Menu showHideMenu;
 
 
     @FXML
     private DatePicker toDatePicker,fromDatePicker;
 
-    /*
-    @FXML
-    public TableView<ObjectTableElement> objectTable;
-    @FXML
-    private TableColumn<ObjectTableElement, StringProperty> nameColumn;
-    @FXML
-    private TableColumn<ObjectTableElement, StringProperty> typeColumn;
-    @FXML
-    private TableColumn<ObjectTableElement, String> idColumn,statusColumn, dateColumn;
-
-
-     */
     @FXML
     SplitPane objectTable;
 
+
     @FXML
-    private TextField whitelistNameField, whitelistTypeField, blacklistNameField, blacklistTypeField;
-    @FXML
-    private ChoiceBox<String> whitelistStatusBox, blacklistStatusBox, presetBox;
+    private ChoiceBox<String>  presetBox;
     private final ObservableList<Control> controlList = FXCollections.observableArrayList();
 
-    @FXML
-    private ListView<String> whitelistNameList, whitelistTypeList, whitelistStatusList, blacklistNameList, blacklistTypeList, blacklistStatusList;
     private final ObservableList<ListView<String>> listViews = FXCollections.observableArrayList();
 
-    @FXML
-    private Button addToNameWhitelist,addToTypeWhitelist,addToStatusWhitelist,addToNameBlacklist,addToTypeBlacklist,addToStatusBlacklist,removeFromNameWhitelist,removeFromTypeWhitelist,removeFromStatusWhitelist,removeFromNameBlacklist,removeFromTypeBlacklist,removeFromStatusBlacklist;
     private final ObservableList<Button> addButtons = FXCollections.observableArrayList();
     private final ObservableList<Button> removeButtons = FXCollections.observableArrayList();
 
@@ -192,9 +176,11 @@ public class MainController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
+        getStatuses();
 
         for(int i = 0; i< singleton.getColumnInfo().size(); i++){
-            String name = singleton.getColumnInfo().get(i).name.substring(0,1).toUpperCase()+ singleton.getColumnInfo().get(i).name.substring(1);
+            ColumnInfo columnInfo = singleton.getColumnInfo().get(i);
+            String name = columnInfo.name.substring(0,1).toUpperCase()+ columnInfo.name.substring(1);
             Button button = new Button(name);
             button.setPrefWidth(9999);
             button.setStyle("-fx-background-radius: 0px");
@@ -227,6 +213,11 @@ public class MainController implements Initializable {
             checkMenuItem.setOnAction(this::onCheckVisible);
             showHideMenu.getItems().add(checkMenuItem);
 
+            if(!name.equals("Id") && !name.equals("Date")) {
+                addFiltersSettings(whiteListContainer,columnInfo,name);
+                addFiltersSettings(blackListContainer,columnInfo,name);
+            }
+
         }
 
         resizeColumns();
@@ -235,21 +226,12 @@ public class MainController implements Initializable {
         toDatePicker.setValue(toDate);
 
 
-        controlList.addAll(whitelistNameField,whitelistTypeField,whitelistStatusBox,blacklistNameField,blacklistTypeField,blacklistStatusBox);
-        listViews.addAll(whitelistNameList,whitelistTypeList,whitelistStatusList,blacklistNameList,blacklistTypeList, blacklistStatusList);
-        addButtons.addAll(addToNameWhitelist,addToTypeWhitelist,addToStatusWhitelist,addToNameBlacklist,addToTypeBlacklist,addToStatusBlacklist);
-        removeButtons.addAll(removeFromNameWhitelist,removeFromTypeWhitelist,removeFromStatusWhitelist,removeFromNameBlacklist,removeFromTypeBlacklist,removeFromStatusBlacklist);
-
-        getStatuses();
         selectPresets();
         selectChartPresets();
         setChartPreset("Custom");
 
         presetBox.setOnAction(this::onPresetChange);
         chartPresetBox.setOnAction(this::loadChartPreset);
-
-        whitelistStatusBox.getItems().setAll(statusNames);
-        blacklistStatusBox.getItems().setAll(statusNames);
 
 
         updateTable();
@@ -287,6 +269,51 @@ public class MainController implements Initializable {
                 });
             }
         }
+    }
+
+    private void addFiltersSettings(TilePane tilePane,ColumnInfo columnInfo, String name){
+        Label label = new Label(name+":");
+        Control control;
+
+        if(columnInfo.type.equals("choice")){
+            control = new ChoiceBox<String>();
+            control.setPrefWidth(150);
+
+            int index = 0;
+            for(int j = 0; j < singleton.choiceNames.size();j++){
+                if(singleton.choiceNames.get(j).equals(name.toLowerCase())){
+                    index = j;
+                    break;
+                }
+            }
+
+            for(Status choice:singleton.choices.get(index)){
+                ((ChoiceBox<String>)control).getItems().add(choice.getName());
+            }
+        }
+        else {
+            control = new TextField();
+        }
+        controlList.add(control);
+
+        Button addButton = new Button("Add");
+        Button removeButton = new Button("Remove");
+        addButton.setOnAction(this::onAddToList);
+        removeButton.setOnAction(this::onRemoveFromList);
+        addButtons.add(addButton);
+        removeButtons.add(removeButton);
+        BorderPane borderPane = new BorderPane();
+        borderPane.setLeft(addButton);
+        borderPane.setRight(removeButton);
+
+        ListView<String> filterListView = new ListView<>();
+        filterListView.setPrefSize(150,100);
+        listViews.add(filterListView);
+
+        VBox filterVBox = new VBox(label,control,borderPane,filterListView);
+        VBox.setMargin(borderPane,new Insets(5,0,5,0));
+        tilePane.getChildren().add(filterVBox);
+        TilePane.setMargin(filterVBox,new Insets(0,5,5,0));
     }
 
     private void changeTableSortOrder(ActionEvent event) {

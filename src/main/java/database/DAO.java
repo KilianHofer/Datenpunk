@@ -1,5 +1,6 @@
 package database;
 
+import com.main.datenpunk.Singleton;
 import enteties.ColumnInfo;
 import enteties.Status;
 import javafx.collections.ObservableList;
@@ -16,6 +17,7 @@ public class DAO {
     private Connection connection;
 
     private static DAO instance = null;
+    private static final Singleton singleton = Singleton.getInstance();
 
     private DAO(){
     }
@@ -200,7 +202,7 @@ public class DAO {
                 strings.set(id, strings.get(id).concat("LOWER("));
                 strings.set(id, strings.get(id).concat( name));
                 strings.set(id, strings.get(id).concat(")"));
-                if(id >= strings.size()/2){
+                if(id%2!=0){
                     strings.set(id, strings.get(id).concat(" NOT"));
                 }
                 strings.set(id, strings.get(id).concat(" LIKE "));
@@ -225,12 +227,24 @@ public class DAO {
         for (int i = 0; i < listViews.size(); i++) {
             lists.add("");
         }
+
+        int i = 0;
+        for(ColumnInfo columnInfo:singleton.getColumnInfo()){
+            if(!columnInfo.name.equals("id") && !columnInfo.name.equals("date")) {
+                buildString(lists, listViews, i++, columnInfo.table + "." + columnInfo.name);
+                buildString(lists, listViews, i++, columnInfo.table + "." + columnInfo.name);
+            }
+        }
+
+        /*
         buildString(lists,listViews,0,"objects.name");                //TODO: this will have to be dynamic in the future
-        buildString(lists,listViews,1,"objects.type");
-        buildString(lists,listViews,2,"history.status");
-        buildString(lists,listViews,3,"objects.name");
-        buildString(lists,listViews,4,"objects.type");
+        buildString(lists,listViews,1,"objects.name");
+        buildString(lists,listViews,2,"objects.type");
+        buildString(lists,listViews,3,"objects.type");
+        buildString(lists,listViews,4,"history.status");
         buildString(lists,listViews,5,"history.status");
+
+         */
 
 
         StringBuilder subquery = new StringBuilder();
