@@ -1,9 +1,12 @@
 package com.main.datenpunk;
 
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 import java.io.BufferedWriter;
@@ -18,7 +21,7 @@ public class NewPresetController {
     @FXML
     public TextField nameField;
     @FXML
-    public CheckBox dateRangeCheck, whitelistCheck, blacklistCheck;
+    public CheckBox fromDateCheck, toDateCheck, whitelistCheck, blacklistCheck,columnVisCheck,columnSizeCheck;
 
     Singleton singleton = Singleton.getInstance();
     MainController controller;
@@ -55,14 +58,30 @@ public class NewPresetController {
 
                 lines = new ArrayList<>();
                 lines.add(controller.getFromDate());
+                writeToFile(path + "\\dateRange.dtpnk", lines, fromDateCheck.isSelected());
+
+                lines.clear();
                 lines.add(controller.getToDate());
-                writeToFile(path + "\\dateRange.dtpnk", lines, dateRangeCheck.isSelected());
+                writeToFile(path + "\\dateRange.dtpnk", lines, toDateCheck.isSelected());
 
                 lines = controller.getWhitelist();
                 writeToFile(path + "\\whitelist.dtpnk", lines, whitelistCheck.isSelected());
 
                 lines = controller.getBlacklist();
                 writeToFile(path + "\\blacklist.dtpnk", lines, blacklistCheck.isSelected());
+
+                lines.clear();
+                for(Node column : singleton.getController().objectTable.getItems()){
+                    lines.add(String.valueOf(((VBox) column).getWidth()));
+                }
+                writeToFile(path + "\\columnSizes.dtpnk",lines,columnSizeCheck.isSelected());
+
+                lines.clear();
+                for(Node column:singleton.getController().objectTable.getItems()){
+                    lines.add(((Button)((VBox)column).getChildren().get(0)).getText());
+                }
+                writeToFile(path + "\\columns.dtpnk",lines,columnVisCheck.isSelected());
+
 
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -75,7 +94,7 @@ public class NewPresetController {
 
     private void writeToFile(String path, List<String> lines, boolean write) throws IOException {
         File file = new File(path);
-        file.createNewFile();
+        Files.createFile(file.toPath());
 
         if(write) {
             FileWriter fileWriter = new FileWriter(file, true);

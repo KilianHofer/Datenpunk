@@ -156,7 +156,7 @@ public class ProjectSelectionController implements Initializable {
                     }
                     Files.delete(file.toPath());
                     file = new File(pathToDelete);
-                    file.delete();
+                    Files.delete(file.toPath());
                     getProjects();
                 }
             } catch (IOException e) {
@@ -224,8 +224,11 @@ public class ProjectSelectionController implements Initializable {
 
         ProjectTableElement element = projectTable.getSelectionModel().getSelectedItem();
 
-        Scanner scanner = new Scanner(element.getLocation());
-        scanner.close();
+        try {
+        FileWriter fileWriter = new FileWriter(element.getLocation());
+        fileWriter.write('!');                                      //accesses the file so that last accessed works properly
+        fileWriter.flush();
+        fileWriter.close();
 
         if(dao.connectToDB("datenpunk_"+element.getName(), "postgres", singleton.getPassword())) {
             if (singleton.getColumns() != null)
@@ -239,7 +242,7 @@ public class ProjectSelectionController implements Initializable {
             singleton.setColumnInfo();
 
 
-            try {
+
                 FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
                 Stage stage = (Stage) projectTable.getScene().getWindow();
                 stage.setTitle("Datenpunk");
@@ -252,9 +255,9 @@ public class ProjectSelectionController implements Initializable {
                 stage.setResizable(true);
                 stage.show();
                 controller.setupLater();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
             }
+        }catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

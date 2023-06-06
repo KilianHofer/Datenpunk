@@ -73,7 +73,6 @@ public class MainController implements Initializable {
     private LocalDate toDate,fromDate;
 
     private List<String> presets = new ArrayList<>();
-    private final List<String> statusNames = new ArrayList<>();
     List<ChartDescriptor> charts = new ArrayList<>();
     int chartEditIndex;
 
@@ -87,10 +86,6 @@ public class MainController implements Initializable {
 
 
     private void getStatuses(){
-        List<Status> statuses = dao.selectStatuses("status");
-        for (Status status : statuses) {
-            statusNames.add(status.getName());
-        }
         for(ColumnInfo columnInfo:singleton.getColumnInfo()){
             List<Status> list = new ArrayList<>();
             if(columnInfo.colored){
@@ -424,7 +419,9 @@ public class MainController implements Initializable {
     }
 
     public void onCheckVisible(Event event){
-
+        checkVisible();
+    }
+    private void  checkVisible(){
         objectTable.getItems().clear();
         for (int i = 0; i < singleton.getColumns().size();i++) {
             CheckMenuItem menuItem = (CheckMenuItem)showHideMenu.getItems().get(i);
@@ -617,6 +614,10 @@ public class MainController implements Initializable {
         for (ListView<String> list : listViews) {
             list.getItems().setAll(new ArrayList<>());
         }
+        for(MenuItem item:showHideMenu.getItems()){
+            ((CheckMenuItem)item).setSelected(true);
+        }
+        checkVisible();
         onResetDates();
 
     }
@@ -669,6 +670,23 @@ public class MainController implements Initializable {
                     }
                 }
                 scanner.close();
+
+                scanner = new Scanner(new File(path+"\\columns.dtpnk"));
+                List<String> checks = new ArrayList<>();
+                for(MenuItem item:showHideMenu.getItems()){
+                    checks.add(item.getText());
+                    ((CheckMenuItem)item).setSelected(false);
+                }
+                while(scanner.hasNext()){
+                    String column = scanner.next();
+                    if(checks.contains(column)) {
+                        CheckMenuItem item = (CheckMenuItem) showHideMenu.getItems().get(checks.indexOf(column));
+                        item.setSelected(true);
+                    }
+                }
+                checkVisible();
+                scanner.close();
+
 
             } catch (FileNotFoundException e) {
                 throw new RuntimeException(e);
