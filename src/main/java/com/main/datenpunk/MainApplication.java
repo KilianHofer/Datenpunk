@@ -17,7 +17,7 @@ public class MainApplication extends Application {
         stage.setResizable(false);
         ProjectSelectionController controller = fxmlLoader.getController();
         stage.show();
-        controller.initalizeTable();
+        controller.initializeTable();
 
     }
 

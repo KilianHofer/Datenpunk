@@ -1,20 +1,8 @@
 package com.main.datenpunk;
 
-import database.DAO;
-import enteties.ObjectTableElement;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.concurrent.Service;
-import javafx.concurrent.Task;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+public class TableService /*extends Service<List<ObjectTableElement>>*/{
 
-import java.time.LocalDate;
-import java.util.List;
-
-public class TableService extends Service<List<ObjectTableElement>> {
-
+    /*
     DAO dao = DAO.getInstance();
 
     List<ObjectTableElement> elements;
@@ -62,4 +50,6 @@ public class TableService extends Service<List<ObjectTableElement>> {
             }
         };
     }
+
+     */
 }

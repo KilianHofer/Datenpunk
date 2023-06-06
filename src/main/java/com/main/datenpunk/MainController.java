@@ -11,6 +11,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
@@ -18,6 +19,7 @@ import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import javafx.util.Callback;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -43,6 +45,9 @@ public class MainController implements Initializable {
     @FXML
     public VBox chartContainer;
     public ChoiceBox<String> chartPresetBox;
+    public BorderPane tableWidthContainer;
+    public SplitPane maxWidthPane;
+    public ScrollPane maxHeightPane;
     @FXML
     private TilePane whiteListContainer, blackListContainer;
     @FXML
@@ -176,8 +181,9 @@ public class MainController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
+        tableWidthContainer.widthProperty().addListener((observableValue, number, t1) -> setTableWidth());
+        maxWidthPane.setMaxWidth(1000);
         getStatuses();
-
         for(int i = 0; i< singleton.getColumnInfo().size(); i++){
             ColumnInfo columnInfo = singleton.getColumnInfo().get(i);
             String name = columnInfo.name.substring(0,1).toUpperCase()+ columnInfo.name.substring(1);
@@ -219,8 +225,8 @@ public class MainController implements Initializable {
             }
 
         }
-
         resizeColumns();
+
 
         toDate = LocalDate.now();
         toDatePicker.setValue(toDate);
@@ -238,7 +244,15 @@ public class MainController implements Initializable {
 
     }
 
-    public void initializeCellFactories() {
+    public void setupLater() {
+        Window window = objectTable.getScene().getWindow();
+        maxWidthPane.setMaxWidth(window.getWidth()-50);
+        maxHeightPane.setMaxHeight(window.getHeight() - 100);
+        window.widthProperty().addListener((observableValue, number, t1) -> maxWidthPane.setMaxWidth((Double) t1-50));
+        window.heightProperty().addListener((observableValue, number, t1) -> maxHeightPane.setMaxHeight((Double) t1 - 100));
+        maxWidthPane.getDividers().get(0).setPosition(1);
+        objectTable.setMaxWidth(window.getWidth()-75);
+
         for (int i = 0; i < singleton.getColumnInfo().size(); i++) {
             ListView<String> listView = (ListView<String>) singleton.getColumns().get(i).getChildren().get(1);
             if (singleton.getColumnInfo().get(i).colored) {
@@ -254,14 +268,24 @@ public class MainController implements Initializable {
                                     setStyle("-fx-control-opacity: 0;");
                                 } else {
                                     setText(item);
-                                    for (int i = 0; i<singleton.choices.size();i++)
-                                        if (((Button) ((VBox) getParent().getParent().getParent().getParent().getParent()).getChildren().get(0)).getText().toLowerCase().equals(singleton.choiceNames.get(i))) {
-                                            for(Status status:singleton.choices.get(i)){
-                                                if(item.equals(status.getName())){
-                                                    setStyle("-fx-control-inner-background: "+status.getColor());
+                                    for (int i = 0; i<singleton.choices.size();i++) {
+                                        VBox vBox;
+                                        Node node = getParent().getParent().getParent().getParent();
+                                        if(node.getClass().equals(VBox.class))
+                                            vBox = (VBox)node;
+                                        else {
+                                            node = getParent().getParent().getParent().getParent().getParent();
+                                            vBox = (VBox)node;
+                                        }
+
+                                        if (((Button) vBox.getChildren().get(0)).getText().toLowerCase().equals(singleton.choiceNames.get(i))) {
+                                            for (Status status : singleton.choices.get(i)) {
+                                                if (item.equals(status.getName())) {
+                                                    setStyle("-fx-control-inner-background: " + status.getColor());
                                                 }
                                             }
                                         }
+                                    }
                                 }
                             }
                         };
@@ -274,6 +298,8 @@ public class MainController implements Initializable {
     private void addFiltersSettings(TilePane tilePane,ColumnInfo columnInfo, String name){
         Label label = new Label(name+":");
         Control control;
+
+
 
         if(columnInfo.type.equals("choice")){
             control = new ChoiceBox<String>();
@@ -333,7 +359,7 @@ public class MainController implements Initializable {
 
     private void resizeColumns() {
         float sum = 0;
-        float toAdd = 1/((float)objectTable.getItems().size()-1);
+        float toAdd = 1/((float)objectTable.getItems().size());
         for(int i = 0; i<objectTable.getDividers().size();i++) {
             SplitPane.Divider divider = objectTable.getDividers().get(i);
             sum+=toAdd;
@@ -393,8 +419,6 @@ public class MainController implements Initializable {
         stage.setScene(scene);
         stage.initModality(Modality.WINDOW_MODAL);
         stage.initOwner(objectTable.getScene().getWindow());
-
-        AddElementController addElementController = fxmlLoader.getController();
         stage.setResizable(false);
         stage.show();
     }
@@ -408,19 +432,12 @@ public class MainController implements Initializable {
                 objectTable.getItems().add(singleton.getColumns().get(i));
             }
         }
-        addBufferColumn();
+        setTableWidth();
         resizeColumns();
     }
 
-    private void addBufferColumn() {
-        Button button = new Button("");
-        button.setStyle("-fx-background-radius: 0px");
-        button.setMinWidth(0);
-        ListView<String> listView = new ListView<>();
-        listView.setMinWidth(0);
-        VBox vBox = new VBox(button,listView);
-        vBox.setMinWidth(0);
-        objectTable.getItems().add(vBox);
+    private void setTableWidth(){
+        objectTable.setMaxWidth(Math.max(objectTable.getItems().size()*150,tableWidthContainer.getWidth()-15));
     }
 
     @FXML
@@ -428,7 +445,6 @@ public class MainController implements Initializable {
 
         if(!changingPresets) {
             toDate = toDatePicker.getValue();
-            //presetBox.setValue("Custom");
             updateTable();
         }
     }
@@ -553,7 +569,7 @@ public class MainController implements Initializable {
         stage.setScene(scene);
 
         ProjectSelectionController controller = fxmlLoader.getController();
-        controller.initalizeTable();
+        controller.initializeTable();
         stage.show();
 
     }

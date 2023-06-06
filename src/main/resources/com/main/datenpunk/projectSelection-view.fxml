@@ -21,14 +21,14 @@
           <Menu mnemonicParsing="false" text="File">
             <items>
                   <MenuItem mnemonicParsing="false" onAction="#onNew" text="New Project" />
-                  <MenuItem mnemonicParsing="false" onAction="#onOpenFromFile" text="Open" />
+                  <MenuItem mnemonicParsing="false" onAction="#onOpenFromFile" text="Open From File" />
                   <SeparatorMenuItem mnemonicParsing="false" />
               <MenuItem mnemonicParsing="false" onAction="#onClose" text="Close" />
             </items>
           </Menu>
             <Menu mnemonicParsing="false" text="Settings">
               <items>
-                  <MenuItem mnemonicParsing="false" onAction="#onDeleteSavedPasswords" text="Delete saved passwprds" />
+                  <MenuItem mnemonicParsing="false" onAction="#onDeleteSavedPasswords" text="Delete saved passwords" />
               </items>
             </Menu>
         </menus>

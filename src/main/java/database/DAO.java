@@ -85,7 +85,7 @@ public class DAO {
                 createAuxTable(categoryName, categoryLists.get(i));
                 if(i == 0)
                     subquery.append(",");
-                subquery.append("FOREIGN KEY(").append(categoryName).append(") REFERENCES ").append(categoryName).append("(name)").append(",");
+                subquery.append("FOREIGN KEY(").append(categoryName).append(") REFERENCES ").append(categoryName).append("(name)");
             }
             String query;
             if(tableName.equals("objects"))
@@ -93,6 +93,7 @@ public class DAO {
             else
                 query = "CREATE TABLE history(id INT,"+subquery+"FOREIGN KEY(id) REFERENCES objects(id))";
             PreparedStatement statement = connection.prepareStatement(query);
+            System.out.println(statement);
             statement.executeUpdate();
 
         } catch (SQLException e) {

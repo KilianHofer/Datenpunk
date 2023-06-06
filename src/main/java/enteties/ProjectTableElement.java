@@ -12,8 +12,8 @@ public class ProjectTableElement {
 
     public ProjectTableElement(String name, String lastVisited, String createdAt, String location, boolean local){
         this.name = new SimpleStringProperty(name);
-        this.lastVisited = new SimpleStringProperty(lastVisited.substring(0,9));
-        this.createdAt = new SimpleStringProperty(createdAt.substring(0,9));
+        this.lastVisited = new SimpleStringProperty(lastVisited.substring(0,10));
+        this.createdAt = new SimpleStringProperty(createdAt.substring(0,10));
         this.location = new SimpleStringProperty(location);
         this.local = local;
     }

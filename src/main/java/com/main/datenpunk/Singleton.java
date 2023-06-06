@@ -5,25 +5,39 @@ import enteties.ChartDescriptor;
 import enteties.ColumnInfo;
 import enteties.Status;
 import javafx.scene.layout.VBox;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 public class Singleton {
 
     DAO dao = DAO.getInstance();
     MainController controller;
-
-    public boolean sorting = false;
-
-    private String currentProject;
+        private String currentProject;
     private final String workingDirectory = System.getProperty("user.home") + "\\Datenpunk";
     private static Singleton instance = null;
 
     private List<ColumnInfo> columnInfo;
 
+    private String password;
+
+
+
     private final List<VBox> columns = new ArrayList<>();
     List<List<Status>> choices = new ArrayList<>();
     List<String> choiceNames = new ArrayList<>();
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
 
     public void setController(MainController controller){
         this.controller = controller;
@@ -69,4 +83,31 @@ public class Singleton {
     public void threadGenerateChart(VBox box, ChartDescriptor chartDescriptor) {
         new ChartService(box,chartDescriptor).start();
     }
+
+    public void removeFromProjectsFile(String location) throws IOException {
+
+        File file = new File(workingDirectory+"\\projects.dtpnk");
+        File tmpFile = new File(workingDirectory+"\\tmp.dtpnk");
+        System.out.println(tmpFile.createNewFile());
+
+        Scanner scanner = new Scanner(file);
+        FileWriter fileWriter = new FileWriter(tmpFile,true);
+        BufferedWriter writer = new BufferedWriter(fileWriter);
+        String line;
+        while(scanner.hasNext()){
+            line = scanner.nextLine();
+            if(!line.equals(location)){
+                writer.append(line).append("\n");
+            }
+        }
+        writer.close();
+        fileWriter.close();
+        scanner.close();
+
+
+        System.out.println(file.delete());
+        file = new File(workingDirectory + "\\projects.dtpnk");
+        tmpFile.renameTo(file);
+    }
+
 }
