@@ -86,12 +86,14 @@ public class DAO {
                 if(i == 0)
                     subquery.append(",");
                 subquery.append("FOREIGN KEY(").append(categoryName).append(") REFERENCES ").append(categoryName).append("(name)");
+                if(i < categoryLists.size()-1)
+                    subquery.append(",");
             }
             String query;
             if(tableName.equals("objects"))
                 query = "CREATE TABLE objects(" + subquery + ")";
             else
-                query = "CREATE TABLE history(id INT,"+subquery+"FOREIGN KEY(id) REFERENCES objects(id))";
+                query = "CREATE TABLE history(id INT,"+subquery+",FOREIGN KEY(id) REFERENCES objects(id))";
             PreparedStatement statement = connection.prepareStatement(query);
             System.out.println(statement);
             statement.executeUpdate();

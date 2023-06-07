@@ -28,6 +28,7 @@ public class Singleton {
 
 
     private final List<VBox> columns = new ArrayList<>();
+    private final List<String> columnNames = new ArrayList<>();
     List<List<Status>> choices = new ArrayList<>();
     List<String> choiceNames = new ArrayList<>();
 
@@ -110,4 +111,7 @@ public class Singleton {
         tmpFile.renameTo(file);
     }
 
+    public List<String> getColumnNames() {
+        return columnNames;
+    }
 }
