@@ -84,6 +84,7 @@ public class MainController implements Initializable {
     private String sortColumn = "Status";
     List<TableService> threads = new ArrayList<>(); //TODO
 
+    List<Float> columnWidths = new ArrayList<>();
 
     private void getStatuses(){
         for(ColumnInfo columnInfo:singleton.getColumnInfo()){
@@ -209,6 +210,7 @@ public class MainController implements Initializable {
             VBox vBox = new VBox(button,listView);
             objectTable.getItems().add(i,vBox);
             singleton.getColumns().add(vBox);
+            singleton.getColumnNames().add(name);
             CheckMenuItem checkMenuItem = new CheckMenuItem(name);
             checkMenuItem.setSelected(true);
             checkMenuItem.setOnAction(this::onCheckVisible);
@@ -219,6 +221,9 @@ public class MainController implements Initializable {
                 addFiltersSettings(blackListContainer,columnInfo,name);
             }
 
+        }
+        for (int i = 0; i < singleton.getColumns().size(); i++) {
+            columnWidths.add((float) i+1);
         }
         resizeColumns();
 
@@ -354,10 +359,31 @@ public class MainController implements Initializable {
 
     private void resizeColumns() {
         float sum = 0;
-        float toAdd = 1/((float)objectTable.getItems().size());
+        List<Float> toAdd = new ArrayList<>();
+        if(columnWidths.contains(null)) {
+            for (int i = 0; i < objectTable.getItems().size(); i++) {
+                toAdd.add(1 / ((float) objectTable.getItems().size()));
+            }
+        }
+        else {
+            float total = 0;
+            float subTotal = 0;
+            for (Node node:objectTable.getItems()) {
+                int i = singleton.getColumns().indexOf(node);
+                total+=columnWidths.get(i);
+            }
+            for (int i = 0; i < objectTable.getItems().size(); i++) {
+                Node node = objectTable.getItems().get(i);
+                int index = singleton.getColumns().indexOf(node);
+                subTotal += columnWidths.get(index);
+                Float value = 1/(total/subTotal);
+                toAdd.add(value);
+
+            }
+        }
         for(int i = 0; i<objectTable.getDividers().size();i++) {
             SplitPane.Divider divider = objectTable.getDividers().get(i);
-            sum+=toAdd;
+            sum+=toAdd.get(i);
             divider.setPosition(sum);
         }
     }

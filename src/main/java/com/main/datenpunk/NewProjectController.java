@@ -11,6 +11,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -109,6 +110,7 @@ public class NewProjectController implements Initializable {
                 case "Choice" -> {
                     TextField textField = new TextField();
                     textField.setPromptText("Name");
+                    textField.setOnAction(NewProjectController::addToList);
                     vBox.getChildren().add(textField);
 
                     ColorPicker colorPicker = new ColorPicker();
@@ -122,6 +124,15 @@ public class NewProjectController implements Initializable {
                     Button addButton = new Button("Add");
                     addButton.setOnAction(NewProjectController::addToList);
                     borderPane.setRight(addButton);
+                    Button upButton = new Button("▲");
+                    upButton.setStyle("-fx-font-size: 10");
+                    upButton.setOnAction(NewProjectController::moveUp);
+                    Button downButton = new Button("▼");
+                    downButton.setStyle("-fx-font-size: 10");
+                    downButton.setOnAction(NewProjectController::moveDown);
+                    HBox hBox = new HBox(upButton,downButton);
+                    hBox.setAlignment(Pos.CENTER);
+                    borderPane.setCenter(hBox);
                     vBox.getChildren().add(borderPane);
 
                     ListView<String> listView = new ListView<>();
@@ -564,7 +575,12 @@ public class NewProjectController implements Initializable {
     }
 
     public static void addToList(ActionEvent event) {
-        VBox vBox = (VBox) ((Button) event.getSource()).getParent().getParent();
+        Control control = (Control) event.getSource();
+        VBox vBox;
+        if(control.getClass().equals(Button.class))
+            vBox = (VBox) control.getParent().getParent();
+        else
+            vBox = (VBox) control.getParent();
         TextField textField = (TextField) vBox.getChildren().get(2);
         if (textField.getText().equals("")) {
             textField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
@@ -585,5 +601,36 @@ public class NewProjectController implements Initializable {
 
     public void onAddToList(ActionEvent event) {
         addToList(event);
+    }
+
+    public void onMoveUp(ActionEvent actionEvent) {
+        changePosition(actionEvent,-1);
+    }
+
+    public void onMoveDown(ActionEvent actionEvent) {
+        changePosition(actionEvent,1);
+    }
+    public static void moveUp(ActionEvent actionEvent){
+        changePosition(actionEvent,-1);
+    }
+
+    public static void moveDown(ActionEvent actionEvent) {
+        changePosition(actionEvent,1);
+    }
+
+    private static void changePosition(ActionEvent actionEvent, int offset){
+        Button button = (Button)actionEvent.getSource();
+        VBox vBox = (VBox)button.getParent().getParent().getParent();
+        ListView<String> listView = (ListView<String>)vBox.getChildren().get(5);
+
+        String item = listView.getSelectionModel().getSelectedItem();
+        if(item != null){
+            int index = listView.getItems().indexOf(item);
+            String tmp = listView.getItems().get(index+offset);
+            listView.getItems().set(index+offset,item);
+            listView.getItems().set(index,tmp);
+            listView.getSelectionModel().select(index+offset);
+        }
+
     }
 }
