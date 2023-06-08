@@ -58,11 +58,11 @@ public class NewPresetController {
 
                 lines = new ArrayList<>();
                 lines.add(controller.getFromDate());
-                writeToFile(path + "\\dateRange.dtpnk", lines, fromDateCheck.isSelected());
+                writeToFile(path + "\\dateStart.dtpnk", lines, fromDateCheck.isSelected());
 
                 lines.clear();
                 lines.add(controller.getToDate());
-                writeToFile(path + "\\dateRange.dtpnk", lines, toDateCheck.isSelected());
+                writeToFile(path + "\\dateEnd.dtpnk", lines, toDateCheck.isSelected());
 
                 lines = controller.getWhitelist();
                 writeToFile(path + "\\whitelist.dtpnk", lines, whitelistCheck.isSelected());
@@ -71,8 +71,8 @@ public class NewPresetController {
                 writeToFile(path + "\\blacklist.dtpnk", lines, blacklistCheck.isSelected());
 
                 lines.clear();
-                for(Node column : singleton.getController().objectTable.getItems()){
-                    lines.add(String.valueOf(((VBox) column).getWidth()));
+                for(VBox column : singleton.getColumns()){
+                    lines.add(String.valueOf(column.getWidth()));
                 }
                 writeToFile(path + "\\columnSizes.dtpnk",lines,columnSizeCheck.isSelected());
 
@@ -94,7 +94,8 @@ public class NewPresetController {
 
     private void writeToFile(String path, List<String> lines, boolean write) throws IOException {
         File file = new File(path);
-        Files.createFile(file.toPath());
+        if(!file.exists())
+            Files.createFile(file.toPath());
 
         if(write) {
             FileWriter fileWriter = new FileWriter(file, true);

@@ -223,7 +223,7 @@ public class MainController implements Initializable {
 
         }
         for (int i = 0; i < singleton.getColumns().size(); i++) {
-            columnWidths.add((float) i+1);
+            columnWidths.add(null);
         }
         resizeColumns();
 
@@ -362,7 +362,8 @@ public class MainController implements Initializable {
         List<Float> toAdd = new ArrayList<>();
         if(columnWidths.contains(null)) {
             for (int i = 0; i < objectTable.getItems().size(); i++) {
-                toAdd.add(1 / ((float) objectTable.getItems().size()));
+                sum += 1 / ((float) objectTable.getItems().size());
+                toAdd.add(sum);
             }
         }
         else {
@@ -371,6 +372,7 @@ public class MainController implements Initializable {
             for (Node node:objectTable.getItems()) {
                 int i = singleton.getColumns().indexOf(node);
                 total+=columnWidths.get(i);
+
             }
             for (int i = 0; i < objectTable.getItems().size(); i++) {
                 Node node = objectTable.getItems().get(i);
@@ -383,8 +385,7 @@ public class MainController implements Initializable {
         }
         for(int i = 0; i<objectTable.getDividers().size();i++) {
             SplitPane.Divider divider = objectTable.getDividers().get(i);
-            sum+=toAdd.get(i);
-            divider.setPosition(sum);
+            divider.setPosition(toAdd.get(i));
         }
     }
 
@@ -643,6 +644,9 @@ public class MainController implements Initializable {
         for(MenuItem item:showHideMenu.getItems()){
             ((CheckMenuItem)item).setSelected(true);
         }
+        for(int i = 0;i<columnWidths.size();i++){
+            columnWidths.set(i,null);
+        }
         checkVisible();
         onResetDates();
 
@@ -650,32 +654,37 @@ public class MainController implements Initializable {
 
     public void onPresetChange(ActionEvent event) {
         String preset = presetBox.getValue();
-        if(!preset.equals("Custom")){
+        if(preset != null && !preset.equals("Custom")){
             changingPresets = true;
             try {
                 String path = singleton.getWorkingDirectory() + "\\Projects\\" + singleton.getCurrentProject() + "\\Presets\\" + preset;
-                Scanner scanner = new Scanner(new File(path+"\\dateRange.dtpnk"));
 
-                String next;
+                Scanner scanner = new Scanner(new File(path+"\\dateStart.dtpnk"));
                 if(scanner.hasNext()){
-                    next = scanner.next();
+                    String next = scanner.next();
                     if(next.equals(""))
                         fromDate = null;
                     else
                         fromDate = LocalDate.parse(next);
-                    fromDatePicker.setValue(fromDate);
-                    if(scanner.hasNext()){
-                        next = scanner.next();
-                        if(next.equals(""))
-                            fromDate = LocalDate.now();
-                        else
-                            toDate = LocalDate.parse(next);
-                        toDatePicker.setValue(toDate);
-                    }
                 }
                 else {
-                    resetDates();
+                    fromDate = null;
                 }
+                fromDatePicker.setValue(fromDate);
+                scanner.close();
+
+                scanner = new Scanner(new File(path+"\\dateEnd.dtpnk"));
+                if(scanner.hasNext()){
+                    String next = scanner.next();
+                    if(next.equals(""))
+                        toDate = null;
+                    else
+                        toDate = LocalDate.parse(next);
+                }
+                else {
+                    toDate = LocalDate.now();
+                }
+                toDatePicker.setValue(toDate);
                 scanner.close();
 
                 scanner = new Scanner(new File(path+"\\whitelist.dtpnk"));
@@ -697,6 +706,12 @@ public class MainController implements Initializable {
                 }
                 scanner.close();
 
+                scanner = new Scanner(new File(path+"\\columnSizes.dtpnk"));
+                for(int i = 0; i< columnWidths.size();i++){
+                    columnWidths.set(i,Float.parseFloat(scanner.next()));
+                }
+                scanner.close();
+
                 scanner = new Scanner(new File(path+"\\columns.dtpnk"));
                 List<String> checks = new ArrayList<>();
                 for(MenuItem item:showHideMenu.getItems()){
@@ -712,6 +727,7 @@ public class MainController implements Initializable {
                 }
                 checkVisible();
                 scanner.close();
+
 
 
             } catch (FileNotFoundException e) {
