@@ -31,6 +31,8 @@ import java.util.*;
 public class NewProjectController implements Initializable {
 
 
+    public BorderPane mainPane;
+    public Button createButton;
     @FXML
     VBox columnContainer;
 
@@ -45,6 +47,14 @@ public class NewProjectController implements Initializable {
     TextField nameField, pathField;
 
     boolean changingOrder = false;
+    boolean updating = false;
+
+    public void setUpdating(){
+        updating = true;
+        mainPane.setTop(null);
+        createButton.setText("Update");
+
+    }
 
 
     ChangeListener<String> positionListener = new ChangeListener<>() {
@@ -171,6 +181,11 @@ public class NewProjectController implements Initializable {
 
     @FXML
     public void onCreate() {
+        if(!updating)
+            createProject();
+    }
+
+    public void createProject(){
         String name = nameField.getText();
         String path = pathField.getText();
         File file = new File(path);
@@ -229,8 +244,6 @@ public class NewProjectController implements Initializable {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
-
     }
 
     private void createTables() {
@@ -254,6 +267,7 @@ public class NewProjectController implements Initializable {
         List<String> types = new ArrayList<>();
         List<String> tables = new ArrayList<>();
         List<Integer> positions = new ArrayList<>();
+        List<Boolean> required = new ArrayList<>();
 
         for (int i = 0; i < columns.size(); i++) {
             names.add(getColumnNameField(i).getText().toLowerCase());
@@ -263,9 +277,10 @@ public class NewProjectController implements Initializable {
             else
                 tables.add("objects");
             positions.add(Integer.parseInt(getColumnPositionField(i).getText()));
+            required.add(getRequiredCheck(i).isSelected());
         }
 
-        dao.createColumnTable(names, types, tables, positions);
+        dao.createColumnTable(names, types, tables, positions,required);
     }
 
     private void createTable(List<Integer> list, boolean history) {
@@ -402,7 +417,7 @@ public class NewProjectController implements Initializable {
             Scene scene = new Scene(fxmlLoader.load());
             Stage stage = new Stage();
             DatabaseConnectionController connectionController = fxmlLoader.getController();
-            connectionController.method = this::onCreate;
+            connectionController.method = this::createProject;
             stage.setTitle("Connect to Database");
             stage.setScene(scene);
             stage.initModality(Modality.WINDOW_MODAL);
@@ -434,6 +449,7 @@ public class NewProjectController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+
         pathField.setText(System.getProperty("user.home") + "\\Datenpunk\\Projects");
 
         getColumnChoiceBox(0).setValue("SERIAL");
@@ -486,7 +502,11 @@ public class NewProjectController implements Initializable {
     }
 
     private CheckBox getColumnHistoryCheck(int id) {
-        return (CheckBox) ((VBox) getColumnContainer(id).getChildren().get(1)).getChildren().get(2);
+        return (CheckBox)((VBox) getColumnContainer(id).getChildren().get(1)).getChildren().get(2);
+    }
+
+    private CheckBox getRequiredCheck(int id) {
+        return (CheckBox)((VBox) getColumnContainer(id).getChildren().get(1)).getChildren().get(3);
     }
 
     private ChoiceBox<String> getColumnChoiceBox(int id) {
@@ -523,9 +543,11 @@ public class NewProjectController implements Initializable {
         nameField.textProperty().addListener(emptyListener);
 
         CheckBox trackHistory = new CheckBox("Track History");
+        CheckBox required = new CheckBox("Required");
 
-        VBox second = new VBox(nameLabel, nameField, trackHistory);
+        VBox second = new VBox(nameLabel, nameField, trackHistory,required);
         VBox.setMargin(nameField, new Insets(0, 0, 5, 0));
+        VBox.setMargin(required,new Insets(5,0,0,0));
 
 
         Label typeLabel = new Label("Type:");

@@ -25,6 +25,7 @@ public class AddElementController implements Initializable {
     Singleton singleton = Singleton.getInstance();
 
     List<Boolean> accept = new ArrayList<>();
+    List<Boolean> required = new ArrayList<>();
 
 
 
@@ -100,7 +101,11 @@ public class AddElementController implements Initializable {
                 name = name.substring(0,1).toUpperCase()+name.substring(1)+":";
                 Label label = new Label(name);
                 Node setting;
-                accept.add(false);
+                if(columnInfo.required)
+                    accept.add(false);
+                else
+                    accept.add(true);
+                required.add(columnInfo.required);
                 switch (columnInfo.type) {
                     case "choice" -> {
                         setting = new ChoiceBox<String>();
@@ -112,11 +117,13 @@ public class AddElementController implements Initializable {
                                 }
                             }
                         }
-                        ((ChoiceBox<String>)setting).valueProperty().addListener(emptyListener);
+                        if(columnInfo.required)
+                            ((ChoiceBox<String>)setting).valueProperty().addListener(emptyListener);
                     }
                     case "text" -> {
                         setting = new TextField();
-                        ((TextField)setting).textProperty().addListener(emptyListener);
+                        if(columnInfo.required)
+                            ((TextField)setting).textProperty().addListener(emptyListener);
                     }
                     case "integer" -> {
                         setting = new TextField();
@@ -129,8 +136,13 @@ public class AddElementController implements Initializable {
                                 setting.setStyle("-fx-border-width: 0px");
                             }
                             else {
-                                setting.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
-                                accept.set(index,false);
+                                if(t1.equals("") && !required.get(index)){
+                                    accept.set(index,true);
+                                }
+                                else {
+                                    setting.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+                                    accept.set(index, false);
+                                }
                             }
                         });
                     }
@@ -145,8 +157,13 @@ public class AddElementController implements Initializable {
                                 accept.set(index,true);
                             }
                             else {
-                                setting.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
-                                accept.set(index,false);
+                                if(t1.equals("") && !required.get(index)){
+                                    accept.set(index,true);
+                                }
+                                else {
+                                    setting.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+                                    accept.set(index, false);
+                                }
                             }
                         });
                     }

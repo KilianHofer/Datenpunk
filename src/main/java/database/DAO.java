@@ -120,14 +120,14 @@ public class DAO {
         }
     }
 
-    public void createColumnTable(List<String> names,List<String> types, List<String> tables, List<Integer> positions){
+    public void createColumnTable(List<String> names, List<String> types, List<String> tables, List<Integer> positions, List<Boolean> required){
         try{
-            String query = "CREATE TABLE columns(name VARCHAR(200),type VARCHAR (100),tables VARCHAR (100),position INT)";
+            String query = "CREATE TABLE columns(name VARCHAR(200),type VARCHAR (100),tables VARCHAR (100),position INT,required BOOLEAN)";
             PreparedStatement statement = connection.prepareStatement(query);
             statement.executeUpdate();
 
             for (int i = 0; i < names.size(); i++) {
-                String insertQuery = "INSERT INTO columns VALUES('"+names.get(i)+"','"+types.get(i)+"','"+tables.get(i)+"','"+positions.get(i)+"')";
+                String insertQuery = "INSERT INTO columns VALUES('"+names.get(i)+"','"+types.get(i)+"','"+tables.get(i)+"','"+positions.get(i)+"',"+required.get(i)+")";
                 PreparedStatement insertStatement = connection.prepareStatement(insertQuery);
                 insertStatement.executeUpdate();
             }
@@ -136,30 +136,6 @@ public class DAO {
             throw new RuntimeException(e);
         }
 
-    }
-
-    public void createTables(){
-        try{
-            //Create objects Table
-            String query = "CREATE TABLE objects(id SERIAL PRIMARY KEY,name VARCHAR(200),type VARCHAR(200))";
-            PreparedStatement statement = connection.prepareStatement(query);
-            statement.executeUpdate();
-
-            //Create status Table
-            query = "CREATE TABLE status(id SERIAL PRIMARY KEY, sortorder INT UNIQUE NOT NULL, name VARCHAR(200) NOT NULL UNIQUE,colour CHAR(7))";
-            statement = connection.prepareStatement(query);
-            statement.executeUpdate();
-            fillStatusTable();
-
-            //create history Table
-            query = "CREATE TABLE history(id INT,status VARCHAR(200),date BIGINT,PRIMARY KEY(id,date),FOREIGN KEY(id) REFERENCES objects(id), FOREIGN KEY (status) REFERENCES status(name))";
-            statement = connection.prepareStatement(query);
-            statement.executeUpdate();
-
-
-        }catch (SQLException e){
-            System.out.println(e.getMessage());
-        }
     }
 
     private void fillStatusTable() {
@@ -187,7 +163,8 @@ public class DAO {
                 boolean colored = type.equals("choice");
                 boolean discrete = (colored || type.equals("text"));
                 Integer position = resultSet.getInt("position");
-                columnInfo.add(new ColumnInfo(table,name,discrete,colored,position,type));
+                boolean required = resultSet.getBoolean("required");
+                columnInfo.add(new ColumnInfo(table,name,discrete,colored,position,type,required));
             }
 
 
@@ -282,12 +259,13 @@ public class DAO {
         try {
             String query =
                     "SELECT "+column+"  FROM objects " +
-                    "JOIN history ON (objects.id = history.id) " +
-                    "JOIN (SELECT id,max(date) AS t FROM history WHERE date >= ? AND date <= ? GROUP BY id) AS i ON (i.id = objects.id AND i.t=history.date) " +
-                    "JOIN status ON status.name=history.status" + subquery + " ORDER BY "+sortColumn+ " "+sortType; //TODO: fix SQL-Injection
+                    "LEFT JOIN history ON (objects.id = history.id) " +
+                    "LEFT JOIN (SELECT id,max(date) AS t FROM history WHERE date >= ? AND date <= ? GROUP BY id) AS i ON (i.id = objects.id AND i.t=history.date) " +
+                    "LEFT JOIN status ON status.name=history.status" + subquery + " ORDER BY "+sortColumn+ " "+sortType; //TODO: fix SQL-Injection
             statement = connection.prepareStatement(query);
             statement.setLong(1,fromTimestamp);
             statement.setLong(2,toTimestamp);
+            System.out.println(statement);
             resultSet = statement.executeQuery();
 
             String columnName = column.substring(column.lastIndexOf(".")+1);
@@ -563,7 +541,11 @@ public class DAO {
             StringBuilder objectValuesSubquery = new StringBuilder();
             for(int i = 0; i<objectColumns.size();i++){
                 objectColumnsSubquery.append(objectColumns.get(i));
-                objectValuesSubquery.append("'").append(objectValues.get(i)).append("'");
+                String value = objectValues.get(i);
+                if(value != null)
+                    objectValuesSubquery.append("'").append(objectValues.get(i)).append("'");
+                else
+                    objectValuesSubquery.append("null");
                 if(i<objectColumns.size()-1){
                     objectColumnsSubquery.append(",");
                     objectValuesSubquery.append(",");
@@ -584,7 +566,11 @@ public class DAO {
             StringBuilder historyValuesSubquery = new StringBuilder();
             for(int i = 0; i<historyColumns.size();i++){
                 historyColumnsSubquery.append(historyColumns.get(i));
-                historyValuesSubquery.append("'").append(historyValues.get(i)).append("'");
+                String value = historyValues.get(i);
+                if(value != null)
+                    historyValuesSubquery.append("'").append(historyValues.get(i)).append("'");
+                else
+                    historyValuesSubquery.append("null");
                 if(i<historyColumns.size()-1){
                     historyColumnsSubquery.append(",");
                     historyValuesSubquery.append(",");
