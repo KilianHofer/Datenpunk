@@ -36,9 +36,10 @@ public class FileNotFoundController implements Initializable{
     }
 
 
-    public void onDelete() throws IOException {
+    public void onDelete() {
         System.out.println(name);
-        projectSelectionController.deleteProject(name,path);
+        projectSelectionController.setToDelete(name,path);
+        projectSelectionController.deleteProject();
         onClose();
     }
     public void onReconnect() throws IOException {

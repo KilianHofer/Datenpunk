@@ -17,7 +17,7 @@ import org.json.simple.JSONObject;
 public class NewDiagramPresetController {
 
     public TextField nameField;
-    Singelton singelton = Singelton.getInstance();
+    Singleton singleton = Singleton.getInstance();
 
     public void onCancel() {
         ((Stage)nameField.getScene().getWindow()).close();
@@ -25,7 +25,7 @@ public class NewDiagramPresetController {
 
     public void onCreate() throws IOException {
         if(!nameField.getText().equals("")) {
-            String path = singelton.getWorkingDirectory() + "\\Projects\\" + singelton.getCurrentProject() + "\\DiagramPresets\\";
+            String path = singleton.getWorkingDirectory() + "\\Projects\\" + singleton.getCurrentProject() + "\\DiagramPresets\\";
             File file = new File(path);
             if (!file.exists())
                 Files.createDirectory(file.toPath());
@@ -41,7 +41,7 @@ public class NewDiagramPresetController {
 
             JSONArray chartList = new JSONArray();
 
-            for (ChartDescriptor chart : singelton.getController().charts) {
+            for (ChartDescriptor chart : singleton.getController().charts) {
                 JSONObject chartDetails = new JSONObject();
 
                 chartDetails.put("title", chart.title);
@@ -71,8 +71,8 @@ public class NewDiagramPresetController {
             try (FileWriter fileWriter = new FileWriter(file)) {
                 fileWriter.write(chartList.toJSONString());
                 fileWriter.flush();
-                singelton.getController().setChartPreset(nameField.getText());
-                singelton.getController().selectChartPresets();
+                singleton.getController().setChartPreset(nameField.getText());
+                singleton.getController().selectChartPresets();
             } catch (IOException e) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setContentText("Could not save preset.\n Error: " + e.getMessage());

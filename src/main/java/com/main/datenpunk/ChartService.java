@@ -18,16 +18,14 @@ import java.util.List;
 
 public class ChartService extends Service<Chart> {
 
-    VBox box;
     ChartDescriptor c;
     Chart chart;
 
     DAO dao = DAO.getInstance();
-    Singelton singelton = Singelton.getInstance();
-    List<ColumnInfo> columnInfo = singelton.getColumnInfo();
+    Singleton singleton = Singleton.getInstance();
+    List<ColumnInfo> columnInfo = singleton.getColumnInfo();
 
     public ChartService(VBox box, ChartDescriptor chartDescriptor) {
-        this.box = box;
         this.c = chartDescriptor;
         setOnSucceeded(workerStateEvent -> {
             if(box.getParent() != null){
@@ -186,11 +184,11 @@ public class ChartService extends Service<Chart> {
                         for (ColumnInfo column : columnInfo) {
 
                             if (column.name.equals(c.xAxis)) {
-                                seriesX = column.table + "." + c.xAxis;
+                                seriesX = column.table + ".\"" + c.xAxis+"\"";
                                 discrete = column.discrete;
                             }
                             if (column.name.equals(c.yAxis))
-                                seriesY = column.table + "." + c.yAxis;
+                                seriesY = column.table + ".\"" + c.yAxis+"\"";
                         }
                         String comparator = series.substring(series.lastIndexOf(" ") + 1, series.lastIndexOf("("));
                         if (discrete != null) {
@@ -214,7 +212,7 @@ public class ChartService extends Service<Chart> {
                                 if (c.xMax.equals(""))
                                     xMaxValue = dao.getFirstOrLastValue(false, seriesX);
 
-                                if (seriesX.equals("history.timestamp")) {
+                                if (seriesX.equals("history.\"Date\"")) {
 
                                     if (c.xMin.equals(""))
                                         xMinValue = Instant.ofEpochMilli(Long.parseLong(xMinValue)).atZone(ZoneId.systemDefault()).toLocalDate().toString();
@@ -290,7 +288,7 @@ public class ChartService extends Service<Chart> {
                     Boolean discrete = null;
                     for (ColumnInfo info : columnInfo) {
                         if (column.equals(info.name)) {
-                            column = info.table + "." + column;
+                            column = info.table + ".\"" + column+"\"";
                             discrete = info.discrete;
                             break;
                         }

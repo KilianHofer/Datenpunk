@@ -10,18 +10,16 @@
 <BorderPane xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.main.datenpunk.NewDiagramPresetController">
    <center>
       <VBox>
-         <children>
-            <Label text="Name:">
-               <VBox.margin>
-                  <Insets bottom="5.0" right="5.0" top="5.0" />
-               </VBox.margin>
-            </Label>
-            <TextField fx:id="nameField" promptText="Name" />
-            <BorderPane />
-         </children>
          <BorderPane.margin>
-            <Insets bottom="5.0" left="20.0" right="20.0" top="5.0" />
+            <Insets bottom="5.0" left="20.0" right="20.0" top="5.0"/>
          </BorderPane.margin>
+         <Label text="Name:">
+            <VBox.margin>
+               <Insets bottom="5.0" right="5.0" top="5.0"/>
+            </VBox.margin>
+         </Label>
+         <TextField fx:id="nameField" promptText="Name"/>
+         <BorderPane/>
       </VBox>
    </center>
    <bottom>

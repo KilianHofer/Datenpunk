@@ -21,6 +21,10 @@ import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Scanner;
 
@@ -34,14 +38,20 @@ public class ProjectSelectionController implements Initializable {
     @FXML
     public TableColumn<ProjectTableElement,String> nameColumn, lastVisitedColumn,createdAtColumn, locationColumn;
 
-
+    private String nameToDelete,pathToDelete;
 
     ObservableList<ProjectTableElement> projectTableElements= FXCollections.observableArrayList();
 
 
 
     DAO dao = DAO.getInstance();
-    Singelton singelton = Singelton.getInstance();
+    Singleton singleton = Singleton.getInstance();
+
+
+    public void setToDelete(String name, String path){
+        nameToDelete = name;
+        pathToDelete = path;
+    }
 
     @FXML
     public void onNew() throws IOException {
@@ -58,7 +68,6 @@ public class ProjectSelectionController implements Initializable {
 
         NewProjectController newProjectController = fxmlLoader.getController();
         newProjectController.setReturnStage((Stage)searchBar.getScene().getWindow());      //TODO: better data transfer
-        stage.setResizable(false);
         stage.show();
     }
 
@@ -71,22 +80,22 @@ public class ProjectSelectionController implements Initializable {
         String subString = path.substring(path.lastIndexOf("."));
         if(subString.equals(".dtpnkl") || subString.equals(".dtpnkr")){
 
-            File file = new File(path);
-
             if(!inProjectList(path)){
-                FileWriter fileWriter = new FileWriter(System.getProperty("user.home")+"\\Datenpunk\\projects.dtpnk",true);
-                BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-                bufferedWriter.append(path).append("\n");
-                bufferedWriter.close();
+                                FileWriter fileWriter = new FileWriter(singleton.getWorkingDirectory()+"\\projects.dtpnk",true);
+                BufferedWriter writer = new BufferedWriter(fileWriter);
+                writer.append(path);
+                writer.flush();
+                writer.close();
                 fileWriter.close();
+                getProjects();
             }
-
-
-            String name = path.substring(path.lastIndexOf("\\")+1,path.lastIndexOf("."));
-
-            BasicFileAttributes attributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
-            boolean local = path.charAt(path.length() - 1) != 'r';
-            openProject(new ProjectTableElement(name,attributes.lastAccessTime().toString(),attributes.creationTime().toString(),file.getAbsolutePath(),local));
+            for(ProjectTableElement projectTableElement:projectTable.getItems()){
+                if(projectTableElement.getLocation().equals(path)){
+                    projectTable.getSelectionModel().select(projectTableElement);
+                    break;
+                }
+            }
+            openProject();
         }
 
 
@@ -94,7 +103,7 @@ public class ProjectSelectionController implements Initializable {
     }
     private boolean inProjectList(String path) {
 
-        Scanner scanner = new Scanner(System.getProperty("user.home")+"\\Datenpunk\\projects.dtpnk");
+        Scanner scanner = new Scanner(singleton.getWorkingDirectory()+"\\projects.dtpnk");
 
         while (scanner.hasNext()){
             if(scanner.next().equals(path))
@@ -108,103 +117,65 @@ public class ProjectSelectionController implements Initializable {
         ((Stage)projectTable.getScene().getWindow()).close();
     }
 
-    public void onDelete() throws IOException {
+    public void onDelete() {
 
         if(projectTable.getSelectionModel().getSelectedItem() != null){
             ProjectTableElement element = projectTable.getSelectionModel().getSelectedItem();
             Alert alert = new Alert((Alert.AlertType.CONFIRMATION));
             alert.setContentText("Do you want to delete Project: " + element.getName());
             if(alert.showAndWait().get() == ButtonType.OK){
-            deleteProject(element.getName(),element.getLocation());
+                setToDelete(element.getName(),element.getLocation());
+                deleteProject();
             }
         }
     }
 
+    public void deleteProject() {
 
-    public void deleteProject(String name, String location) throws IOException {
+
 
             String subString = System.getProperty("user.home")+"\\Datenpunk";
-            File file = new File(subString+"\\Projects\\"+name);
-            file.delete();
 
-            file = new File(location);
-            file.delete();
-
-
-            if (!checkSavedPasswordAndConnect(new File(subString + "\\connection.dtpnk"), "")) {
-
-                FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("databaseConnection-view.fxml"));
-                Scene scene = new Scene(fxmlLoader.load());
-
-                Stage stage = new Stage();
-
-                stage.setTitle("Connect to Database");
-                stage.setScene(scene);
-
-                DatabaseConnectionController databaseConnectionController = fxmlLoader.getController();
-                databaseConnectionController.setName("");      //TODO: better data transfer
-                databaseConnectionController.setRetrunStage((Stage) searchBar.getScene().getWindow());
-                databaseConnectionController.setDeletion(true);
-                databaseConnectionController.setName(name);
-                stage.setResizable(false);
-                stage.show();
+            try {
+                if (singleton.getPassword() == null) {
+                    if (!checkSavedPassword()) {
+                        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("databaseConnection-view.fxml"));
+                        Scene scene = new Scene(fxmlLoader.load());
+                        Stage stage = new Stage();
+                        DatabaseConnectionController connectionController = fxmlLoader.getController();
+                        connectionController.method = this::deleteProject;
+                        stage.setTitle("Connect to Database");
+                        stage.setScene(scene);
+                        stage.setResizable(false);
+                        stage.show();
+                    }
+                } else {
+                    dao.connectToDB("", "postgres", singleton.getPassword());
+                    dao.dropDatabase(nameToDelete);
+                    singleton.removeFromProjectsFile(pathToDelete);
+                    File file = new File(subString + "\\Projects\\" + nameToDelete);
+                    for (File childFile : Objects.requireNonNull(file.listFiles())) {
+                        Files.delete(childFile.toPath());
+                    }
+                    Files.delete(file.toPath());
+                    file = new File(pathToDelete);
+                    Files.delete(file.toPath());
+                    getProjects();
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-            else {
-                dao.dropDatabase(name);
-            }
-
-            removeFromProjectsFile(location);
-
     }
 
-
-
-    public void removeFromProjectsFile(String location) throws IOException {
-        String subPath = System.getProperty("user.home")+"\\Datenpunk";
-        File file = new File(subPath+"\\projects.dtpnk");
-        File tmpFile = new File(subPath+"\\tmp.dtpnk");
-        System.out.println(tmpFile.createNewFile());
-
-
-
-        Scanner scanner = new Scanner(file);
-        FileWriter fileWriter = new FileWriter(tmpFile,true);
-        BufferedWriter writer = new BufferedWriter(fileWriter);
-        String line;
-        while(scanner.hasNext()){
-            line = scanner.nextLine();
-            if(!line.equals(location)){
-                writer.append(line).append("\n");
-            }
-        }
-        writer.close();
-        fileWriter.close();
-        scanner.close();
-
-
-        System.out.println(file.delete());
-        file = new File(subPath + "\\projects.dtpnk");
-        tmpFile.renameTo(file);
-
-        getProjects(file);
-    }
-
-    public void onSearch() {
-    }
-
-
-    public boolean checkSavedPasswordAndConnect(File file, String dbName){
+    public boolean checkSavedPassword(){
+        File file = new File(singleton.getWorkingDirectory()+"\\connection.dtpnk");
         String password;
-        if(!dbName.equals("")){
-            dbName = "datenpunk_" +dbName;
-        }
-
         try {
             if (file.exists()) {
                 Scanner scanner = new Scanner(file);
                 if (scanner.hasNext()) {
                     password = scanner.next();
-                    dao.connectToDB(dbName,"postgres",password);
+                    singleton.setPassword(password);
                     return true;
                 }
                 scanner.close();
@@ -218,54 +189,74 @@ public class ProjectSelectionController implements Initializable {
 
     public void onOpen() throws IOException {
         if(projectTable.getSelectionModel().getSelectedItem() != null){
-            ProjectTableElement element = projectTable.getSelectionModel().getSelectedItem();
-             openProject(element);
+            openProject();
         }
     }
 
-    private void openProject(ProjectTableElement element) throws IOException {
-        File file = new File(System.getProperty("user.home")+"\\Datenpunk\\connection.dtpnk");
-        if(checkSavedPasswordAndConnect(file,element.getName())){
-            singelton.setCurrentProject(element.getName());
-            singelton.setColumnInfo();
-            openProjectWindow();
+    private void openProject() throws IOException {
+
+        if(singleton.getPassword() == null){
+            checkSavedPassword();
+            if (!dao.connectToDB("", "postgres", singleton.getPassword())) {
+
+                FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("databaseConnection-view.fxml"));
+                Scene scene = new Scene(fxmlLoader.load());
+                Stage stage = new Stage();
+                DatabaseConnectionController connectionController = fxmlLoader.getController();
+                connectionController.method = this::openProjectWindow;
+                stage.setTitle("Connect to Database");
+                stage.setScene(scene);
+                stage.setResizable(false);
+                stage.show();
+            }
+            else {
+                openProjectWindow();
+            }
         }
         else {
-
-            FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("databaseConnection-view.fxml"));
-            Scene scene = new Scene(fxmlLoader.load());
-
-
-            Stage stage = new Stage();
-
-            stage.initModality(Modality.WINDOW_MODAL);
-            stage.initOwner(projectTable.getScene().getWindow());
-
-            stage.setTitle("Connect to Database");
-            stage.setScene(scene);
-
-            DatabaseConnectionController databaseConnectionController = fxmlLoader.getController();
-            databaseConnectionController.setName(element.getName());      //TODO: better data transfer
-            databaseConnectionController.setRetrunStage((Stage) stage.getOwner());
-            databaseConnectionController.setNew(false);
-            stage.setResizable(false);
-            stage.show();
+            openProjectWindow();
         }
     }
 
-    private void openProjectWindow() throws IOException {
+    private void openProjectWindow(){
+
+        ProjectTableElement element = projectTable.getSelectionModel().getSelectedItem();
+
+        try {
+        FileWriter fileWriter = new FileWriter(element.getLocation());
+        fileWriter.write('!');                                      //accesses the file so that last accessed works properly
+        fileWriter.flush();
+        fileWriter.close();
+
+        if(dao.connectToDB("datenpunk_"+element.getName(), "postgres", singleton.getPassword())) {
+            if (singleton.getColumns() != null)
+                singleton.getColumns().clear();
+            if (singleton.getColumnInfo() != null)
+                singleton.getColumnInfo().clear();
+            singleton.choices.clear();
+            singleton.choiceNames.clear();
+
+            singleton.setCurrentProject(element.getName());
+            singleton.setColumnInfo();
 
 
 
-        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
-        Stage stage = (Stage) projectTable.getScene().getWindow();
-        stage.setTitle("Datenpunk");
-        stage.setScene( new Scene(fxmlLoader.load()));
-        stage.setMaximized(true);
-        stage.setResizable(true);
-        stage.show();
-
-
+                FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
+                Stage stage = (Stage) projectTable.getScene().getWindow();
+                stage.setTitle("Datenpunk");
+                Scene scene = new Scene(fxmlLoader.load());
+                scene.getStylesheets().add(Objects.requireNonNull(ProjectSelectionController.class.getResource("/com/main/datenpunk/application.css")).toExternalForm());
+                MainController controller = fxmlLoader.getController();
+                singleton.setController(controller);
+                stage.setScene(scene);
+                stage.setMaximized(true);
+                stage.setResizable(true);
+                stage.show();
+                controller.setupLater();
+            }
+        }catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -276,10 +267,10 @@ public class ProjectSelectionController implements Initializable {
             row.setOnMouseClicked(event -> {
                 if(event.getClickCount() == 2 && (!row.isEmpty())){
                     if(event.getButton().equals(MouseButton.PRIMARY)) {
-                        if (event.getClickCount() == 2) {               //TODO: known issue: opens detail view of selected item even by double-click on table header
+                        if (event.getClickCount() == 2) {
 
                             try {
-                                openProject(projectTable.getSelectionModel().getSelectedItem());
+                                openProject();
                             } catch (IOException e) {
                                 throw new RuntimeException(e);
                             }
@@ -315,7 +306,7 @@ public class ProjectSelectionController implements Initializable {
         }
     }
 
-    public void initalizeTable(){
+    public void initializeTable(){
         String path = System.getProperty("user.home")+"\\Datenpunk";
         File file = new File(path);
         try {
@@ -331,12 +322,14 @@ public class ProjectSelectionController implements Initializable {
         }catch (IOException e){
             e.printStackTrace();
         }
-        getProjects(file);
+        getProjects();
 
         projectTable.getSelectionModel().select(0);
 
     }
-    public void getProjects(File file)  {
+    public void getProjects()  {
+
+        File file = new File(singleton.getWorkingDirectory()+"\\projects.dtpnk");
         try {
             projectTableElements = FXCollections.observableArrayList();
             Scanner scanner = new Scanner(file);
@@ -377,7 +370,13 @@ public class ProjectSelectionController implements Initializable {
 
             BasicFileAttributes attributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
 
-            projectTableElements.add(new ProjectTableElement(name,attributes.lastAccessTime().toString(),attributes.creationTime().toString(),path,local));
+            LocalDateTime visitedDate = LocalDateTime.ofInstant(attributes.lastAccessTime().toInstant(), ZoneId.systemDefault());
+            LocalDateTime createdDate = LocalDateTime.ofInstant(attributes.creationTime().toInstant(), ZoneId.systemDefault());
+
+            String visitedAt = visitedDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            String createdAt = createdDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+
+            projectTableElements.add(new ProjectTableElement(name,visitedAt,createdAt,path,local));
         } catch (IOException ignore) {
             FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("fileNotFound-view.fxml"));
             Stage stage = new Stage();

@@ -27,6 +27,8 @@ public class RecoverProjectController {
     String name;
     String type;
 
+    Singleton singleton = Singleton.getInstance();
+
     boolean error = false;
 
     public void  setController(ProjectSelectionController controller){
@@ -82,11 +84,11 @@ public class RecoverProjectController {
         File file = new File(path);
         if(file.exists()){
             if(reconnect && file.isFile()){
-                corectProjectList(file);
+                correctProjectList(file);
             }
             else if(!reconnect && file.isDirectory()){
                 file = new File(file.getAbsolutePath()+"\\"+name);
-                corectProjectList(file);
+                correctProjectList(file);
             }
         }
     }
@@ -99,11 +101,11 @@ public class RecoverProjectController {
         }
     }
 
-    private void corectProjectList(File file){
+    private void correctProjectList(File file){
 
         try {
         if(!file.exists())
-            file.createNewFile();
+            Files.createFile(file.toPath());
         String folderPath = System.getProperty("user.home")+"\\Datenpunk\\Projects\\"+name.substring(0,name.lastIndexOf("."));
         file = new File(folderPath);
             if (!file.exists()) {
@@ -116,7 +118,7 @@ public class RecoverProjectController {
                 prefabRecoveryError();
             }
 
-            controller.removeFromProjectsFile(originalPath);
+            singleton.removeFromProjectsFile(originalPath);
 
             File projectsFile = new File(System.getProperty("user.home") + "\\Datenpunk\\projects.dtpnk");
             FileWriter fileWriter = new FileWriter(projectsFile, true);
@@ -127,7 +129,7 @@ public class RecoverProjectController {
             writer.close();
             fileWriter.close();
 
-            controller.getProjects(projectsFile);
+            controller.getProjects();
         } catch (IOException e) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setContentText(e.getMessage());
