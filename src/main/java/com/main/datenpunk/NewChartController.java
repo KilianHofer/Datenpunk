@@ -15,6 +15,7 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.util.Callback;
@@ -27,6 +28,7 @@ public class NewChartController implements Initializable {
 
     @FXML
     public Button createButton;
+    public VBox chartContainer;
     MainController controller;
     @FXML
     public ColorPicker colorPicker;
@@ -55,24 +57,22 @@ public class NewChartController implements Initializable {
     private ChartDescriptor chartDescriptor;
     private String currentChartType;
 
-    List<ColumnInfo> columnInfo;
 
     ObservableList<TextField> textFields = FXCollections.observableArrayList();
 
     String[] continuousOptions = new String[]{"value", "sum", "average", "greater than", "greater or equal", "less than", "less or equal", "equals"};
 
-    boolean xContiniuous = false;
+    boolean xContinuous = false;
     boolean update = false;
+    boolean updating = false;
 
-    Singelton singelton = Singelton.getInstance();
+    Singleton singleton = Singleton.getInstance();
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
-        controller = singelton.getController();
+        controller = singleton.getController();
 
-        singelton.setColumnInfo();          //TODO: move to on project open
-        columnInfo = singelton.getColumnInfo();
 
         textFields.addAll(xMinField, xMaxField, xNameField, yMinField, yMaxField, yNameField);
 
@@ -85,7 +85,7 @@ public class NewChartController implements Initializable {
         chartSelectionList.getSelectionModel().select(0);
 
         xSelectionBox.getItems().clear();
-        for (ColumnInfo column : columnInfo) {
+        for (ColumnInfo column : singleton.getColumnInfo()) {
             ySelectionBox.getItems().add(column.name);
             if (!(column.discrete && xMinField.isVisible()))
                 xSelectionBox.getItems().add(column.name);
@@ -155,6 +155,7 @@ public class NewChartController implements Initializable {
     public void loadChart(ChartDescriptor c){
 
         update = true;
+        updating = true;
         createButton.setText("Update");
 
         xNameField.setText(c.xName);
@@ -163,22 +164,8 @@ public class NewChartController implements Initializable {
 
         chartSelectionList.getSelectionModel().select(chartSelectionList.getItems().indexOf(c.chartType));
 
-        xSelectionBox.setValue(c.xAxis);
-        ySelectionBox.setValue(c.yAxis);
-
         fromDatePicker.setValue(c.fromDate);
         toDatePicker.setValue(c.toDate);
-
-        String range;
-        if(!c.chartType.equals("Pie Chart")) {
-            if (c.xAxis.equals("timestamp"))
-                range = String.valueOf((int) c.stepSize);
-            else
-                range = String.valueOf(c.stepSize);
-            rangeField.setText(range);
-        }
-
-        seriesList.getItems().addAll(c.seriesList);
 
         relativeCheck.setSelected(c.isRelative);
         pointCheck.setSelected(c.showPoints);
@@ -188,7 +175,24 @@ public class NewChartController implements Initializable {
         yMinField.setText(c.yMin);
         yMaxField.setText(c.yMax);
 
-        chart = singelton.generateChart(c);
+        String range;
+        if(!c.chartType.equals("Pie Chart")) {
+            if (c.xAxis.equals("date"))
+                range = String.valueOf((int) c.stepSize);
+            else
+                range = String.valueOf(c.stepSize);
+            rangeField.setText(range);
+        }
+
+        xSelectionBox.setValue(c.xAxis);
+        ySelectionBox.setValue(c.yAxis);
+
+        seriesList.getItems().addAll(c.seriesList);
+
+        updating = false;
+        changeChart();
+        updateChart();
+
 
     }
 
@@ -206,7 +210,7 @@ public class NewChartController implements Initializable {
     private void hideContinuousOptions() {
         String name = xSelectionBox.getValue();
         Boolean discrete = null;
-        for (ColumnInfo column : columnInfo) {
+        for (ColumnInfo column : singleton.getColumnInfo()) {
             if (column.name.equals(name))
                 discrete = column.discrete;
         }
@@ -216,13 +220,13 @@ public class NewChartController implements Initializable {
                 xMinField.setVisible(false);
                 xMaxField.setVisible(false);
                 rangeField.setVisible(false);
-                xContiniuous = false;
+                xContinuous = false;
             } else {
                 xToggle.setVisible(true);
                 xMinField.setVisible(true);
                 xMaxField.setVisible(true);
                 rangeField.setVisible(true);
-                xContiniuous = true;
+                xContinuous = true;
             }
         }
     }
@@ -231,7 +235,7 @@ public class NewChartController implements Initializable {
 
         String name = ySelectionBox.getValue();
         Boolean discrete = null;
-        for (ColumnInfo column : columnInfo) {
+        for (ColumnInfo column :singleton.getColumnInfo()) {
             if (column.name.equals(name))
                 discrete = column.discrete;
         }
@@ -246,7 +250,7 @@ public class NewChartController implements Initializable {
         seriesSelectionBox.setValue(null);
         String name = ySelectionBox.getValue();
         Boolean discrete = null;
-        for (ColumnInfo column : columnInfo) {
+        for (ColumnInfo column : singleton.getColumnInfo()) {
             if (column.name.equals(name))
                 discrete = column.discrete;
         }
@@ -272,7 +276,9 @@ public class NewChartController implements Initializable {
     }
 
     private void changeChart() {                                //changes Layout to fit selected Chart type
-        chartPane.setCenter(null);
+
+        chartContainer.getChildren().clear();
+
         if(currentChartType != null) {
             switch (currentChartType) {
                 case "Line Chart" -> {
@@ -303,12 +309,12 @@ public class NewChartController implements Initializable {
                 }
             }
             chart.setAnimated(false);
-            chartPane.setCenter(chart);
+            chartContainer.getChildren().add(chart);
 
             String previous = xSelectionBox.getValue();
 
             xSelectionBox.getItems().setAll(new ArrayList<>());
-            for (ColumnInfo column : columnInfo) {
+            for (ColumnInfo column : singleton.getColumnInfo()) {
                 if (!(column.discrete && !(chart.getClass().equals(BarChart.class) || chart.getClass().equals(StackedBarChart.class))))
                     xSelectionBox.getItems().add(column.name);
             }
@@ -319,103 +325,106 @@ public class NewChartController implements Initializable {
 
     private void updateChart() {
 
-        boolean cont = true;
+        if(!updating) {
 
-        if(chartSelectionList.getSelectionModel().getSelectedItem() == null) {
-            chartSelectionList.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
-            cont = false;
-        }
-        String chartType = chartSelectionList.getSelectionModel().getSelectedItem();
-        if(xSelectionBox.getSelectionModel().getSelectedItem() == null && !chartType.equals("Pie Chart")){
-            xSelectionBox.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
-            cont = false;
-        }
-        if(ySelectionBox.getSelectionModel().getSelectedItem() == null){
-            ySelectionBox.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
-            cont = false;
-        }
-        if(!cont)
-            return;
+            boolean cont = true;
 
-        chartSelectionList.setStyle("-fx-border-width: 0px;");
-        xSelectionBox.setStyle("-fx-border-width: 0px;");
-        ySelectionBox.setStyle("-fx-border-width: 0px;");
-
-
-        LocalDate fromDate = fromDatePicker.getValue();
-        LocalDate toDate = toDatePicker.getValue();
-        List<String> seriesList = this.seriesList.getItems();
-        boolean showPoints = pointCheck.isSelected();
-        boolean isRelative = relativeCheck.isSelected();
-        String xAxis = xSelectionBox.getValue();
-        String xMin = xMinField.getText();
-        String xMax = xMaxField.getText();
-        String xType = this.xType;
-        String yAxis = ySelectionBox.getValue();
-        String yMin = yMinField.getText();
-        String yMax = yMaxField.getText();
-        String range = rangeField.getText();
-
-        Boolean discrete = null;
-
-        float stepSize = 1;
-
-        for (ColumnInfo column : columnInfo) {
-            if (column.name.equals(xAxis)) {
-                discrete = column.discrete;
-                break;
-            }
-        }
-
-        if(!chartType.equals("Pie Chart")) {
-            if(Boolean.FALSE.equals(discrete)) {
-                if (!range.matches("[0-9]+[.]?[0-9]?+") || (xAxis.equals("timestamp") && !range.matches("[0-9]+"))) {
-                    rangeField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
-                    cont = false;
-                }
-                else
-                    rangeField.setStyle("--fx-border-width: 0px;");
-            }
-            if (!yMin.matches("[-]?[0-9]+[.]?[0-9]?+") && !yMin.equals("")) {
-                yMinField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+            if (chartSelectionList.getSelectionModel().getSelectedItem() == null) {
+                chartSelectionList.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
                 cont = false;
             }
-            else
-                yMinField.setStyle("--fx-border-width: 0px;");
-            if (!yMax.matches("[-]?[0-9]+[.]?[0-9]?+") && !yMax.equals("")) {
-                yMaxField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+            String chartType = chartSelectionList.getSelectionModel().getSelectedItem();
+            if (xSelectionBox.getSelectionModel().getSelectedItem() == null && !chartType.equals("Pie Chart")) {
+                xSelectionBox.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
                 cont = false;
             }
-            else
-                yMaxField.setStyle("--fx-border-width: 0px;");
-            if(!xAxis.equals("timestamp")){
-                if (!xMin.matches("[-]?[0-9]+[.]?[0-9]?+") && !xMin.equals("")) {
-                    xMinField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
-                    cont = false;
-                }
-                else
-                    xMinField.setStyle("--fx-border-width: 0px;");
-                if (!xMax.matches("[-]?[0-9]+[.]?[0-9]?+") && !xMax.equals("")) {
-                    xMaxField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
-                    cont = false;
-                }
-                else
-                    xMaxField.setStyle("--fx-border-width: 0px;");
+            if (ySelectionBox.getSelectionModel().getSelectedItem() == null) {
+                ySelectionBox.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+                cont = false;
             }
-            else {
-                xMin = checkDateBound(xMinField);
-                xMax = checkDateBound(xMaxField);
+            if (!cont)
+                return;
+
+            chartSelectionList.setStyle("-fx-border-width: 0px;");
+            xSelectionBox.setStyle("-fx-border-width: 0px;");
+            ySelectionBox.setStyle("-fx-border-width: 0px;");
+
+
+            LocalDate fromDate = fromDatePicker.getValue();
+            LocalDate toDate = toDatePicker.getValue();
+            List<String> seriesList = this.seriesList.getItems();
+            boolean showPoints = pointCheck.isSelected();
+            boolean isRelative = relativeCheck.isSelected();
+            String xAxis = xSelectionBox.getValue();
+            String xMin = xMinField.getText();
+            String xMax = xMaxField.getText();
+            String xType = this.xType;
+            String yAxis = ySelectionBox.getValue();
+            String yMin = yMinField.getText();
+            String yMax = yMaxField.getText();
+            String range = rangeField.getText();
+
+            Boolean discrete = null;
+
+            float stepSize = 1;
+
+            for (ColumnInfo column : singleton.getColumnInfo()) {
+                if (column.name.equals(xAxis)) {
+                    discrete = column.discrete;
+                    break;
+                }
             }
 
+            String floatRegex = "^(0*[1-9][0-9]*(\\.[0-9]+)?|0+\\.[0-9]*[1-9][0-9]*)$";
+            String intRegex = "^[1-9][0-9]*$";
+
+            if (!chartType.equals("Pie Chart")) {
+                if (Boolean.FALSE.equals(discrete)) {
+                    if (!range.matches(floatRegex) || (xAxis.equals("date") && !range.matches(intRegex))) {
+                        rangeField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+                        cont = false;
+                    } else
+                        rangeField.setStyle("--fx-border-width: 0px;");
+                }
+                if (!yMin.matches(floatRegex) && !yMin.equals("")) {
+                    yMinField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+                    cont = false;
+                } else
+                    yMinField.setStyle("--fx-border-width: 0px;");
+                if (!yMax.matches(floatRegex) && !yMax.equals("")) {
+                    yMaxField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+                    cont = false;
+                } else
+                    yMaxField.setStyle("--fx-border-width: 0px;");
+                if (!xAxis.equals("date")) {
+                    if (!xMin.matches(floatRegex) && !xMin.equals("")) {
+                        xMinField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+                        cont = false;
+                    } else
+                        xMinField.setStyle("--fx-border-width: 0px;");
+                    if (!xMax.matches(floatRegex) && !xMax.equals("")) {
+                        xMaxField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+                        cont = false;
+                    } else
+                        xMaxField.setStyle("--fx-border-width: 0px;");
+                } else {
+                    xMin = checkDateBound(xMinField);
+                    xMax = checkDateBound(xMaxField);
+                }
+
+            }
+            if (!cont || xMin.equals("false") || xMax.equals("false"))
+                return;
+            if (!chartType.equals("Pie Chart") && Boolean.FALSE.equals(discrete))
+                stepSize = Float.parseFloat(range);
+            chartDescriptor = new ChartDescriptor("", "", "", chartType, String.valueOf(fromDate), String.valueOf(toDate), seriesList, showPoints, isRelative, xAxis, xMin, xMax, xType, yAxis, yMin, yMax, stepSize);
+
+            chartContainer = new VBox();
+            chartPane.setCenter(chartContainer);
+            chartContainer.getChildren().add(chart);
+
+            singleton.threadGenerateChart(chartContainer, chartDescriptor);
         }
-        if(!cont || xMin.equals("false") || xMax.equals("false"))
-            return;
-        if(!chartType.equals("Pie Chart") && !discrete)
-            stepSize = Float.parseFloat(range);
-        chartDescriptor = new ChartDescriptor("","","", chartType,String.valueOf(fromDate),String.valueOf(toDate),seriesList,showPoints,isRelative,xAxis,xMin,xMax,xType,yAxis,yMin,yMax,stepSize);
-        chart = singelton.generateChart(chartDescriptor);
-        chartPane.setCenter(chart);
-        singelton.setChartColors(chart,seriesList,showPoints);
 
     }
 
@@ -426,23 +435,6 @@ public class NewChartController implements Initializable {
                 field.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
                 return "false";
             }
-            /*
-            String substring = bound.substring(0, bound.indexOf("-"));
-            if (substring.length() == 3)
-                bound = "20" + bound;
-            else if (substring.length() == 4) {
-                bound = "2" + bound;
-            }
-            substring = bound.substring(bound.indexOf("-") + 1, bound.lastIndexOf("-"));
-            if (substring.length() == 1) {
-                bound = bound.substring(0, bound.indexOf("-") + 1) + "0" + substring + "-" + bound.substring(bound.lastIndexOf("-"));
-            }
-            substring = bound.substring(bound.lastIndexOf("-") + 1);
-            if (substring.length() == 1) {
-                bound = bound.substring(bound.lastIndexOf("-")) + "0" + substring;
-            }
-
-             */
         }
         field.setStyle("--fx-border-width: 0px;");
         return bound;
@@ -576,7 +568,7 @@ public class NewChartController implements Initializable {
     private boolean comparatorValid() {
         String comparator = comparatorField.getText();
         if(!comparator.equals("")){
-            if(comparator.matches("[-]?[0-9]+[.]?[0-9]?+")){
+            if(comparator.matches("-?[0-9]+[.]?[0-9]?+")){
                 comparatorField.setStyle("-fx-border-width: 0px;");
                 return true;
             }

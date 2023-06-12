@@ -2,8 +2,6 @@ package com.main.datenpunk;
 
 import database.DAO;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.PasswordField;
@@ -17,60 +15,30 @@ import java.io.IOException;
 public class DatabaseConnectionController {
         @FXML
     public PasswordField passwordField;
-    public CheckBox remenberMe;
-    private String name;
-    private Stage returnStage;
-    private boolean newProject = false;
-    private boolean deletion = false;
+    public CheckBox rememberMe;
 
-    public void onConnect() throws IOException {
+    public Runnable method;
+
+    public void onConnect(){
 
         DAO dao = DAO.getInstance();
-        Singelton singelton = Singelton.getInstance();
+        Singleton singleton = Singleton.getInstance();
 
-        if(deletion){
-            dao.connectToDB("","postgres",passwordField.getText());
-            dao.dropDatabase("");
+        if(dao.connectToDB("","postgres",passwordField.getText())){
             checkRememberMe();
+            singleton.setPassword(passwordField.getText());
+            method.run();
             onCancel();
-            return;
-        }
-
-        if(dao.connectToDB("","postgres",passwordField.getText()) && newProject) {
-            dao.createDatabase(name);
-        }
-        else {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setContentText("Could not connect to Database");
-            alert.show();
-            return;
-        }
-        if (dao.connectToDB("datenpunk_" + name, "postgres", passwordField.getText())) {
-            if(newProject)
-                dao.createTables();
-
-            checkRememberMe();
-
-            singelton.setCurrentProject(name);
-            FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
-            Scene scene = new Scene(fxmlLoader.load());
-            Stage stage = returnStage;
-            stage.setTitle("Datenpunk");
-            stage.setScene(scene);
-            stage.setMaximized(true);
-            stage.setResizable(true);
-            onCancel();
-            System.out.println("test");
-            stage.show();
         }
         else {
             passwordField.setStyle("-fx-border-color: red; -fx-border-width: 2px");
         }
-
     }
 
+
+
     private void checkRememberMe() {
-        if (remenberMe.isSelected()) {
+        if (rememberMe.isSelected()) {
             File file = new File(System.getProperty("user.home") + "\\Datenpunk\\connection.dtpnk");
             try {
                 if (!file.exists()) {
@@ -96,20 +64,5 @@ public class DatabaseConnectionController {
         Stage stage = (Stage) passwordField.getScene().getWindow();
         stage.close();
 
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setRetrunStage(Stage returnStage) {
-        this.returnStage = returnStage;
-    }
-
-    public void setNew(boolean newProject) {
-        this.newProject = newProject;
-    }
-    public void setDeletion(boolean deletion) {
-        this.deletion = deletion;
     }
 }

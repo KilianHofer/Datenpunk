@@ -12,13 +12,13 @@ public class ProjectTableElement {
 
     public ProjectTableElement(String name, String lastVisited, String createdAt, String location, boolean local){
         this.name = new SimpleStringProperty(name);
-        this.lastVisited = new SimpleStringProperty(lastVisited.substring(0,9));
-        this.createdAt = new SimpleStringProperty(createdAt.substring(0,9));
+        this.lastVisited = new SimpleStringProperty(lastVisited);
+        this.createdAt = new SimpleStringProperty(createdAt);
         this.location = new SimpleStringProperty(location);
         this.local = local;
     }
 
-    public StringProperty nameProperty(){
+    public StringProperty nameProperty(){       //these property functions are used by the JavaFX table, they are not unused!
         return name;
     }
     public StringProperty lastVisitedProperty(){
