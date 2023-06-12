@@ -2,6 +2,7 @@ package com.main.datenpunk;
 
 import database.DAO;
 import enteties.*;
+import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -26,14 +27,15 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -43,7 +45,7 @@ public class MainController implements Initializable {
     private final DAO dao = DAO.getInstance();
     private final Singleton singleton = Singleton.getInstance();
     @FXML
-    public VBox chartContainer;
+    public TilePane chartContainer;
     public ChoiceBox<String> chartPresetBox;
     public BorderPane tableWidthContainer;
     public SplitPane maxWidthPane;
@@ -55,14 +57,14 @@ public class MainController implements Initializable {
 
 
     @FXML
-    private DatePicker toDatePicker,fromDatePicker;
+    private DatePicker toDatePicker, fromDatePicker;
 
     @FXML
     SplitPane objectTable;
 
 
     @FXML
-    private ChoiceBox<String>  presetBox;
+    private ChoiceBox<String> presetBox;
     private final ObservableList<Control> controlList = FXCollections.observableArrayList();
 
     private final ObservableList<ListView<String>> listViews = FXCollections.observableArrayList();
@@ -70,7 +72,7 @@ public class MainController implements Initializable {
     private final ObservableList<Button> addButtons = FXCollections.observableArrayList();
     private final ObservableList<Button> removeButtons = FXCollections.observableArrayList();
 
-    private LocalDate toDate,fromDate;
+    private LocalDate toDate, fromDate;
 
     private List<String> presets = new ArrayList<>();
     List<ChartDescriptor> charts = new ArrayList<>();
@@ -82,14 +84,13 @@ public class MainController implements Initializable {
 
     private String sortType = "ASC";
     private String sortColumn = "Status";
-    List<TableService> threads = new ArrayList<>(); //TODO
 
     List<Float> columnWidths = new ArrayList<>();
 
-    private void getStatuses(){
-        for(ColumnInfo columnInfo:singleton.getColumnInfo()){
+    private void getStatuses() {
+        for (ColumnInfo columnInfo : singleton.getColumnInfo()) {
             List<Status> list = new ArrayList<>();
-            if(columnInfo.colored){
+            if (columnInfo.colored) {
                 list.addAll(dao.selectStatuses(columnInfo.name));
             }
             singleton.choices.add(list);
@@ -97,24 +98,14 @@ public class MainController implements Initializable {
         }
     }
 
-    public List<String> getWhitelist(){
-        List<String> list = new ArrayList<>();
 
-        for (int i = 0; i < listViews.size()/2; i++) {
-            list.addAll(listViews.get(i).getItems());
-            list.add("");
-        }
-        return  list;
+    public List<String> getWhitelist(int id) {
+        return ((ListView<String>) ((VBox) whiteListContainer.getChildren().get(id)).getChildren().get(3)).getItems();
     }
 
-    public List<String> getBlacklist(){
-        List<String> list = new ArrayList<>();
 
-        for (int i = listViews.size()/2; i < listViews.size(); i++) {
-            list.addAll(listViews.get(i).getItems());
-            list.add("");
-        }
-        return  list;
+    public List<String> getBlacklist(int id) {
+        return ((ListView<String>) ((VBox) blackListContainer.getChildren().get(id)).getChildren().get(3)).getItems();
     }
 
     public void selectPresets() {
@@ -122,8 +113,8 @@ public class MainController implements Initializable {
         presets = new ArrayList<>();
 
         List<Path> paths;
-        try{
-            Stream<Path> files = Files.list(Paths.get(singleton.getWorkingDirectory()+"\\Projects\\"+ singleton.getCurrentProject()+"\\Presets"));
+        try {
+            Stream<Path> files = Files.list(Paths.get(singleton.getWorkingDirectory() + "\\Projects\\" + singleton.getCurrentProject() + "\\Presets"));
             paths = files.toList();
 
         } catch (IOException e) {
@@ -135,15 +126,15 @@ public class MainController implements Initializable {
         for (Path value : paths) {
             path = value.toString();
             file = new File(path);
-            if (file.isDirectory())
-                presets.add(path.substring(path.lastIndexOf("\\") + 1));
+            if (file.isFile())
+                presets.add(path.substring(path.lastIndexOf("\\") + 1, path.lastIndexOf(".")));
         }
 
         presetBox.getItems().setAll(presets);
         presetBox.setValue("Custom");
     }
 
-    public void setPreset(String name){
+    public void setPreset(String name) {
         presetBox.setValue(name);
     }
 
@@ -151,26 +142,25 @@ public class MainController implements Initializable {
     public void updateTable() {
 
         String sortColumnName = sortColumn;
-        for(VBox column:singleton.getColumns()){
-            Button button = (Button)column.getChildren().get(0);
-            String columnName = "";
-            for(ColumnInfo columnInfo:singleton.getColumnInfo()){
-                if(columnInfo.name.equals(button.getText().toLowerCase()))
-                    columnName= columnInfo.table+"."+columnInfo.name;
-                if(columnInfo.name.equals(sortColumnName.toLowerCase()))
-                    sortColumnName= columnInfo.table+"."+sortColumnName;
-
-            }
-            ListView<String> listView = (ListView<String>)column.getChildren().get(1);
-            listView.getItems().setAll(dao.selectMain(fromDate,toDate,listViews,columnName,sortColumnName,sortType));
+        for (VBox column : singleton.getColumns()) {
+            Button button = (Button) column.getChildren().get(0);
+            String columnName = button.getText();
+            ListView<String> listView = (ListView<String>) column.getChildren().get(1);
+            listView.getItems().setAll(dao.selectMain(fromDate, toDate, listViews, columnName, sortColumnName, sortType));
         }
     }
 
     ListChangeListener<String> listChangeListener = change -> {
-        for (VBox column:singleton.getColumns()){
+        for (VBox column : singleton.getColumns()) {
             int ROW_HEIGHT = 24;
             ListView<String> listView = (ListView<String>) column.getChildren().get(1);
-            listView.setPrefHeight(listView.getItems().size()*ROW_HEIGHT+2+ROW_HEIGHT);
+            listView.setPrefHeight(listView.getItems().size() * ROW_HEIGHT + 2 + ROW_HEIGHT);
+        }
+    };
+
+    ChangeListener widthListener = (ChangeListener<Number>) (observableValue, number, t1) -> {
+        for(int i = 0; i < singleton.getColumns().size();i++){
+            columnWidths.set(i,((Double)singleton.getColumns().get(i).getWidth()).floatValue());
         }
     };
 
@@ -180,26 +170,26 @@ public class MainController implements Initializable {
         tableWidthContainer.widthProperty().addListener((observableValue, number, t1) -> setTableWidth());
         maxWidthPane.setMaxWidth(1000);
         getStatuses();
-        for(int i = 0; i< singleton.getColumnInfo().size(); i++){
+        for (int i = 0; i < singleton.getColumnInfo().size(); i++) {
             ColumnInfo columnInfo = singleton.getColumnInfo().get(i);
-            String name = columnInfo.name.substring(0,1).toUpperCase()+ columnInfo.name.substring(1);
+            String name = columnInfo.name;
             Button button = new Button(name);
             button.setPrefWidth(9999);
             button.setStyle("-fx-background-radius: 0px");
             button.setOnAction(this::changeTableSortOrder);
             ListView<String> listView = new ListView<>();
             listView.getSelectionModel().selectedIndexProperty().addListener((observableValue, s, t1) -> {
-                if(!switchSelection) {
+                if (!switchSelection) {
                     switchSelection = true;
-                    for(VBox column:singleton.getColumns()){
-                        int index = ((ListView<String>)column.getChildren().get(1)).getSelectionModel().getSelectedIndex();
-                        if((selectedIndex == null || index != selectedIndex)&&index!=-1){
+                    for (VBox column : singleton.getColumns()) {
+                        int index = ((ListView<String>) column.getChildren().get(1)).getSelectionModel().getSelectedIndex();
+                        if ((selectedIndex == null || index != selectedIndex) && index != -1) {
                             selectedIndex = index;
                             break;
                         }
                     }
-                    for(VBox column:singleton.getColumns()){
-                        ((ListView<String>)column.getChildren().get(1)).getSelectionModel().select(selectedIndex);
+                    for (VBox column : singleton.getColumns()) {
+                        ((ListView<String>) column.getChildren().get(1)).getSelectionModel().select(selectedIndex);
                     }
                     switchSelection = false;
                 }
@@ -207,8 +197,8 @@ public class MainController implements Initializable {
             });
             listView.setOnMouseClicked(this::openDetailView);
             listView.getItems().addListener(listChangeListener);
-            VBox vBox = new VBox(button,listView);
-            objectTable.getItems().add(i,vBox);
+            VBox vBox = new VBox(button, listView);
+            objectTable.getItems().add(i, vBox);
             singleton.getColumns().add(vBox);
             singleton.getColumnNames().add(name);
             CheckMenuItem checkMenuItem = new CheckMenuItem(name);
@@ -216,14 +206,17 @@ public class MainController implements Initializable {
             checkMenuItem.setOnAction(this::onCheckVisible);
             showHideMenu.getItems().add(checkMenuItem);
 
-            if(!name.equals("Id") && !name.equals("Date")) {
-                addFiltersSettings(whiteListContainer,columnInfo,name);
-                addFiltersSettings(blackListContainer,columnInfo,name);
+            if (!name.equals("id") && !name.equals("Date")) {
+                addFiltersSettings(whiteListContainer, columnInfo, name);
+                addFiltersSettings(blackListContainer, columnInfo, name);
             }
 
         }
         for (int i = 0; i < singleton.getColumns().size(); i++) {
             columnWidths.add(null);
+        }
+        for (SplitPane.Divider divider:objectTable.getDividers()){
+            divider.positionProperty().addListener(widthListener);
         }
         resizeColumns();
 
@@ -246,79 +239,93 @@ public class MainController implements Initializable {
 
     public void setupLater() {
         Window window = objectTable.getScene().getWindow();
-        maxWidthPane.setMaxWidth(window.getWidth()-50);
+        maxWidthPane.setMaxWidth(window.getWidth() - 50);
         maxHeightPane.setMaxHeight(window.getHeight() - 100);
-        window.widthProperty().addListener((observableValue, number, t1) -> maxWidthPane.setMaxWidth((Double) t1-50));
+        window.widthProperty().addListener((observableValue, number, t1) -> {
+            maxWidthPane.setMaxWidth((Double) t1 - 50);
+            chartContainer.setMaxWidth((Double) t1 - 50);
+        });
         window.heightProperty().addListener((observableValue, number, t1) -> maxHeightPane.setMaxHeight((Double) t1 - 100));
         maxWidthPane.getDividers().get(0).setPosition(1);
-        objectTable.setMaxWidth(window.getWidth()-75);
+        objectTable.setMaxWidth(window.getWidth() - 75);
 
         for (int i = 0; i < singleton.getColumnInfo().size(); i++) {
             ListView<String> listView = (ListView<String>) singleton.getColumns().get(i).getChildren().get(1);
-            if (singleton.getColumnInfo().get(i).colored) {
-                listView.setCellFactory(new Callback<>() {
-                    @Override
-                    public ListCell<String> call(ListView<String> stringListView) {
-                        return new ListCell<>() {
-                            @Override
-                            protected void updateItem(String item, boolean empty) {
-                                super.updateItem(item, empty);
-                                if (item == null || empty) {
-                                    setText(null);
-                                    setStyle("-fx-control-opacity: 0;");
-                                } else {
-                                    setText(item);
-                                    for (int i = 0; i<singleton.choices.size();i++) {
+            ColumnInfo columnInfo = singleton.getColumnInfo().get(i);
+
+
+            listView.setCellFactory(new Callback<>() {
+                @Override
+                public ListCell<String> call(ListView<String> stringListView) {
+                    return new ListCell<>() {
+                        @Override
+                        protected void updateItem(String item, boolean empty) {
+                            super.updateItem(item, empty);
+                            if (item == null || empty) {
+                                setText(null);
+                                setStyle("-fx-control-opacity: 0;");
+                            } else {
+                                setText(item);
+                                if (columnInfo.colored) {
+                                    for (int i = 0; i < singleton.choices.size(); i++) {
                                         VBox vBox;
                                         Node node = getParent().getParent().getParent().getParent();
-                                        if(node.getClass().equals(VBox.class))
-                                            vBox = (VBox)node;
-                                        else {
+                                        if (!node.getClass().equals(VBox.class)) {
                                             node = getParent().getParent().getParent().getParent().getParent();
-                                            vBox = (VBox)node;
                                         }
+                                        vBox = (VBox) node;
 
-                                        if (((Button) vBox.getChildren().get(0)).getText().toLowerCase().equals(singleton.choiceNames.get(i))) {
+                                        if (((Button) vBox.getChildren().get(0)).getText().equals(singleton.choiceNames.get(i))) {
                                             for (Status status : singleton.choices.get(i)) {
                                                 if (item.equals(status.getName())) {
-                                                    setStyle("-fx-control-inner-background: " + status.getColor());
+                                                    setStyle("-fx-control-inner-background: " + status.getColor() + ";" +
+                                                            "-fx-border-color: transparent;");
+                                                } else if (item.equals("") && columnInfo.required) {
+                                                    setStyle("-fx-control-inner-background: " + status.getColor() + ";" +
+                                                            "-fx-border-color: red;");
                                                 }
                                             }
                                         }
                                     }
+                                } else {
+                                    if (item.equals("") && columnInfo.required) {
+                                        setStyle("-fx-border-color: red;");
+                                    } else {
+                                        setStyle("-fx-border-color: transparent;");
+                                    }
                                 }
                             }
-                        };
-                    }
-                });
-            }
+                        }
+                    };
+                }
+            });
+
         }
     }
 
-    private void addFiltersSettings(TilePane tilePane,ColumnInfo columnInfo, String name){
-        Label label = new Label(name+":");
+    private void addFiltersSettings(TilePane tilePane, ColumnInfo columnInfo, String name) {
+        Label label = new Label(name + ":");
         Control control;
 
 
-
-        if(columnInfo.type.equals("choice")){
+        if (columnInfo.type.equals("Choice")) {
             control = new ChoiceBox<String>();
             control.setPrefWidth(150);
 
             int index = 0;
-            for(int j = 0; j < singleton.choiceNames.size();j++){
-                if(singleton.choiceNames.get(j).equals(name.toLowerCase())){
+            for (int j = 0; j < singleton.choiceNames.size(); j++) {
+                if (singleton.choiceNames.get(j).equals(name)) {
                     index = j;
                     break;
                 }
             }
 
-            for(Status choice:singleton.choices.get(index)){
-                ((ChoiceBox<String>)control).getItems().add(choice.getName());
+            for (Status choice : singleton.choices.get(index)) {
+                ((ChoiceBox<String>) control).getItems().add(choice.getName());
             }
-        }
-        else {
+        } else {
             control = new TextField();
+            ((TextField) control).setOnAction(this::onAddToList);
         }
         controlList.add(control);
 
@@ -329,29 +336,29 @@ public class MainController implements Initializable {
         addButtons.add(addButton);
         removeButtons.add(removeButton);
         BorderPane borderPane = new BorderPane();
-        borderPane.setLeft(addButton);
-        borderPane.setRight(removeButton);
+        borderPane.setRight(addButton);
+        borderPane.setLeft(removeButton);
 
         ListView<String> filterListView = new ListView<>();
-        filterListView.setPrefSize(150,100);
+        filterListView.setPrefSize(150, 100);
+        filterListView.setOnMouseClicked(this::onListClick);
         listViews.add(filterListView);
 
-        VBox filterVBox = new VBox(label,control,borderPane,filterListView);
-        VBox.setMargin(borderPane,new Insets(5,0,5,0));
+        VBox filterVBox = new VBox(label, control, borderPane, filterListView);
+        VBox.setMargin(borderPane, new Insets(5, 0, 5, 0));
         tilePane.getChildren().add(filterVBox);
-        TilePane.setMargin(filterVBox,new Insets(0,5,5,0));
+        TilePane.setMargin(filterVBox, new Insets(0, 5, 5, 0));
     }
 
     private void changeTableSortOrder(ActionEvent event) {
         Button button = (Button) event.getSource();
-        if(button.getText().equals(sortColumn)){
-            if(sortType.equals("ASC"))
+        if (button.getText().equals(sortColumn)) {
+            if (sortType.equals("ASC"))
                 sortType = "DESC";
             else
                 sortType = "ASC";
-        }
-        else{
-            sortColumn=button.getText();
+        } else {
+            sortColumn = button.getText();
             sortType = "ASC";
         }
         updateTable();
@@ -360,42 +367,41 @@ public class MainController implements Initializable {
     private void resizeColumns() {
         float sum = 0;
         List<Float> toAdd = new ArrayList<>();
-        if(columnWidths.contains(null)) {
+        if (columnWidths.contains(null)) {
             for (int i = 0; i < objectTable.getItems().size(); i++) {
                 sum += 1 / ((float) objectTable.getItems().size());
                 toAdd.add(sum);
             }
-        }
-        else {
+        } else {
             float total = 0;
             float subTotal = 0;
-            for (Node node:objectTable.getItems()) {
+            for (Node node : objectTable.getItems()) {
                 int i = singleton.getColumns().indexOf(node);
-                total+=columnWidths.get(i);
+                total += columnWidths.get(i);
 
             }
             for (int i = 0; i < objectTable.getItems().size(); i++) {
                 Node node = objectTable.getItems().get(i);
                 int index = singleton.getColumns().indexOf(node);
                 subTotal += columnWidths.get(index);
-                Float value = 1/(total/subTotal);
+                Float value = 1 / (total / subTotal);
                 toAdd.add(value);
 
             }
         }
-        for(int i = 0; i<objectTable.getDividers().size();i++) {
+        for (int i = 0; i < objectTable.getDividers().size(); i++) {
             SplitPane.Divider divider = objectTable.getDividers().get(i);
             divider.setPosition(toAdd.get(i));
         }
     }
 
-    private void openDetailView(MouseEvent event){
+    private void openDetailView(MouseEvent event) {
 
-        if(event.getClickCount() == 2) {
+        if (event.getClickCount() == 2) {
 
             ListView<String> idList = null;
             for (VBox column : singleton.getColumns()) {
-                if (((Button) column.getChildren().get(0)).getText().equals("Id"))
+                if (((Button) column.getChildren().get(0)).getText().equals("id"))
                     idList = (ListView<String>) column.getChildren().get(1);
             }
 
@@ -417,10 +423,9 @@ public class MainController implements Initializable {
                     stage.initOwner(objectTable.getScene().getWindow());
 
                     DetailController detailController = fxmlLoader.getController();
-                    detailController.setCurrentElement(Integer.parseInt(currentElement));     //TODO: Better data transfer
-                    stage.setResizable(false);
+                    detailController.setCurrentElement(Integer.parseInt(currentElement));
                     stage.show();
-                    detailController.initializeCellFactories();
+                    detailController.setupLater();
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -445,49 +450,55 @@ public class MainController implements Initializable {
         stage.show();
     }
 
-    public void onCheckVisible(Event event){
+    public void onCheckVisible(Event event) {
         checkVisible();
     }
-    private void  checkVisible(){
+
+    private void checkVisible() {
         objectTable.getItems().clear();
-        for (int i = 0; i < singleton.getColumns().size();i++) {
-            CheckMenuItem menuItem = (CheckMenuItem)showHideMenu.getItems().get(i);
-            if(menuItem.isSelected()){
+        for (int i = 0; i < singleton.getColumns().size(); i++) {
+            CheckMenuItem menuItem = (CheckMenuItem) showHideMenu.getItems().get(i);
+            if (menuItem.isSelected()) {
                 objectTable.getItems().add(singleton.getColumns().get(i));
             }
+        }
+        for (SplitPane.Divider divider:objectTable.getDividers()){
+            divider.positionProperty().addListener(widthListener);
         }
         setTableWidth();
         resizeColumns();
     }
 
-    private void setTableWidth(){
-        objectTable.setMaxWidth(Math.max(objectTable.getItems().size()*150,tableWidthContainer.getWidth()-15));
+    private void setTableWidth() {
+        objectTable.setMaxWidth(Math.max(objectTable.getItems().size() * 150, tableWidthContainer.getWidth() - 15));
     }
 
     @FXML
     public void selectToDate() {
 
-        if(!changingPresets) {
+        if (!changingPresets) {
             toDate = toDatePicker.getValue();
             updateTable();
         }
     }
+
     @FXML
     public void selectFromDate() {
-        if(!changingPresets) {
+        if (!changingPresets) {
             fromDate = fromDatePicker.getValue();
             updateTable();
         }
     }
 
-    public String getFromDate(){
+    public String getFromDate() {
 
-        if(fromDate == null)
+        if (fromDate == null)
             return "";
         return fromDate.toString();
     }
-    public String getToDate(){
-        if(toDate == null)
+
+    public String getToDate() {
+        if (toDate == null)
             return "";
         return toDate.toString();
     }
@@ -496,13 +507,14 @@ public class MainController implements Initializable {
         presetBox.setValue("Custom");
         resetDates();
     }
-    private void resetDates(){
+
+    private void resetDates() {
 
         toDate = LocalDate.now();
         fromDate = null;
         toDatePicker.setValue(toDate);
         fromDatePicker.setValue(fromDate);
-        if(!changingPresets)
+        if (!changingPresets)
             updateTable();
 
     }
@@ -515,7 +527,7 @@ public class MainController implements Initializable {
     @FXML
     public void onAddToList(ActionEvent actionEvent) {
 
-        if(!changingPresets) {
+        if (!changingPresets) {
             int i;
             if (actionEvent.getSource().getClass() == Button.class)
                 i = addButtons.indexOf(actionEvent.getSource());
@@ -542,8 +554,8 @@ public class MainController implements Initializable {
     }
 
 
-    private void removeFromList(int id){
-        if(!changingPresets) {
+    private void removeFromList(int id) {
+        if (!changingPresets) {
             ListView<String> listView = listViews.get(id);
             if (listView.getSelectionModel().getSelectedItem() != null) {
                 listView.getItems().remove(listView.getSelectionModel().getSelectedItem());
@@ -554,7 +566,7 @@ public class MainController implements Initializable {
     }
 
     public void onListClick(MouseEvent event) {
-        if(event.getButton().equals(MouseButton.PRIMARY)) {
+        if (event.getButton().equals(MouseButton.PRIMARY)) {
             if (event.getClickCount() == 2) {
                 removeFromList(listViews.indexOf(event.getSource()));
             }
@@ -562,7 +574,7 @@ public class MainController implements Initializable {
     }
 
     public void onListKey(KeyEvent keyEvent) {
-        if(keyEvent.getCode().equals(KeyCode.DELETE) || keyEvent.getCode().equals(KeyCode.BACK_SPACE)){
+        if (keyEvent.getCode().equals(KeyCode.DELETE) || keyEvent.getCode().equals(KeyCode.BACK_SPACE)) {
             removeFromList(listViews.indexOf(keyEvent.getSource()));
         }
     }
@@ -570,17 +582,13 @@ public class MainController implements Initializable {
     public void onNewProject() throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("newProject-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
-
-
         Stage stage = new Stage();
-
         stage.setTitle("New Project");
         stage.setScene(scene);
         stage.initModality(Modality.WINDOW_MODAL);
         stage.initOwner(fromDatePicker.getScene().getWindow());
-
         NewProjectController newProjectController = fxmlLoader.getController();
-        newProjectController.setReturnStage((Stage)fromDatePicker.getScene().getWindow());      //TODO: better data transfer
+        newProjectController.setReturnStage((Stage) fromDatePicker.getScene().getWindow());      //TODO: better data transfer
         stage.show();
     }
 
@@ -589,7 +597,7 @@ public class MainController implements Initializable {
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("projectSelection-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
 
-        Stage stage = (Stage)fromDatePicker.getScene().getWindow();
+        Stage stage = (Stage) fromDatePicker.getScene().getWindow();
         stage.setScene(scene);
 
         ProjectSelectionController controller = fxmlLoader.getController();
@@ -620,12 +628,12 @@ public class MainController implements Initializable {
     public void onDeletePreset() throws IOException {
 
         String name = presetBox.getValue();
-        if(!name.equals("Custom")) {
+        if (!name.equals("Custom")) {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
             alert.setContentText("Delete Prefab: " + name);
             if (alert.showAndWait().get() == ButtonType.OK) {
                 File file = new File(singleton.getWorkingDirectory() + "\\Projects\\" + singleton.getCurrentProject() + "\\Presets\\" + name);
-                for(File pFile: Objects.requireNonNull(file.listFiles())){
+                for (File pFile : Objects.requireNonNull(file.listFiles())) {
                     Files.delete(pFile.toPath());
                 }
                 Files.delete(file.toPath());
@@ -641,12 +649,10 @@ public class MainController implements Initializable {
         for (ListView<String> list : listViews) {
             list.getItems().setAll(new ArrayList<>());
         }
-        for(MenuItem item:showHideMenu.getItems()){
-            ((CheckMenuItem)item).setSelected(true);
+        for (MenuItem item : showHideMenu.getItems()) {
+            ((CheckMenuItem) item).setSelected(true);
         }
-        for(int i = 0;i<columnWidths.size();i++){
-            columnWidths.set(i,null);
-        }
+        Collections.fill(columnWidths, null);
         checkVisible();
         onResetDates();
 
@@ -654,86 +660,86 @@ public class MainController implements Initializable {
 
     public void onPresetChange(ActionEvent event) {
         String preset = presetBox.getValue();
-        if(preset != null && !preset.equals("Custom")){
+        if (preset != null && !preset.equals("Custom")) {
             changingPresets = true;
-            try {
-                String path = singleton.getWorkingDirectory() + "\\Projects\\" + singleton.getCurrentProject() + "\\Presets\\" + preset;
 
-                Scanner scanner = new Scanner(new File(path+"\\dateStart.dtpnk"));
-                if(scanner.hasNext()){
-                    String next = scanner.next();
-                    if(next.equals(""))
-                        fromDate = null;
-                    else
-                        fromDate = LocalDate.parse(next);
-                }
-                else {
+            JSONParser jsonParser = new JSONParser();
+            String path = singleton.getWorkingDirectory() + "\\Projects\\" + singleton.getCurrentProject() + "\\Presets\\" + preset + ".json";
+
+
+            try (FileReader reader = new FileReader(path)) {
+
+                Object obj = jsonParser.parse(reader);
+                JSONObject o = (JSONObject) obj;
+                Filter filter = new Filter(
+                        (String) o.get("start"),
+                        (String) o.get("end"),
+                        (List<String>) o.get("order"),
+                        (List<Boolean>) o.get("visible"),
+                        (List<Double>) o.get("widths"),
+                        (List<List<String>>) o.get("whitelist"),
+                        (List<List<String>>) o.get("blacklist")
+                );
+
+                if (filter.start.equals("")) {
                     fromDate = null;
+                    fromDatePicker.setValue(null);
+                } else {
+                    fromDate = LocalDate.parse(filter.start);
+                    fromDatePicker.setValue(fromDate);
                 }
-                fromDatePicker.setValue(fromDate);
-                scanner.close();
+                if (filter.end.equals("")) {
+                    toDate = LocalDate.ofInstant(Instant.ofEpochMilli(System.currentTimeMillis()), ZoneId.systemDefault());
+                    toDatePicker.setValue(toDate);
+                } else {
+                    toDate = LocalDate.parse(filter.end);
+                    toDatePicker.setValue(toDate);
+                }
 
-                scanner = new Scanner(new File(path+"\\dateEnd.dtpnk"));
-                if(scanner.hasNext()){
-                    String next = scanner.next();
-                    if(next.equals(""))
-                        toDate = null;
-                    else
-                        toDate = LocalDate.parse(next);
-                }
-                else {
-                    toDate = LocalDate.now();
-                }
-                toDatePicker.setValue(toDate);
-                scanner.close();
-
-                scanner = new Scanner(new File(path+"\\whitelist.dtpnk"));
-                int count = listViews.size();
-                for (int i = 0; i < count; i++) {
-                    if(i == count/2){
-                        scanner.close();
-                        scanner = new Scanner(new File(path+"\\blacklist.dtpnk"));
-                    }
-                    ListView<String> list = listViews.get(i);
-                    list.getItems().setAll(new ArrayList<>());
-                    while(scanner.hasNext()){
-                        String line = scanner.nextLine();
-                        if(!line.equals(""))
-                            list.getItems().add(line);
+                if (!filter.widths.isEmpty()) {
+                    for (int i = 0; i < columnWidths.size(); i++) {
+                        if (i < filter.widths.size())
+                            columnWidths.set(i, filter.widths.get(i).floatValue());
                         else
-                            break;
+                            columnWidths.set(i, 150f);
+
                     }
                 }
-                scanner.close();
 
-                scanner = new Scanner(new File(path+"\\columnSizes.dtpnk"));
-                for(int i = 0; i< columnWidths.size();i++){
-                    columnWidths.set(i,Float.parseFloat(scanner.next()));
-                }
-                scanner.close();
+                for (int i = 0; i < whiteListContainer.getChildren().size(); i++) {
+                    VBox vBox = (VBox) whiteListContainer.getChildren().get(i);
+                    ListView<String> listView = (ListView<String>) vBox.getChildren().get(3);
+                    if (!filter.whitelist.isEmpty() && i<filter.whitelist.size())
+                        listView.getItems().setAll(filter.whitelist.get(i));
 
-                scanner = new Scanner(new File(path+"\\columns.dtpnk"));
-                List<String> checks = new ArrayList<>();
-                for(MenuItem item:showHideMenu.getItems()){
-                    checks.add(item.getText());
-                    ((CheckMenuItem)item).setSelected(false);
+                    else
+                        listView.getItems().clear();
+
                 }
-                while(scanner.hasNext()){
-                    String column = scanner.next();
-                    if(checks.contains(column)) {
-                        CheckMenuItem item = (CheckMenuItem) showHideMenu.getItems().get(checks.indexOf(column));
-                        item.setSelected(true);
-                    }
+
+
+                for (int i = 0; i < blackListContainer.getChildren().size(); i++) {
+                    VBox vBox = (VBox) blackListContainer.getChildren().get(i);
+                    ListView<String> listView = (ListView<String>) vBox.getChildren().get(3);
+                    if (!filter.blacklist.isEmpty() && i<filter.blacklist.size())
+                        listView.getItems().setAll(filter.blacklist.get(i));
+
+                    else
+                        listView.getItems().clear();
+                }
+
+                for (int i = 0; i < showHideMenu.getItems().size(); i++) {
+                    ((CheckMenuItem) showHideMenu.getItems().get(i)).setSelected(filter.visible.get(i));
                 }
                 checkVisible();
-                scanner.close();
 
 
-
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
+            } catch (IOException | ParseException | RuntimeException e) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setContentText("This Preset no longer works properly!");
+                alert.show();
             }
-            changingPresets= false;
+            changingPresets = false;
             updateTable();
         }
     }
@@ -743,12 +749,12 @@ public class MainController implements Initializable {
     }
 
     public void showChartOptions(MouseEvent event) {
-        VBox vBox = (VBox) ((HBox)event.getSource()).getChildren().get(1);
+        VBox vBox = (VBox) ((HBox) event.getSource()).getChildren().get(1);
         vBox.setVisible(true);
     }
 
     public void hideChartOptions(MouseEvent event) {
-        VBox vBox = (VBox) ((HBox)event.getSource()).getChildren().get(1);
+        VBox vBox = (VBox) ((HBox) event.getSource()).getChildren().get(1);
         vBox.setVisible(false);
     }
 
@@ -767,7 +773,7 @@ public class MainController implements Initializable {
         stage.show();
     }
 
-    public void addNewChart(ChartDescriptor chartDescriptor){
+    public void addNewChart(ChartDescriptor chartDescriptor) {
         setChartPreset("Custom");
         addChart(chartDescriptor);
     }
@@ -784,6 +790,7 @@ public class MainController implements Initializable {
         hBox.getChildren().add(chartVBox);
         hBox.setOnMouseEntered(this::showChartOptions);
         hBox.setOnMouseExited(this::hideChartOptions);
+        hBox.setPrefWidth(Region.USE_COMPUTED_SIZE);
 
         VBox vBox = new VBox();
         vBox.setVisible(false);
@@ -794,25 +801,25 @@ public class MainController implements Initializable {
 
         Button editButton = new Button("\uD83D\uDD89");
         editButton.setOnAction(this::onEditChart);
-        vBox.getChildren().addAll(closeButton,editButton);
+        vBox.getChildren().addAll(closeButton, editButton);
 
         hBox.getChildren().add(vBox);
 
         chartContainer.getChildren().add(hBox);
         chartContainer.setPrefWidth(Region.USE_COMPUTED_SIZE);
 
-        singleton.threadGenerateChart(chartVBox,chartDescriptor);
+        singleton.threadGenerateChart(chartVBox, chartDescriptor);
 
     }
 
     public void setChart(ChartDescriptor chartDescriptor) {
         setChartPreset("Custom");
-        charts.set(chartEditIndex,chartDescriptor);
-        VBox vBox = ((VBox)((HBox)(chartContainer.getChildren().get(chartEditIndex))).getChildren().get(0));
-        singleton.threadGenerateChart(vBox,chartDescriptor);
+        charts.set(chartEditIndex, chartDescriptor);
+        VBox vBox = ((VBox) ((HBox) (chartContainer.getChildren().get(chartEditIndex))).getChildren().get(0));
+        singleton.threadGenerateChart(vBox, chartDescriptor);
     }
 
-    private void onEditChart(ActionEvent event){
+    private void onEditChart(ActionEvent event) {
 
         try {
 
@@ -844,10 +851,10 @@ public class MainController implements Initializable {
 
         setChartPreset("Custom");
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        Button button = (Button)event.getSource();
+        Button button = (Button) event.getSource();
         HBox hBox = (HBox) button.getParent().getParent();
-        alert.setContentText("Do you want to delete this Diagram: \n"+((Chart)((VBox)hBox.getChildren().get(0)).getChildren().get(0)).getTitle());
-        if(alert.showAndWait().get() == ButtonType.OK) {
+        alert.setContentText("Do you want to delete this Diagram: \n" + ((Chart) ((VBox) hBox.getChildren().get(0)).getChildren().get(0)).getTitle());
+        if (alert.showAndWait().get() == ButtonType.OK) {
             int index = chartContainer.getChildren().indexOf(hBox);
             VBox vBox = (VBox) hBox.getParent();
             vBox.getChildren().remove(hBox);
@@ -855,12 +862,12 @@ public class MainController implements Initializable {
         }
     }
 
-    public void selectChartPresets(){
+    public void selectChartPresets() {
         List<String> chartPresets = new ArrayList<>();
 
         List<Path> paths;
-        try{
-            Stream<Path> files = Files.list(Paths.get(singleton.getWorkingDirectory()+"\\Projects\\"+ singleton.getCurrentProject()+"\\DiagramPresets"));
+        try {
+            Stream<Path> files = Files.list(Paths.get(singleton.getWorkingDirectory() + "\\Projects\\" + singleton.getCurrentProject() + "\\DiagramPresets"));
             paths = files.toList();
 
         } catch (IOException e) {
@@ -873,13 +880,13 @@ public class MainController implements Initializable {
             path = value.toString();
             file = new File(path);
             if (file.getName().endsWith(".json"))
-                chartPresets.add(path.substring(path.lastIndexOf("\\") + 1,path.lastIndexOf(".")));
+                chartPresets.add(path.substring(path.lastIndexOf("\\") + 1, path.lastIndexOf(".")));
         }
 
         chartPresetBox.getItems().setAll(chartPresets);
     }
 
-    public void setChartPreset(String name){
+    public void setChartPreset(String name) {
         chartPresetBox.setValue(name);
     }
 
@@ -899,19 +906,20 @@ public class MainController implements Initializable {
         stage.show();
 
     }
+
     public void onDeleteChartPreset() {
 
 
-        try{
+        try {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setContentText("Do you really want to delete this Preset?\n"+chartPresetBox.getValue());
-            if(alert.showAndWait().get() == ButtonType.OK) {
+            alert.setContentText("Do you really want to delete this Preset?\n" + chartPresetBox.getValue());
+            if (alert.showAndWait().get() == ButtonType.OK) {
                 File file = new File(singleton.getWorkingDirectory() + "\\Projects\\" + singleton.getCurrentProject() + "\\DiagramPresets\\" + chartPresetBox.getValue() + ".json");
                 Files.delete(file.toPath());
             }
-        }catch (IOException e) {
+        } catch (IOException e) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setContentText("Could not delete chart preset: "+chartPresetBox.getValue());
+            alert.setContentText("Could not delete chart preset: " + chartPresetBox.getValue());
             alert.show();
         }
         chartPresetBox.setValue("Custom");
@@ -919,17 +927,17 @@ public class MainController implements Initializable {
 
     }
 
-    private void loadChartPreset(Event event){
+    private void loadChartPreset(Event event) {
 
-        if(chartPresetBox.getValue().equals("Custom"))
+        if (chartPresetBox.getValue().equals("Custom"))
             return;
         resetCharts();
 
         JSONParser jsonParser = new JSONParser();
 
-        try(FileReader reader = new FileReader(singleton.getWorkingDirectory()+"\\Projects\\"+ singleton.getCurrentProject()+"\\DiagramPresets\\"+chartPresetBox.getValue()+".json")){
+        try (FileReader reader = new FileReader(singleton.getWorkingDirectory() + "\\Projects\\" + singleton.getCurrentProject() + "\\DiagramPresets\\" + chartPresetBox.getValue() + ".json")) {
             Object obj = jsonParser.parse(reader);
-            JSONArray chartList = (JSONArray)obj;
+            JSONArray chartList = (JSONArray) obj;
 
             charts.clear();
             chartList.forEach(chart -> parseChartDescriptor((JSONObject) chart));
@@ -941,26 +949,27 @@ public class MainController implements Initializable {
 
     private void parseChartDescriptor(JSONObject chart) {
 
-        JSONObject o = (JSONObject)chart.get("chartDescriptor");
+        JSONObject o = (JSONObject) chart.get("chartDescriptor");
 
         ChartDescriptor chartDescriptor = new ChartDescriptor(
-                (String)o.get("title"),
-                (String)o.get("xName"),
-                (String)o.get("yName"),
-                (String)o.get("chartType"),
+                (String) o.get("title"),
+                (String) o.get("xName"),
+                (String) o.get("yName"),
+                (String) o.get("chartType"),
                 (String) o.get("fromDate"),
                 (String) o.get("toDate"),
-                (List<String>)o.get("seriesList"),
-                (boolean)o.get("showPoints"),
-                (boolean)o.get("isRelative"),
-                (String)o.get("xAxis"),
-                (String)o.get("xMin"),
-                (String)o.get("xMax"),
-                (String)o.get("xType"),
-                (String)o.get("yAxis"),
-                (String)o.get("yMin"),
-                (String)o.get("yMax"),
-                Float.parseFloat((String)o.get("stepSize")));
+                (List<String>) o.get("seriesList"),
+                (boolean) o.get("showPoints"),
+                (boolean) o.get("isRelative"),
+                (String) o.get("xAxis"),
+                (String) o.get("xMin"),
+                (String) o.get("xMax"),
+                (String) o.get("xType"),
+                (String) o.get("yAxis"),
+                (String) o.get("yMin"),
+                (String) o.get("yMax"),
+                Float.parseFloat((String) o.get("stepSize"))
+        );
 
         addChart(chartDescriptor);
     }
@@ -970,8 +979,25 @@ public class MainController implements Initializable {
         resetCharts();
 
     }
-    private void resetCharts(){
+
+    private void resetCharts() {
         charts.clear();
         chartContainer.getChildren().clear();
+    }
+
+    @FXML
+    private void onOpenSettings() throws IOException {
+        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("newProject-view.fxml"));
+        Scene scene = new Scene(fxmlLoader.load());
+        Stage stage = new Stage();
+        stage.setTitle("New Project");
+        stage.setScene(scene);
+        stage.initModality(Modality.WINDOW_MODAL);
+        stage.initOwner(fromDatePicker.getScene().getWindow());
+        NewProjectController newProjectController = fxmlLoader.getController();
+        newProjectController.setReturnStage((Stage) fromDatePicker.getScene().getWindow());
+        stage.show();
+        newProjectController.setUpdating();
+
     }
 }

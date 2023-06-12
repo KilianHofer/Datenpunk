@@ -8,34 +8,32 @@
 <?import javafx.scene.layout.VBox?>
 
 
-<AnchorPane xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.main.datenpunk.FileNotFoundController">
-   <children>
-      <VBox layoutX="141.0" layoutY="41.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
-         <children>
-            <Label fx:id="errorLabel" text="error" />
-            <Label fx:id="optionsLabel" text="Options">
-               <VBox.margin>
-                  <Insets top="20.0" />
-               </VBox.margin>
-            </Label>
-            <BorderPane prefHeight="38.0" prefWidth="318.0">
-               <center>
-                  <Button mnemonicParsing="false" onAction="#onReconnect" text="Reconnect" BorderPane.alignment="CENTER" />
-               </center>
-               <left>
-                  <Button mnemonicParsing="false" onAction="#onDelete" text="Delete" BorderPane.alignment="CENTER" />
-               </left>
-               <right>
-                  <Button mnemonicParsing="false" onAction="#onReconstruct" text="Reconstruct" BorderPane.alignment="CENTER" />
-               </right>
-               <padding>
-                  <Insets top="30.0" />
-               </padding>
-            </BorderPane>
-         </children>
+<AnchorPane xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.main.datenpunk.FileNotFoundController">
+   <VBox layoutX="141.0" layoutY="41.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
+      <padding>
+         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
+      </padding>
+      <Label fx:id="errorLabel" text="error"/>
+      <Label fx:id="optionsLabel" text="Options">
+         <VBox.margin>
+            <Insets top="20.0"/>
+         </VBox.margin>
+      </Label>
+      <BorderPane prefHeight="38.0" prefWidth="318.0">
+         <center>
+            <Button mnemonicParsing="false" onAction="#onReconnect" text="Reconnect" BorderPane.alignment="CENTER"/>
+         </center>
+         <left>
+            <Button mnemonicParsing="false" onAction="#onDelete" text="Delete" BorderPane.alignment="CENTER"/>
+         </left>
+         <right>
+            <Button mnemonicParsing="false" onAction="#onReconstruct" text="Reconstruct"
+                    BorderPane.alignment="CENTER"/>
+         </right>
          <padding>
-            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+            <Insets top="30.0"/>
          </padding>
-      </VBox>
-   </children>
+      </BorderPane>
+   </VBox>
 </AnchorPane>

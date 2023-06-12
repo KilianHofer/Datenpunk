@@ -17,249 +17,258 @@
 <?import javafx.scene.paint.Color?>
 <?import javafx.scene.text.Font?>
 
-<VBox xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.main.datenpunk.NewChartController">
-   <children>
-      <HBox>
-         <children>
-            <ListView fx:id="chartSelectionList" prefHeight="200.0" prefWidth="200.0">
-               <HBox.margin>
-                  <Insets bottom="25.0" left="10.0" right="10.0" top="25.0" />
-               </HBox.margin>
-            </ListView>
-            <BorderPane>
-               <top>
-                  <VBox BorderPane.alignment="CENTER">
-                     <BorderPane.margin>
-                        <Insets bottom="20.0" left="290.0" right="215.0" top="20.0" />
-                     </BorderPane.margin>
-                     <children>
-                        <TextField fx:id="titleField" prefHeight="43.0" prefWidth="460.0" promptText="Title">
-                           <font>
-                              <Font size="18.0" />
-                           </font>
-                        </TextField>
-                        <BorderPane>
-                           <left>
-                              <VBox BorderPane.alignment="CENTER">
-                                 <children>
-                                    <Label text="From:" />
-                                    <DatePicker fx:id="fromDatePicker" promptText="no beginning" />
-                                 </children>
-                              </VBox>
-                           </left>
-                           <right>
-                              <VBox BorderPane.alignment="CENTER">
-                                 <children>
-                                    <Label text="To:" />
-                                    <DatePicker fx:id="toDatePicker" promptText="current date" />
-                                 </children>
-                              </VBox>
-                           </right>
-                           <VBox.margin>
-                              <Insets top="5.0" />
-                           </VBox.margin>
-                        </BorderPane>
-                     </children>
-                  </VBox>
-               </top>
-               <center>
-                  <BorderPane fx:id="chartPane" BorderPane.alignment="CENTER">
-                     <left>
-                        <BorderPane prefHeight="295.0" prefWidth="100.0">
-                           <center>
-                              <TextField fx:id="yNameField" alignment="CENTER" maxWidth="100.0" prefWidth="100.0" promptText="y-Axis Name" rotate="-90.0" BorderPane.alignment="CENTER">
-                                 <BorderPane.margin>
-                                    <Insets bottom="10.0" top="10.0" />
-                                 </BorderPane.margin>
-                              </TextField>
-                           </center>
-                           <bottom>
-                              <TextField fx:id="yMinField" prefWidth="100.0" promptText="min." rotate="-90.0" BorderPane.alignment="CENTER">
-                                 <BorderPane.margin>
-                                    <Insets bottom="60.0" top="50.0" />
-                                 </BorderPane.margin>
-                              </TextField>
-                           </bottom>
-                           <top>
-                              <TextField fx:id="yMaxField" alignment="CENTER_RIGHT" prefHeight="25.0" prefWidth="179.0" promptText="max." rotate="-90.0" BorderPane.alignment="CENTER">
-                                 <BorderPane.margin>
-                                    <Insets bottom="60.0" top="50.0" />
-                                 </BorderPane.margin>
-                              </TextField>
-                           </top>
-                        </BorderPane>
-                     </left>
-                     <bottom>
-                        <BorderPane BorderPane.alignment="CENTER">
-                           <center>
-                              <TextField alignment="CENTER" prefWidth="100.0" promptText="x-Axis Name" fx:id="xNameField" />
-                           </center>
-                           <left>
-                              <TextField prefWidth="100.0" promptText="min." BorderPane.alignment="CENTER" fx:id="xMinField">
-                                 <BorderPane.margin>
-                                    <Insets left="150.0" right="60.0" />
-                                 </BorderPane.margin>
-                              </TextField>
-                           </left>
-                           <right>
-                              <TextField alignment="CENTER_RIGHT" prefWidth="100.0" promptText="max." BorderPane.alignment="CENTER" fx:id="xMaxField">
-                                 <BorderPane.margin>
-                                    <Insets left="60.0" />
-                                 </BorderPane.margin>
-                              </TextField>
-                           </right>
-                        </BorderPane>
-                     </bottom>
-                     <center>
-                        <VBox fx:id="chartContainer" BorderPane.alignment="CENTER" />
-                     </center>
-                  </BorderPane>
-               </center>
-               <left>
-                  <HBox alignment="CENTER" BorderPane.alignment="CENTER">
-                     <BorderPane.margin>
-                        <Insets left="15.0" />
-                     </BorderPane.margin>
-                     <children>
-                        <VBox maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="73.0" prefWidth="150.0">
-                           <children>
-                              <Label text="y-Axis" />
-                              <ChoiceBox fx:id="ySelectionBox" prefHeight="25.0" prefWidth="150.0" />
-                              <CheckBox fx:id="relativeCheck" mnemonicParsing="false" text="Relative">
-                                 <VBox.margin>
-                                    <Insets bottom="5.0" top="5.0" />
-                                 </VBox.margin>
-                              </CheckBox>
-                              <CheckBox fx:id="pointCheck" mnemonicParsing="false" text="Show Points" />
-                           </children>
-                        </VBox>
-                     </children>
-                  </HBox>
-               </left>
-               <bottom>
-                  <HBox alignment="CENTER" BorderPane.alignment="CENTER" fx:id="xOptions">
-                     <BorderPane.margin>
-                        <Insets top="20.0" />
-                     </BorderPane.margin>
-                     <children>
-                        <VBox>
-                           <children>
-                              <Label prefHeight="17.0" prefWidth="150.0" text="x-Axis:">
-                                 <VBox.margin>
-                                    <Insets />
-                                 </VBox.margin>
-                              </Label>
-                              <ChoiceBox prefWidth="150.0" fx:id="xSelectionBox">
-                                 <VBox.margin>
-                                    <Insets bottom="10.0" top="5.0" />
-                                 </VBox.margin>
-                              </ChoiceBox>
-                              <HBox fx:id="xToggle">
-                                 <children>
-                                    <RadioButton mnemonicParsing="false" selected="true" text="Accumulative">
-                                       <HBox.margin>
-                                          <Insets right="5.0" />
-                                       </HBox.margin>
-                                       <toggleGroup>
-                                          <ToggleGroup fx:id="xTypeGroup" />
-                                       </toggleGroup>
-                                    </RadioButton>
-                                    <RadioButton mnemonicParsing="false" text="Range" toggleGroup="$xTypeGroup" />
-                                 </children>
-                              </HBox>
-                              <HBox>
-                                 <children>
-                                    <TextField fx:id="rangeField" promptText="range">
-                                       <HBox.margin>
-                                          <Insets top="5.0" />
-                                       </HBox.margin>
-                                    </TextField>
-                                 </children>
-                              </HBox>
-                           </children>
-                        </VBox>
-                     </children>
-                  </HBox>
-               </bottom>
-               <right>
-                  <VBox>
-                     <children>
-                        <Label text="Series:" />
-                        <TextField fx:id="seriesNameField" promptText="Name">
-                           <VBox.margin>
-                              <Insets bottom="5.0" />
-                           </VBox.margin>
-                        </TextField>
-                        <ChoiceBox fx:id="seriesSelectionBox" prefHeight="25.0" prefWidth="205.0" />
-                        <TextField fx:id="comparatorField">
-                           <VBox.margin>
-                              <Insets top="5.0" />
-                           </VBox.margin>
-                        </TextField>
-                        <BorderPane>
-                           <left>
-                              <Button mnemonicParsing="false" onAction="#onSeriesAdd" text="Add" BorderPane.alignment="CENTER" />
-                           </left>
-                           <right>
-                              <Button mnemonicParsing="false" onAction="#onSeriesDelete" text="Remove" BorderPane.alignment="CENTER" />
-                           </right>
-                           <VBox.margin>
-                              <Insets bottom="10.0" top="10.0" />
-                           </VBox.margin>
-                           <center>
-                              <Button mnemonicParsing="false" onAction="#onAddAll" text="Add All" BorderPane.alignment="CENTER" />
-                           </center>
-                        </BorderPane>
-                        <ListView fx:id="seriesList" editable="true" onMouseClicked="#onSeriesListClick" prefHeight="200.0" prefWidth="200.0" />
-                        <ColorPicker fx:id="colorPicker" minHeight="25.0" prefHeight="25.0" prefWidth="205.0">
-                           <VBox.margin>
-                              <Insets top="5.0" />
-                           </VBox.margin>
-                           <value>
-                              <Color />
-                           </value>
-                        </ColorPicker>
-                        <HBox alignment="CENTER">
-                           <children>
-                              <Button mnemonicParsing="false" onAction="#onChangeName" text="Set Name">
-                                 <HBox.margin>
-                                    <Insets />
-                                 </HBox.margin>
-                              </Button>
-                              <Button mnemonicParsing="false" onAction="#onChangeValue" text="SetValue">
-                                 <HBox.margin>
-                                    <Insets left="5.0" right="5.0" />
-                                 </HBox.margin>
-                              </Button>
-                              <Button mnemonicParsing="false" onAction="#onChangeColor" text="Set Color">
-                                 <HBox.margin>
-                                    <Insets />
-                                 </HBox.margin>
-                              </Button>
-                           </children>
-                           <VBox.margin>
-                              <Insets top="5.0" />
-                           </VBox.margin>
-                        </HBox>
-                     </children>
-                     <BorderPane.margin>
-                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-                     </BorderPane.margin>
-                  </VBox>
-               </right>
-            </BorderPane>
-         </children>
-      </HBox>
-      <BorderPane>
-         <left>
-            <Button mnemonicParsing="false" onAction="#onCancel" text="Cancel" BorderPane.alignment="CENTER" />
-         </left>
-         <right>
-            <Button fx:id="createButton" mnemonicParsing="false" onAction="#onCreate" text="Create" BorderPane.alignment="CENTER" />
-         </right>
-         <VBox.margin>
-            <Insets bottom="20.0" left="10.0" right="10.0" />
-         </VBox.margin>
-      </BorderPane>
-   </children>
+<VBox xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.main.datenpunk.NewChartController">
+   <HBox>
+      <children>
+         <ListView fx:id="chartSelectionList" prefHeight="200.0" prefWidth="200.0">
+            <HBox.margin>
+               <Insets bottom="25.0" left="10.0" right="10.0" top="25.0"/>
+            </HBox.margin>
+         </ListView>
+         <BorderPane>
+            <top>
+               <VBox BorderPane.alignment="CENTER">
+                  <BorderPane.margin>
+                     <Insets bottom="20.0" left="290.0" right="215.0" top="20.0"/>
+                  </BorderPane.margin>
+                  <children>
+                     <TextField fx:id="titleField" prefHeight="43.0" prefWidth="460.0" promptText="Title">
+                        <font>
+                           <Font size="18.0"/>
+                        </font>
+                     </TextField>
+                     <BorderPane>
+                        <left>
+                           <VBox BorderPane.alignment="CENTER">
+                              <children>
+                                 <Label text="From:"/>
+                                 <DatePicker fx:id="fromDatePicker" promptText="no beginning"/>
+                              </children>
+                           </VBox>
+                        </left>
+                        <right>
+                           <VBox BorderPane.alignment="CENTER">
+                              <children>
+                                 <Label text="To:"/>
+                                 <DatePicker fx:id="toDatePicker" promptText="current date"/>
+                              </children>
+                           </VBox>
+                        </right>
+                        <VBox.margin>
+                           <Insets top="5.0"/>
+                        </VBox.margin>
+                     </BorderPane>
+                  </children>
+               </VBox>
+            </top>
+            <center>
+               <BorderPane fx:id="chartPane" BorderPane.alignment="CENTER">
+                  <left>
+                     <BorderPane prefHeight="295.0" prefWidth="100.0">
+                        <center>
+                           <TextField fx:id="yNameField" alignment="CENTER" maxWidth="100.0" prefWidth="100.0"
+                                      promptText="y-Axis Name" rotate="-90.0" BorderPane.alignment="CENTER">
+                              <BorderPane.margin>
+                                 <Insets bottom="10.0" top="10.0"/>
+                              </BorderPane.margin>
+                           </TextField>
+                        </center>
+                        <bottom>
+                           <TextField fx:id="yMinField" prefWidth="100.0" promptText="min." rotate="-90.0"
+                                      BorderPane.alignment="CENTER">
+                              <BorderPane.margin>
+                                 <Insets bottom="60.0" top="50.0"/>
+                              </BorderPane.margin>
+                           </TextField>
+                        </bottom>
+                        <top>
+                           <TextField fx:id="yMaxField" alignment="CENTER_RIGHT" prefHeight="25.0" prefWidth="179.0"
+                                      promptText="max." rotate="-90.0" BorderPane.alignment="CENTER">
+                              <BorderPane.margin>
+                                 <Insets bottom="60.0" top="50.0"/>
+                              </BorderPane.margin>
+                           </TextField>
+                        </top>
+                     </BorderPane>
+                  </left>
+                  <bottom>
+                     <BorderPane BorderPane.alignment="CENTER">
+                        <center>
+                           <TextField alignment="CENTER" prefWidth="100.0" promptText="x-Axis Name" fx:id="xNameField"/>
+                        </center>
+                        <left>
+                           <TextField prefWidth="100.0" promptText="min." BorderPane.alignment="CENTER"
+                                      fx:id="xMinField">
+                              <BorderPane.margin>
+                                 <Insets left="150.0" right="60.0"/>
+                              </BorderPane.margin>
+                           </TextField>
+                        </left>
+                        <right>
+                           <TextField alignment="CENTER_RIGHT" prefWidth="100.0" promptText="max."
+                                      BorderPane.alignment="CENTER" fx:id="xMaxField">
+                              <BorderPane.margin>
+                                 <Insets left="60.0"/>
+                              </BorderPane.margin>
+                           </TextField>
+                        </right>
+                     </BorderPane>
+                  </bottom>
+                  <center>
+                     <VBox fx:id="chartContainer" BorderPane.alignment="CENTER"/>
+                  </center>
+               </BorderPane>
+            </center>
+            <left>
+               <HBox alignment="CENTER" BorderPane.alignment="CENTER">
+                  <BorderPane.margin>
+                     <Insets left="15.0"/>
+                  </BorderPane.margin>
+                  <children>
+                     <VBox maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="73.0" prefWidth="150.0">
+                        <children>
+                           <Label text="y-Axis"/>
+                           <ChoiceBox fx:id="ySelectionBox" prefHeight="25.0" prefWidth="150.0"/>
+                           <CheckBox fx:id="relativeCheck" mnemonicParsing="false" text="Relative">
+                              <VBox.margin>
+                                 <Insets bottom="5.0" top="5.0"/>
+                              </VBox.margin>
+                           </CheckBox>
+                           <CheckBox fx:id="pointCheck" mnemonicParsing="false" text="Show Points"/>
+                        </children>
+                     </VBox>
+                  </children>
+               </HBox>
+            </left>
+            <bottom>
+               <HBox alignment="CENTER" BorderPane.alignment="CENTER" fx:id="xOptions">
+                  <BorderPane.margin>
+                     <Insets top="20.0"/>
+                  </BorderPane.margin>
+                  <children>
+                     <VBox>
+                        <children>
+                           <Label prefHeight="17.0" prefWidth="150.0" text="x-Axis:">
+                              <VBox.margin>
+                                 <Insets/>
+                              </VBox.margin>
+                           </Label>
+                           <ChoiceBox prefWidth="150.0" fx:id="xSelectionBox">
+                              <VBox.margin>
+                                 <Insets bottom="10.0" top="5.0"/>
+                              </VBox.margin>
+                           </ChoiceBox>
+                           <HBox fx:id="xToggle">
+                              <children>
+                                 <RadioButton mnemonicParsing="false" selected="true" text="Accumulative">
+                                    <HBox.margin>
+                                       <Insets right="5.0"/>
+                                    </HBox.margin>
+                                    <toggleGroup>
+                                       <ToggleGroup fx:id="xTypeGroup"/>
+                                    </toggleGroup>
+                                 </RadioButton>
+                                 <RadioButton mnemonicParsing="false" text="Range" toggleGroup="$xTypeGroup"/>
+                              </children>
+                           </HBox>
+                           <HBox>
+                              <children>
+                                 <TextField fx:id="rangeField" promptText="range">
+                                    <HBox.margin>
+                                       <Insets top="5.0"/>
+                                    </HBox.margin>
+                                 </TextField>
+                              </children>
+                           </HBox>
+                        </children>
+                     </VBox>
+                  </children>
+               </HBox>
+            </bottom>
+            <right>
+               <VBox>
+                  <children>
+                     <Label text="Series:"/>
+                     <TextField fx:id="seriesNameField" promptText="Name">
+                        <VBox.margin>
+                           <Insets bottom="5.0"/>
+                        </VBox.margin>
+                     </TextField>
+                     <ChoiceBox fx:id="seriesSelectionBox" prefHeight="25.0" prefWidth="205.0"/>
+                     <TextField fx:id="comparatorField">
+                        <VBox.margin>
+                           <Insets top="5.0"/>
+                        </VBox.margin>
+                     </TextField>
+                     <BorderPane>
+                        <left>
+                           <Button mnemonicParsing="false" onAction="#onSeriesAdd" text="Add"
+                                   BorderPane.alignment="CENTER"/>
+                        </left>
+                        <right>
+                           <Button mnemonicParsing="false" onAction="#onSeriesDelete" text="Remove"
+                                   BorderPane.alignment="CENTER"/>
+                        </right>
+                        <VBox.margin>
+                           <Insets bottom="10.0" top="10.0"/>
+                        </VBox.margin>
+                        <center>
+                           <Button mnemonicParsing="false" onAction="#onAddAll" text="Add All"
+                                   BorderPane.alignment="CENTER"/>
+                        </center>
+                     </BorderPane>
+                     <ListView fx:id="seriesList" editable="true" onMouseClicked="#onSeriesListClick" prefHeight="200.0"
+                               prefWidth="200.0"/>
+                     <ColorPicker fx:id="colorPicker" minHeight="25.0" prefHeight="25.0" prefWidth="205.0">
+                        <VBox.margin>
+                           <Insets top="5.0"/>
+                        </VBox.margin>
+                        <value>
+                           <Color/>
+                        </value>
+                     </ColorPicker>
+                     <HBox alignment="CENTER">
+                        <children>
+                           <Button mnemonicParsing="false" onAction="#onChangeName" text="Set Name">
+                              <HBox.margin>
+                                 <Insets/>
+                              </HBox.margin>
+                           </Button>
+                           <Button mnemonicParsing="false" onAction="#onChangeValue" text="SetValue">
+                              <HBox.margin>
+                                 <Insets left="5.0" right="5.0"/>
+                              </HBox.margin>
+                           </Button>
+                           <Button mnemonicParsing="false" onAction="#onChangeColor" text="Set Color">
+                              <HBox.margin>
+                                 <Insets/>
+                              </HBox.margin>
+                           </Button>
+                        </children>
+                        <VBox.margin>
+                           <Insets top="5.0"/>
+                        </VBox.margin>
+                     </HBox>
+                  </children>
+                  <BorderPane.margin>
+                     <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
+                  </BorderPane.margin>
+               </VBox>
+            </right>
+         </BorderPane>
+      </children>
+   </HBox>
+   <BorderPane>
+      <left>
+         <Button mnemonicParsing="false" onAction="#onCancel" text="Cancel" BorderPane.alignment="CENTER"/>
+      </left>
+      <right>
+         <Button fx:id="createButton" mnemonicParsing="false" onAction="#onCreate" text="Create"
+                 BorderPane.alignment="CENTER"/>
+      </right>
+      <VBox.margin>
+         <Insets bottom="20.0" left="10.0" right="10.0"/>
+      </VBox.margin>
+   </BorderPane>
 </VBox>

@@ -21,6 +21,9 @@ import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Scanner;
@@ -163,11 +166,6 @@ public class ProjectSelectionController implements Initializable {
                 throw new RuntimeException(e);
             }
     }
-
-
-    public void onSearch() {
-    }
-
 
     public boolean checkSavedPassword(){
         File file = new File(singleton.getWorkingDirectory()+"\\connection.dtpnk");
@@ -372,8 +370,13 @@ public class ProjectSelectionController implements Initializable {
 
             BasicFileAttributes attributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
 
+            LocalDateTime visitedDate = LocalDateTime.ofInstant(attributes.lastAccessTime().toInstant(), ZoneId.systemDefault());
+            LocalDateTime createdDate = LocalDateTime.ofInstant(attributes.creationTime().toInstant(), ZoneId.systemDefault());
 
-            projectTableElements.add(new ProjectTableElement(name,attributes.lastAccessTime().toString(),attributes.creationTime().toString(),path,local));
+            String visitedAt = visitedDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            String createdAt = createdDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+
+            projectTableElements.add(new ProjectTableElement(name,visitedAt,createdAt,path,local));
         } catch (IOException ignore) {
             FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("fileNotFound-view.fxml"));
             Stage stage = new Stage();

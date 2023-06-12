@@ -2,6 +2,8 @@ package com.main.datenpunk;
 
 import database.DAO;
 import enteties.*;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -11,6 +13,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import javafx.util.Callback;
 import java.net.URL;
 import java.util.ArrayList;
@@ -37,22 +40,16 @@ public class DetailController implements Initializable {
     private String sortType = "DESC";
     private String sortColumn = "Date";
 
+    List<Boolean> accept = new ArrayList<>();
+    List<Boolean> required = new ArrayList<>();
+
 
     public void updateTable() {
 
-        String sortColumnName = sortColumn;
         for (Node column : historyTable.getItems()) {
             Button button = (Button) ((VBox) column).getChildren().get(0);
-            String columnName = "";
-            for (ColumnInfo columnInfo : singleton.getColumnInfo()) {
-                if (columnInfo.name.equals(button.getText().toLowerCase()))
-                    columnName = columnInfo.table + "." + columnInfo.name;
-                if (columnInfo.name.equals(sortColumnName.toLowerCase()))
-                    sortColumnName = columnInfo.table + "." + sortColumnName;
-
-            }
             ListView<String> listView = (ListView<String>) ((VBox) column).getChildren().get(1);
-            listView.getItems().setAll(dao.selectHistory(currentElement, columnName, sortColumn, sortType));
+            listView.getItems().setAll(dao.selectHistory(currentElement, button.getText(), sortColumn, sortType));
         }
     }
 
@@ -62,16 +59,14 @@ public class DetailController implements Initializable {
         for (Node column : settingsContainer.getChildren()) {
             VBox vBox = (VBox) column;
             String name = ((Label) vBox.getChildren().get(0)).getText();
-            name = name.substring(0, name.length() - 1).toLowerCase();
-            for (ColumnInfo columnInfo : singleton.getColumnInfo()) {
-                if (columnInfo.name.equals(name)) {
-                    name = columnInfo.table + "." + name;
-                    break;
-                }
-            }
+            name = name.substring(0, name.length() - 1);
             Node setting = vBox.getChildren().get(1);
-            if (setting.getClass().equals(TextField.class))
-                ((TextField) setting).setText(dao.selectElement(id, name));
+            setting.requestFocus();
+            if (setting.getClass().equals(TextField.class)){
+                String value =dao.selectElement(id,name);
+                if(value != null)
+                    ((TextField) setting).setText(dao.selectElement(id, name));
+            }
             else
                 ((ChoiceBox<String>) setting).setValue(dao.selectElement(id, name));
 
@@ -83,50 +78,68 @@ public class DetailController implements Initializable {
 
     public void onUpdatePressed() {
 
-
-        List<String> historyNames = new ArrayList<>();
-        List<String> newHistoryValues = new ArrayList<>();
-        List<String> oldHistoryValues = new ArrayList<>();
-        for (Node column : historyTable.getItems()) {
-            String name = ((Button) ((VBox) column).getChildren().get(0)).getText().toLowerCase();
-            if(!name.equals("date")){
-                historyNames.add(name);
-                oldHistoryValues.add(dao.selectHistoryElement(currentElement,name));
+        if(!accept.contains(false)) {
+            List<String> historyNames = new ArrayList<>();
+            List<String> newHistoryValues = new ArrayList<>();
+            List<String> oldHistoryValues = new ArrayList<>();
+            for (Node column : historyTable.getItems()) {
+                String name = ((Button) ((VBox) column).getChildren().get(0)).getText();
+                if (!name.equals("Date")) {
+                    historyNames.add(name);
+                    oldHistoryValues.add(dao.selectHistoryElement(currentElement, name));
+                }
             }
-        }
-        for (Node setting : settingsContainer.getChildren()) {
-            VBox vBox = (VBox) setting;
-            String column = ((Label) vBox.getChildren().get(0)).getText();
-            column = column.substring(0, column.length() - 1).toLowerCase();
-            Node settingValue = vBox.getChildren().get(1);
-            String value;
-            if (settingValue.getClass().equals(TextField.class))
-                value = ((TextField) settingValue).getText();
-            else
-                value = ((ChoiceBox<String>) settingValue).getValue();
+            for (Node setting : settingsContainer.getChildren()) {
+                VBox vBox = (VBox) setting;
+                String column = ((Label) vBox.getChildren().get(0)).getText();
+                column = column.substring(0, column.length() - 1);
+                Node settingValue = vBox.getChildren().get(1);
+                String value;
+                if (settingValue.getClass().equals(TextField.class))
+                    value = ((TextField) settingValue).getText();
+                else
+                    value = ((ChoiceBox<String>) settingValue).getValue();
 
-            if (historyNames.contains(column)) {
-                newHistoryValues.add(value);
-            } else {
-                if(!column.equals("history"))
-                    dao.updateValue(currentElement, column, value);
+                if (historyNames.contains(column)) {
+                    newHistoryValues.add(value);
+                } else {
+                    if (!column.equals("history"))
+                        dao.updateValue(currentElement, column, value);
+                }
             }
-        }
-        for(int i = 0;i<oldHistoryValues.size();i++){
-            if(!newHistoryValues.get(i).equals(oldHistoryValues.get(i))){
-                updated = true;
-                break;
+            for (int i = 0; i < oldHistoryValues.size(); i++) {
+                if (!newHistoryValues.get(i).equals(oldHistoryValues.get(i))) {
+                    updated = true;
+                    break;
+                }
             }
-        }
 
-        if (updated) {
-            updated = false;
-            dao.updateHistory(currentElement, historyNames, newHistoryValues);
-            updateTable();
+            if (updated) {
+                updated = false;
+                dao.updateHistory(currentElement, historyNames, newHistoryValues);
+                updateTable();
+            }
+            singleton.getController().updateTable();
         }
-        singleton.getController().updateTable();
 
     }
+
+    ChangeListener<String> emptyListener = new ChangeListener<>() {
+        @Override
+        public void changed(ObservableValue<? extends String> observableValue, String s, String t1) {
+            Node setting = settingsContainer.getScene().focusOwnerProperty().get();
+            VBox vBox = (VBox) setting.getParent();
+            int index = settingsContainer.getChildren().indexOf(vBox);
+            if (t1.equals("")) {
+                accept.set(index, false);
+                setting.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+            }
+            else {
+                accept.set(index, true);
+                setting.setStyle("-fx-border-width: 0px;");
+            }
+        }
+    };
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -134,14 +147,19 @@ public class DetailController implements Initializable {
 
 
         for (ColumnInfo columnInfo : singleton.getColumnInfo()) {
-            if (!columnInfo.name.equals("id") && !columnInfo.name.equals("date")) {
-                String name = columnInfo.name.substring(0, 1).toUpperCase() + columnInfo.name.substring(1);
+            if (!columnInfo.name.equals("id") && !columnInfo.name.equals("Date")) {
+                String name = columnInfo.name;
                 Label label = new Label(name + ":");
-                Node setting;
+                Control setting;
+                if(columnInfo.required)
+                    accept.add(false);
+                else
+                    accept.add(true);
+                required.add(columnInfo.required);
                 switch (columnInfo.type) {
-                    case "choice" -> {
+                    case "Choice" -> {
                         setting = new ChoiceBox<String>();
-                        ((ChoiceBox<String>) setting).setPrefWidth(150);
+                        setting.setPrefWidth(150);
                         for (int i = 0; i < singleton.choiceNames.size(); i++) {
                             if (singleton.choiceNames.get(i).equals(columnInfo.name)) {
                                 for (Status choice : singleton.choices.get(i)) {
@@ -149,24 +167,56 @@ public class DetailController implements Initializable {
                                 }
                             }
                         }
+                        if(columnInfo.required)
+                            ((ChoiceBox<String>)setting).valueProperty().addListener(emptyListener);
+                        else
+                            ((ChoiceBox<String>) setting).getItems().add("");
                     }
-                    case "text" -> setting = new TextField();
-                    case "integer" -> {
+                    case "Text" -> {
+                        setting = new TextField();
+                        if(columnInfo.required)
+                            ((TextField) setting).textProperty().addListener(emptyListener);
+                    }
+                    case "Integer" -> {
                         setting = new TextField();
                         ((TextField) setting).textProperty().addListener((observableValue, s, t1) -> {
-                            if (t1.matches("[0-9]+"))
+                            TextField textField = (TextField)settingsContainer.getScene().focusOwnerProperty().get();
+                            VBox vBox = (VBox)textField.getParent();
+                            int index = settingsContainer.getChildren().indexOf(vBox);
+                            if (t1.matches("[0-9]+")) {
+                                accept.set(index,true);
                                 setting.setStyle("-fx-border-width: 0px");
-                            else
-                                setting.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+                            }
+                            else {
+                                if(t1.equals("") && !required.get(index)){
+                                    accept.set(index,true);
+                                }
+                                else {
+                                    setting.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+                                    accept.set(index, false);
+                                }
+                            }
                         });
                     }
                     default -> {
                         setting = new TextField();
                         ((TextField) setting).textProperty().addListener((observableValue, s, t1) -> {
-                            if (t1.matches("[0-9]+.?[0-9]?+"))
+                            TextField textField = (TextField)settingsContainer.getScene().focusOwnerProperty().get();
+                            VBox vBox = (VBox)textField.getParent();
+                            int index = settingsContainer.getChildren().indexOf(vBox);
+                            if (t1.matches("^(0*[1-9][0-9]*(\\.[0-9]+)?|0+\\.[0-9]*[1-9][0-9]*)$")) {
                                 setting.setStyle("-fx-border-width: 0px");
-                            else
-                                setting.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+                                accept.set(index,true);
+                            }
+                            else {
+                                if(t1.equals("") && !required.get(index)){
+                                    accept.set(index,true);
+                                }
+                                else {
+                                    setting.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+                                    accept.set(index, false);
+                                }
+                            }
                         });
                     }
                 }
@@ -188,14 +238,16 @@ public class DetailController implements Initializable {
             listView.getSelectionModel().selectedIndexProperty().addListener((observableValue, s, t1) -> {
                 if (!switchSelection) {
                     switchSelection = true;
-                    for (VBox column : singleton.getColumns()) {
+                    for (Node node : historyTable.getItems()) {
+                        VBox column = (VBox) node;
                         int index = ((ListView<String>) column.getChildren().get(1)).getSelectionModel().getSelectedIndex();
                         if ((selectedIndex == null || index != selectedIndex) && index != -1) {
                             selectedIndex = index;
                             break;
                         }
                     }
-                    for (VBox column : singleton.getColumns()) {
+                    for (Node node : historyTable.getItems()) {
+                        VBox column = (VBox)node;
                         ((ListView<String>) column.getChildren().get(1)).getSelectionModel().select(selectedIndex);
                     }
                     switchSelection = false;
@@ -206,21 +258,33 @@ public class DetailController implements Initializable {
             VBox vBox = new VBox(button, listView);
             historyTable.getItems().add(vBox);
         }
+
+        for(int i = 0; i<historyTable.getDividers().size();i++){
+            SplitPane.Divider divider = historyTable.getDividers().get(i);
+            float position = 1/((float)historyTable.getDividers().size()+1)*(i+1);
+            divider.setPosition(position);
+        }
+
         updateTable();
     }
 
-    public void initializeCellFactories() {
+    public void setupLater() {
+
+        Window window = historyTable.getScene().getWindow();
+
+        historyTable.setMaxWidth(window.getWidth()-75);
+        window.widthProperty().addListener((observableValue, number, t1) -> historyTable.setMaxWidth((Double)t1-75));
+
         for (int i = 0; i < historyTable.getItems().size(); i++) {
             VBox vBox = (VBox) historyTable.getItems().get(i);
             ListView<String> listView = (ListView<String>) (vBox).getChildren().get(1);
             ColumnInfo column = null;
             for (ColumnInfo columnInfo : singleton.getColumnInfo()) {
-                if (columnInfo.name.equals(((Button) vBox.getChildren().get(0)).getText().toLowerCase())) {
+                if (columnInfo.name.equals(((Button) vBox.getChildren().get(0)).getText())) {
                     column = columnInfo;
                     break;
                 }
             }
-
 
             assert column != null;
             if (column.colored) {
@@ -237,7 +301,7 @@ public class DetailController implements Initializable {
                                 } else {
                                     setText(item);
                                     for (int i = 0; i < singleton.choices.size(); i++) {
-                                        if (((Button) ((VBox) getParent().getParent().getParent().getParent().getParent()).getChildren().get(0)).getText().toLowerCase().equals(singleton.choiceNames.get(i))) {
+                                        if (((Button) ((VBox) getParent().getParent().getParent().getParent().getParent()).getChildren().get(0)).getText().equals(singleton.choiceNames.get(i))) {
                                             for (Status status : singleton.choices.get(i)) {
                                                 if (item.equals(status.getName())) {
                                                     setStyle("-fx-control-inner-background: " + status.getColor());
@@ -255,7 +319,8 @@ public class DetailController implements Initializable {
     }
 
     ListChangeListener<String> listChangeListener = change -> {
-        for (VBox column : singleton.getColumns()) {
+        for (Node node : historyTable.getItems()) {
+            VBox column = (VBox)node;
             int ROW_HEIGHT = 24;
             ListView<String> listView = (ListView<String>) column.getChildren().get(1);
             listView.setPrefHeight(listView.getItems().size() * ROW_HEIGHT + 2);

@@ -9,6 +9,7 @@ import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
@@ -44,7 +45,7 @@ public class AddElementController implements Initializable {
                         objectColumns.add(columnInfo.name);
                 }
                 else {
-                    if (!columnInfo.name.equals("date"))
+                    if (!columnInfo.name.equals("Date"))
                         historyColumns.add((columnInfo.name));
                 }
             }
@@ -56,7 +57,7 @@ public class AddElementController implements Initializable {
                 VBox vBox = (VBox)setting;
 
                 String name = ((Label)vBox.getChildren().get(0)).getText();
-                name = name.substring(0,name.length()-1).toLowerCase();
+                name = name.substring(0,name.length()-1);
 
                 Node valueNode = vBox.getChildren().get(1);
                 String value;
@@ -97,19 +98,19 @@ public class AddElementController implements Initializable {
     public void initialize(URL url, ResourceBundle resourceBundle) {
         for(ColumnInfo columnInfo: singleton.getColumnInfo()){
             String name = columnInfo.name;
-            if(!name.equals("id") && !name.equals("date")){
-                name = name.substring(0,1).toUpperCase()+name.substring(1)+":";
+            if(!name.equals("id") && !name.equals("Date")){
+                name = name+":";
                 Label label = new Label(name);
-                Node setting;
+                Control setting;
                 if(columnInfo.required)
                     accept.add(false);
                 else
                     accept.add(true);
                 required.add(columnInfo.required);
                 switch (columnInfo.type) {
-                    case "choice" -> {
+                    case "Choice" -> {
                         setting = new ChoiceBox<String>();
-                        ((ChoiceBox<String>) setting).setPrefWidth(150);
+                        setting.setPrefWidth(150);
                         for (int i = 0; i < singleton.choiceNames.size(); i++) {
                             if (singleton.choiceNames.get(i).equals(columnInfo.name)) {
                                 for (Status choice : singleton.choices.get(i)) {
@@ -119,13 +120,15 @@ public class AddElementController implements Initializable {
                         }
                         if(columnInfo.required)
                             ((ChoiceBox<String>)setting).valueProperty().addListener(emptyListener);
+                        else
+                            ((ChoiceBox<String>) setting).getItems().add("");
                     }
-                    case "text" -> {
+                    case "Text" -> {
                         setting = new TextField();
                         if(columnInfo.required)
                             ((TextField)setting).textProperty().addListener(emptyListener);
                     }
-                    case "integer" -> {
+                    case "Integer" -> {
                         setting = new TextField();
                         ((TextField) setting).textProperty().addListener((observableValue, s, t1) -> {
                             TextField textField = (TextField)settingContainer.getScene().focusOwnerProperty().get();
@@ -152,7 +155,7 @@ public class AddElementController implements Initializable {
                             TextField textField = (TextField)settingContainer.getScene().focusOwnerProperty().get();
                             VBox vBox = (VBox)textField.getParent();
                             int index = settingContainer.getChildren().indexOf(vBox);
-                            if (t1.matches("[0-9]+.?[0-9]?+")) {
+                            if (t1.matches("^(0*[1-9][0-9]*(\\.[0-9]+)?|0+\\.[0-9]*[1-9][0-9]*)$")) {
                                 setting.setStyle("-fx-border-width: 0px");
                                 accept.set(index,true);
                             }

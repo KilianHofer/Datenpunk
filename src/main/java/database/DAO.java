@@ -73,7 +73,7 @@ public class DAO {
             StringBuilder subquery = new StringBuilder();
             for (int i = 0; i < names.size(); i++) {
                 String name = names.get(i);
-                subquery.append(name).append(" ").append(types.get(i));
+                subquery.append("\"").append(name).append("\" ").append(types.get(i));
                 if(name.equals("id"))
                     subquery.append(" PRIMARY KEY");
 
@@ -85,7 +85,7 @@ public class DAO {
                 createAuxTable(categoryName, categoryLists.get(i));
                 if(i == 0)
                     subquery.append(",");
-                subquery.append("FOREIGN KEY(").append(categoryName).append(") REFERENCES ").append(categoryName).append("(name)");
+                subquery.append("FOREIGN KEY(\"").append(categoryName).append("\") REFERENCES \"").append(categoryName).append("\"(name)");
                 if(i < categoryLists.size()-1)
                     subquery.append(",");
             }
@@ -95,7 +95,6 @@ public class DAO {
             else
                 query = "CREATE TABLE history(id INT,"+subquery+",FOREIGN KEY(id) REFERENCES objects(id))";
             PreparedStatement statement = connection.prepareStatement(query);
-            System.out.println(statement);
             statement.executeUpdate();
 
         } catch (SQLException e) {
@@ -105,12 +104,12 @@ public class DAO {
     }
     private void createAuxTable(String name,List<Status> categories){
         try {
-            String query = "CREATE TABLE " + name + "(id SERIAL,sortorder INT,name VARCHAR(200) UNIQUE,colour char(7))";
+            String query = "CREATE TABLE \"" + name + "\" (id SERIAL,sortorder INT,name VARCHAR(200) UNIQUE,colour char(7))";
             PreparedStatement statement = connection.prepareStatement(query);
             statement.executeUpdate();
 
             for(Status category:categories){
-                String insertQuery = "INSERT INTO " + name + "(sortorder,name,colour) VALUES("+category.getSortOrder()+",'"+category.getName()+"','"+category.getColor()+"')";
+                String insertQuery = "INSERT INTO \"" + name + "\" (sortorder,name,colour) VALUES("+category.getSortOrder()+",'"+category.getName()+"','"+category.getColor()+"')";
                 PreparedStatement insertStatement = connection.prepareStatement(insertQuery);
                 insertStatement.executeUpdate();
             }
@@ -120,14 +119,14 @@ public class DAO {
         }
     }
 
-    public void createColumnTable(List<String> names, List<String> types, List<String> tables, List<Integer> positions, List<Boolean> required){
+    public void createColumnTable(List<String> names, List<String> types, List<String> tables, List<Integer> positions, List<Boolean> required, List<Integer> lengths){
         try{
-            String query = "CREATE TABLE columns(name VARCHAR(200),type VARCHAR (100),tables VARCHAR (100),position INT,required BOOLEAN)";
+            String query = "CREATE TABLE columns(name VARCHAR(200),type VARCHAR (100),tables VARCHAR (100),position INT,required BOOLEAN,length INT)";
             PreparedStatement statement = connection.prepareStatement(query);
             statement.executeUpdate();
 
             for (int i = 0; i < names.size(); i++) {
-                String insertQuery = "INSERT INTO columns VALUES('"+names.get(i)+"','"+types.get(i)+"','"+tables.get(i)+"','"+positions.get(i)+"',"+required.get(i)+")";
+                String insertQuery = "INSERT INTO columns VALUES('"+names.get(i)+"','"+types.get(i)+"','"+tables.get(i)+"','"+positions.get(i)+"',"+required.get(i)+","+lengths.get(i)+")";
                 PreparedStatement insertStatement = connection.prepareStatement(insertQuery);
                 insertStatement.executeUpdate();
             }
@@ -136,18 +135,6 @@ public class DAO {
             throw new RuntimeException(e);
         }
 
-    }
-
-    private void fillStatusTable() {
-        try{
-            String query =  "INSERT INTO status(sortorder,name,colour) VALUES(1,'Complete','#66ff66');" +
-                            "INSERT INTO status(sortorder,name,colour) VALUES(2,'In-Progress','#ffff00');" +
-                            "INSERT INTO status(sortorder,name,colour) VALUES(3,'Planned','#ff0000');";
-            PreparedStatement statement = connection.prepareStatement(query);
-            statement.executeUpdate();
-        }catch (SQLException e){
-            System.out.println(e.getMessage());
-        }
     }
 
     public List<ColumnInfo> selectTableColumns(){
@@ -160,11 +147,12 @@ public class DAO {
                 String name = resultSet.getString("name");
                 String table = resultSet.getString("tables");
                 String type = resultSet.getString("type");
-                boolean colored = type.equals("choice");
-                boolean discrete = (colored || type.equals("text"));
+                boolean colored = type.equals("Choice");
+                boolean discrete = (colored || type.equals("Text"));
                 Integer position = resultSet.getInt("position");
                 boolean required = resultSet.getBoolean("required");
-                columnInfo.add(new ColumnInfo(table,name,discrete,colored,position,type,required));
+                int length = resultSet.getInt("length");
+                columnInfo.add(new ColumnInfo(table,name,discrete,colored,position,type,required,length));
             }
 
 
@@ -210,22 +198,11 @@ public class DAO {
 
         int i = 0;
         for(ColumnInfo columnInfo:singleton.getColumnInfo()){
-            if(!columnInfo.name.equals("id") && !columnInfo.name.equals("date")) {
-                buildString(lists, listViews, i++, columnInfo.table + "." + columnInfo.name);
-                buildString(lists, listViews, i++, columnInfo.table + "." + columnInfo.name);
+            if(!columnInfo.name.equals("id") && !columnInfo.name.equals("Date")) {
+                buildString(lists, listViews, i++, columnInfo.table + ".\"" + columnInfo.name+"\"");
+                buildString(lists, listViews, i++, columnInfo.table + ".\"" + columnInfo.name+"\"");
             }
         }
-
-        /*
-        buildString(lists,listViews,0,"objects.name");                //TODO: this will have to be dynamic in the future
-        buildString(lists,listViews,1,"objects.name");
-        buildString(lists,listViews,2,"objects.type");
-        buildString(lists,listViews,3,"objects.type");
-        buildString(lists,listViews,4,"history.status");
-        buildString(lists,listViews,5,"history.status");
-
-         */
-
 
         StringBuilder subquery = new StringBuilder();
         boolean first = true;
@@ -254,28 +231,46 @@ public class DAO {
 
         long toTimestamp = ZonedDateTime.of(toDate.atTime(23,59), ZoneId.systemDefault()).toInstant().toEpochMilli();
 
+        String statusTable = "";
+        for (ColumnInfo status:singleton.getColumnInfo()){
+            if(status.name.equals("Status"))
+                statusTable = status.table;
+        }
+
+        for (ColumnInfo columnInfo : singleton.getColumnInfo()) {
+            if (columnInfo.name.equals(column))
+                column = columnInfo.table + ".\"" + columnInfo.name+"\"";
+            if (columnInfo.name.equals(sortColumn)) {
+                if(!columnInfo.colored)
+                    sortColumn = columnInfo.table + ".\"" + sortColumn + "\"";
+                else
+                    sortColumn = "\""+sortColumn+"\".sortorder";
+            }
+        }
+
         PreparedStatement statement;
         ResultSet resultSet;
         try {
             String query =
                     "SELECT "+column+"  FROM objects " +
-                    "LEFT JOIN history ON (objects.id = history.id) " +
-                    "LEFT JOIN (SELECT id,max(date) AS t FROM history WHERE date >= ? AND date <= ? GROUP BY id) AS i ON (i.id = objects.id AND i.t=history.date) " +
-                    "LEFT JOIN status ON status.name=history.status" + subquery + " ORDER BY "+sortColumn+ " "+sortType; //TODO: fix SQL-Injection
+                    "JOIN history ON (objects.\"id\" = history.\"id\") " +
+                    "JOIN (SELECT \"id\",max(\"Date\") AS t FROM history WHERE \"Date\" >= ? AND \"Date\" <= ? GROUP BY \"id\") AS i ON (i.\"id\" = objects.\"id\" AND i.t=history.\"Date\") " +
+                    "LEFT JOIN \"Status\" ON \"Status\".\"name\"="+statusTable+".\"Status\"" + subquery + " ORDER BY "+sortColumn+ " "+sortType; //TODO: fix SQL-Injection
             statement = connection.prepareStatement(query);
             statement.setLong(1,fromTimestamp);
             statement.setLong(2,toTimestamp);
-            System.out.println(statement);
             resultSet = statement.executeQuery();
 
-            String columnName = column.substring(column.lastIndexOf(".")+1);
+            String columnName = column.substring(column.lastIndexOf(".")+2,column.length()-1);
 
             while(resultSet.next()){
 
                 String result = resultSet.getString(columnName);
 
-                if(columnName.equals("date"))
+                if(columnName.equals("Date"))
                     result = LocalDateTime.ofInstant(Instant.ofEpochMilli(Long.parseLong(result)),ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                if(result == null)
+                    result = "";
                 objectTableElements.add(result);
             }
             return objectTableElements;
@@ -286,14 +281,27 @@ public class DAO {
     }
 
     public String selectElement(int id, String column){
+
+
+        String statusTable = "";
+        for (ColumnInfo status:singleton.getColumnInfo()){
+            if(status.name.equals("Status"))
+                statusTable = status.table;
+            if (status.name.equals(column))
+                column = status.table + ".\"" + column+"\"";
+        }
+
         try {
-            String query = "SELECT " + column +"  FROM objects JOIN history ON (objects.id = history.id) JOIN (SELECT id,max(date) AS t FROM history GROUP BY id) AS i ON (i.id = objects.id AND i.t=history.date) JOIN status s ON s.name=history.status WHERE objects.id = ?";
+            String query = "SELECT " + column +"  FROM objects " +
+                    "JOIN history ON (objects.\"id\" = history.\"id\") " +
+                    "JOIN (SELECT \"id\",max(\"Date\") AS t FROM history GROUP BY \"id\") AS i ON (i.\"id\" = objects.\"id\" AND i.t=history.\"Date\") " +
+                    "JOIN \"Status\" s ON s.\"name\"="+statusTable+".\"Status\" WHERE objects.\"id\" = ?";
             PreparedStatement statement =  connection.prepareStatement(query);
             statement.setInt(1,id);
             ResultSet resultSet = statement.executeQuery();
 
             if(resultSet.next()){
-                return resultSet.getString(column.substring(column.lastIndexOf(".")+1));
+                return resultSet.getString(column.substring(column.lastIndexOf(".")+2,column.length()-1));
             }
 
 
@@ -305,20 +313,31 @@ public class DAO {
 
     public List<String> selectHistory(int id,String column, String sortColumn,String sortType){
 
+        for (ColumnInfo columnInfo : singleton.getColumnInfo()) {
+            if (columnInfo.name.equals(column))
+                column = columnInfo.table + ".\"" + columnInfo.name+"\"";
+            if (columnInfo.name.equals(sortColumn)) {
+                if(!columnInfo.colored)
+                    sortColumn = columnInfo.table + ".\"" + sortColumn + "\"";
+                else
+                    sortColumn = "\""+sortColumn+"\".sortorder";
+            }
+        }
+
         List<String> history = new ArrayList<>();
         PreparedStatement statement;
         ResultSet resultSet;
-        String query = "SELECT " + column + " FROM history WHERE id=? ORDER BY " + sortColumn + " " + sortType;
         try{
+            String query = "SELECT " + column + " FROM history WHERE \"id\"=? ORDER BY " + sortColumn + " " + sortType;
             statement = connection.prepareStatement(query);
             statement.setInt(1,id);
             resultSet = statement.executeQuery();
 
-            String name = column.substring(column.lastIndexOf(".")+1);
+            String name = column.substring(column.lastIndexOf(".")+2,column.length()-1);
 
             while(resultSet.next()){
                 String result = resultSet.getString(name);
-                if(name.equals("date"))
+                if(name.equals("Date"))
                     result = LocalDateTime.ofInstant(Instant.ofEpochMilli(Long.parseLong(result)), TimeZone.getDefault().toZoneId()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
                 history.add(result);
@@ -333,7 +352,7 @@ public class DAO {
 
     public String selectHistoryElement(int id,String column){
         try{
-            String query = "SELECT "+column+" FROM history WHERE id = "+id+" ORDER BY date DESC LIMIT 1";
+            String query = "SELECT \""+column+"\" FROM history WHERE \"id\" = "+id+" ORDER BY \"Date\" DESC LIMIT 1";
             PreparedStatement statement = connection.prepareStatement(query);
             ResultSet resultSet = statement.executeQuery();
             if(resultSet.next()){
@@ -365,7 +384,7 @@ public class DAO {
     public List<Status> selectStatuses(String table){
         try{
             List<Status> statuses = new ArrayList<>();
-            String query = "SELECT * FROM " + table;
+            String query = "SELECT * FROM \"" + table+"\" ORDER BY sortorder";
             PreparedStatement statement = connection.prepareStatement(query);
             ResultSet resultSet = statement.executeQuery();
             int sortOrder;
@@ -386,28 +405,6 @@ public class DAO {
         return null;
     }
 
-    public Status selectStatus(String name) {
-        try{
-            String query = "SELECT * FROM status WHERE name = ?";
-            PreparedStatement statement = connection.prepareStatement(query);
-            statement.setString(1,name);
-            ResultSet resultSet = statement.executeQuery();
-            int sortOrder;
-            String sName, color;
-
-            if(resultSet.next()){
-                sortOrder = resultSet.getInt("sortOrder");
-                sName = resultSet.getString("name");
-                color = resultSet.getString("colour");
-                return new Status(sName,sortOrder,color);
-            }
-
-
-        }catch (SQLException e){
-            System.out.println(e.getMessage());
-        }
-        return null;
-    }
 
     public String getFirstOrLastValue(boolean first, String source){
         try{
@@ -421,7 +418,7 @@ public class DAO {
             ResultSet resultSet = statement.executeQuery();
 
             if(resultSet.next()){
-                return String.valueOf(resultSet.getLong(source.substring(source.indexOf(".")+1)));
+                return String.valueOf(resultSet.getLong(source.substring(source.indexOf(".")+2,source.length()-1)));
             }
 
         } catch (SQLException e) {
@@ -435,7 +432,7 @@ public class DAO {
             String subquery1 = "",subquery2 = "", subquery3, subquery4 = "";
             switch (value) {
                 case "All" -> subquery1 = "COUNT";
-                case "value" -> subquery4 = " ORDER BY history.date DESC LIMIT 1";
+                case "value" -> subquery4 = " ORDER BY history.\"Date\" DESC LIMIT 1";
                 case "sum" -> subquery1 = "SUM";
                 case "average" -> subquery1 = "AVG";
                 case "greater than" -> {
@@ -464,8 +461,8 @@ public class DAO {
                 }
             }
 
-            if(xAxis.equals("date")){
-                subquery2 = " AND date < " + end;
+            if(xAxis.equals("Date")){
+                subquery2 = " AND \"Date\" < " + end;
             }
 
             if(category == null){
@@ -475,13 +472,22 @@ public class DAO {
                 subquery3 = xAxis + " = '" + category + "'";
             }
 
-            String query = "SELECT " + subquery1 + " (" + yAxis + ") FROM objects JOIN history ON objects.id = history.id JOIN (SELECT id,MAX(date) AS t FROM history WHERE date >= " + startDataTimestamp + subquery2 + " AND date < " + endDataTimestamp + " GROUP BY id) AS i ON (i.id = objects.id AND i.t=history.date) JOIN status ON status.name = history.status WHERE "+ subquery3 + subquery4;
+            String statusTable = "";
+            for (ColumnInfo status:singleton.getColumnInfo()){
+                if(status.name.equals("Status"))
+                    statusTable = status.table;
+            }
+
+            String query = "SELECT " + subquery1 + " (" + yAxis + ") FROM objects " +
+                    "JOIN history ON objects.id = history.id " +
+                    "JOIN (SELECT id,MAX(\"Date\") AS t FROM history WHERE \"Date\" >= " + startDataTimestamp + subquery2 + " AND \"Date\" < " + endDataTimestamp + " GROUP BY id) AS i ON (i.id = objects.id AND i.t=history.\"Date\") " +
+                    "JOIN \"Status\" ON \"Status\".name = "+statusTable+".\"Status\" WHERE "+ subquery3 + subquery4;
             PreparedStatement statement = connection.prepareStatement(query);
             ResultSet resultSet = statement.executeQuery();
             if (resultSet.next()) {
                 if(value.equals("value"))
-                    return resultSet.getFloat(yAxis.substring(yAxis.indexOf(".")+1));
-                return resultSet.getFloat(subquery1.toLowerCase());
+                    return resultSet.getFloat(yAxis.substring(yAxis.indexOf(".")+2,yAxis.length()-1));
+                return resultSet.getFloat(subquery1);
             }
 
         } catch (SQLException e) {
@@ -495,7 +501,7 @@ public class DAO {
 
         long startTimestamp = ZonedDateTime.of(start.atStartOfDay(), ZoneId.systemDefault()).toInstant().toEpochMilli();
         long endTimestamp = ZonedDateTime.of(end.atStartOfDay(), ZoneId.systemDefault()).toInstant().toEpochMilli();
-        return getXYValues(startTimestamp,endTimestamp,null,yAxis,value,startDataTimestamp,endDataTimestamp,comparator,"date");
+        return getXYValues(startTimestamp,endTimestamp,null,yAxis,value,startDataTimestamp,endDataTimestamp,comparator,"history.\"Date\"");
 
     }
     public Float getPieValues(String column ,String value,long startTimestamp,long endTimestamp, String comparator){
@@ -520,7 +526,16 @@ public class DAO {
 
             }
 
-            String query = "SELECT "+subquery1+"*) FROM objects JOIN history ON objects.id=history.id JOIN (SELECT id, MAX(date) t FROM history WHERE date >= "+startTimestamp+" AND date <= "+endTimestamp+" GROUP BY id) AS i ON (i.id = objects.id AND i.t=history.date) JOIN status ON status.name = history.status"+subquery2;
+            String statusTable = "";
+            for (ColumnInfo status:singleton.getColumnInfo()){
+                if(status.name.equals("Status"))
+                    statusTable = status.table;
+            }
+
+            String query = "SELECT "+subquery1+"*) FROM objects " +
+                    "JOIN history ON objects.id=history.id " +
+                    "JOIN (SELECT id, MAX(\"Date\") t FROM history WHERE \"Date\" >= "+startTimestamp+" AND \"Date\" <= "+endTimestamp+" GROUP BY id) AS i ON (i.id = objects.id AND i.t=history.\"Date\") " +
+                    "JOIN \"Status\" ON \"Status\".name = "+statusTable+".\"Status\""+subquery2;
             PreparedStatement statement = connection.prepareStatement(query);
             ResultSet resultSet = statement.executeQuery();
             if(resultSet.next()){
@@ -540,7 +555,7 @@ public class DAO {
             StringBuilder objectColumnsSubquery = new StringBuilder();
             StringBuilder objectValuesSubquery = new StringBuilder();
             for(int i = 0; i<objectColumns.size();i++){
-                objectColumnsSubquery.append(objectColumns.get(i));
+                objectColumnsSubquery.append("\"").append(objectColumns.get(i)).append("\"");
                 String value = objectValues.get(i);
                 if(value != null)
                     objectValuesSubquery.append("'").append(objectValues.get(i)).append("'");
@@ -565,7 +580,7 @@ public class DAO {
             StringBuilder historyColumnsSubquery = new StringBuilder();
             StringBuilder historyValuesSubquery = new StringBuilder();
             for(int i = 0; i<historyColumns.size();i++){
-                historyColumnsSubquery.append(historyColumns.get(i));
+                historyColumnsSubquery.append("\"").append(historyColumns.get(i)).append("\"");
                 String value = historyValues.get(i);
                 if(value != null)
                     historyValuesSubquery.append("'").append(historyValues.get(i)).append("'");
@@ -577,11 +592,10 @@ public class DAO {
                 }
             }
 
-            String historyQuery = "INSERT INTO History(id, date,"+historyColumnsSubquery+") VALUES(?,?,"+historyValuesSubquery+")";
+            String historyQuery = "INSERT INTO history(id, \"Date\","+historyColumnsSubquery+") VALUES(?,?,"+historyValuesSubquery+")";
             PreparedStatement historyStatement = connection.prepareStatement(historyQuery);
             historyStatement.setInt(1,id);
             historyStatement.setLong(2,System.currentTimeMillis());
-            System.out.println(historyStatement);
             historyStatement.execute();
 
 
@@ -591,7 +605,7 @@ public class DAO {
     }
 
     public void updateValue(int id, String column, String value){
-        String query = "UPDATE objects SET "+column+" = ? WHERE id = ?";
+        String query = "UPDATE objects SET \""+column+"\" = ? WHERE id = ?";
         try {
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setString(1,value);
@@ -609,12 +623,12 @@ public class DAO {
         for(int i = 0;i<columns.size();i++){
             String column =columns.get(i);
             String value = values.get(i);
-            columnSubquery.append(",").append(column);
+            columnSubquery.append(",").append("\"").append(column).append("\"");
             valueSubquery.append(",'").append(value).append("'");
 
         }
 
-        String query = "INSERT INTO history(id,date"+columnSubquery+") VALUES ("+id+","+System.currentTimeMillis()+valueSubquery+")";
+        String query = "INSERT INTO history(id,\"Date\""+columnSubquery+") VALUES ("+id+","+System.currentTimeMillis()+valueSubquery+")";
         try {
             PreparedStatement statement = connection.prepareStatement(query);
             statement.execute();
@@ -646,10 +660,16 @@ public class DAO {
         List<String> series = new ArrayList<>();
         try{
             String query;                                     //TODO: only returns statuses that have already been in use
-            if(name.equals("name"))                           //TODO: temporary solution might have to be more complicated with dynamic database
-                query = "SELECT o."+name+" FROM objects o, history, status group by o."+name;
+            if(name.equals("Name")) {
+                String nameTable = "";
+                for(ColumnInfo columnInfo:singleton.getColumnInfo()){
+                    if(columnInfo.name.equals("Name"))
+                        nameTable = columnInfo.table;
+                }
+                query = "SELECT \""+nameTable+"\".\"" + name + "\" FROM objects, history, \"Status\" group by \""+nameTable+"\".\"" + name + "\"";
+            }
             else
-                query = "SELECT "+name+" FROM objects, history, status group by "+name;
+                query = "SELECT \""+name+"\" FROM objects, history, \"Status\" group by \""+name+"\"";
             PreparedStatement statement = connection.prepareStatement(query);
             ResultSet resultSet = statement.executeQuery();
 
@@ -662,5 +682,309 @@ public class DAO {
             throw new RuntimeException(e);
         }
         return series;
+    }
+
+    public void changeColumnPosition(String name, String newPos) {
+        try{
+            String query = "UPDATE columns SET position = ? WHERE name = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1,Integer.parseInt(newPos));
+            statement.setString(2,name);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void changeColumnHistory(String name, String newValue,String type, String length) {
+        try{
+            String datatype = "";
+            switch (type){
+                case "Text" -> datatype = "VARCHAR("+Integer.parseInt(length)+")";
+                case "Integer" -> datatype = "INTEGER";
+                case "Decimal" -> datatype = "FLOAT";
+                case "Choice" -> datatype = "VARCHAR(200)";
+            }
+
+            String lastTimestampsQuery = "SELECT id,MAX(\"Date\") FROM history GROUP BY id";
+            PreparedStatement lastTimestampStatement = connection.prepareStatement(lastTimestampsQuery);
+            ResultSet lastTimestampResultSet = lastTimestampStatement.executeQuery();
+
+
+            String table;
+            if(newValue.equals("true")) {
+                table = "history";
+                String alterHistoryQuery = "ALTER TABLE history ADD \""+name+"\" "+datatype;
+                PreparedStatement alterHistoryStatement = connection.prepareStatement(alterHistoryQuery);
+                alterHistoryStatement.executeUpdate();
+
+                while(lastTimestampResultSet.next()){
+                    int id = lastTimestampResultSet.getInt("id");
+                    long timestamp = lastTimestampResultSet.getLong("max");
+                    String transferToObjectsQuery = "UPDATE history SET \""+name+"\"=(SELECT \""+name+"\" FROM objects WHERE id="+id+") WHERE id="+id+" AND \"Date\"="+timestamp;
+                    PreparedStatement transferToObjectsStatement = connection.prepareStatement(transferToObjectsQuery);
+                    transferToObjectsStatement.executeUpdate();
+                }
+
+                String alterObjectsQuery = "ALTER TABLE objects DROP COLUMN \""+name+"\"";
+                PreparedStatement alterObjectsStatement = connection.prepareStatement(alterObjectsQuery);
+                alterObjectsStatement.executeUpdate();
+            }
+            else {
+                table = "objects";
+                String alterObjectsQuery = "ALTER TABLE objects ADD \""+name+"\" "+datatype;
+                PreparedStatement alterObjectsStatement = connection.prepareStatement(alterObjectsQuery);
+                alterObjectsStatement.executeUpdate();
+
+                while (lastTimestampResultSet.next()){
+                    int id = lastTimestampResultSet.getInt("id");
+                    long timestamp = lastTimestampResultSet.getLong("max");
+                    String transferToHistoryQuery = "UPDATE objects SET \""+name+"\"=(SELECT \""+name+"\" FROM history WHERE id="+id+" AND \"Date\" = "+timestamp+") WHERE id="+id;
+                    PreparedStatement transferToHistoryStatement = connection.prepareStatement(transferToHistoryQuery);
+                    transferToHistoryStatement.executeUpdate();
+                }
+
+                String altertHistoryQuery = "ALTER TABLE history DROP COLUMN \""+name+"\"";
+                PreparedStatement alterHistoryStatement = connection.prepareStatement(altertHistoryQuery);
+                alterHistoryStatement.executeUpdate();
+            }
+            String columnsQuery = "UPDATE columns SET tables = ? WHERE name = ?";
+            PreparedStatement columnsStatement = connection.prepareStatement(columnsQuery);
+            columnsStatement.setString(1,table);
+            columnsStatement.setString(2,name);
+            columnsStatement.executeUpdate();
+
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void changeColumnRequired(String name, String newValue) {
+        try {
+            boolean value;
+            value = newValue.equals("true");
+
+            String query = "UPDATE columns SET required = ? WHERE name = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setBoolean(1, value);
+            statement.setString(2, name);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public boolean changeColumnLength(String table,String name, String newValue) {
+        try{
+            if(table.equals("true"))
+                table = "history";
+            else
+                table = "objects";
+
+            String query = "ALTER TABLE "+table+" ALTER COLUMN \""+name+"\" TYPE VARCHAR("+newValue+")";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.executeUpdate();
+
+            String columnQuery = "UPDATE columns SET length="+Integer.parseInt(newValue)+" WHERE name='"+name+"'";
+            PreparedStatement columnStatement= connection.prepareStatement(columnQuery);
+            columnStatement.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            return false;
+        }
+    }
+
+    public void changeChoicePosition(String table, String name, String newValue) {
+        try{
+            name = name.substring(0,name.lastIndexOf("("));
+            String query = "UPDATE \""+table+"\" SET sortorder = ? WHERE name = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1,Integer.parseInt(newValue));
+            statement.setString(2,name);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void insertChoice(String table, String newValue,String position) {
+        try{
+            String name = newValue.substring(0,newValue.lastIndexOf("("));
+            String colour = newValue.substring(newValue.lastIndexOf("(")+1,newValue.lastIndexOf(")"));
+            String query = "INSERT INTO \""+table+"\"(sortorder,name,colour) VALUES (?,?,?)";
+            PreparedStatement statement  = connection.prepareStatement(query);
+            statement.setInt(1, Integer.parseInt(position));
+            statement.setString(2,name);
+            statement.setString(3,colour);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void deleteChoice(String table, String oldValue) {
+        try{
+            String name = oldValue.substring(0,oldValue.lastIndexOf("("));
+            String query = "DELETE FROM \""+table+"\" WHERE name = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setString(1,name);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void changeChoice(String table, String oldValue, String newValue) {
+        try{
+            String oldName = oldValue.substring(0,oldValue.lastIndexOf("("));
+            String newName = newValue.substring(0,newValue.lastIndexOf("("));
+            String newColour = newValue.substring(newValue.lastIndexOf("(")+1,newValue.lastIndexOf(")"));
+            String query = "UPDATE \""+table+"\" SET name = ?,colour = ? WHERE name = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setString(1,newName);
+            statement.setString(2,newColour);
+            statement.setString(3,oldName);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void alterColumnAdd(String table, String name,String type,String position,String required, String length,List<String> list) {
+        try{
+            boolean auxTable = false;
+            String datatype = "";
+            switch (type){
+                case "Text" -> datatype = "VARCHAR("+length+")";
+                case "Integer" -> datatype = "INTEGER";
+                case "Decimal" -> datatype = "FLOAT";
+                case "Choice" -> {
+                    datatype = "VARCHAR(200)";
+                    auxTable = true;}
+            }
+            if(auxTable) {
+                List<Status> choiceList = new ArrayList<>();
+                for (int i = 0; i < list.size(); i++) {
+                    String item = list.get(i);
+                    String itemName = item.substring(0, item.lastIndexOf("("));
+                    String colour = item.substring(item.lastIndexOf("(") + 1, item.lastIndexOf(")"));
+                    choiceList.add(new Status(itemName, i, colour));
+                }
+                createAuxTable(name, choiceList);
+            }
+
+            if(table.equals("true"))
+                table = "history";
+            else
+                table = "objects";
+
+            String query = "ALTER TABLE \""+table+"\" ADD COLUMN \""+name+"\" "+datatype;
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.executeUpdate();
+
+            String columnQuery = "INSERT INTO columns VALUES(?,?,?,?,?,?)";
+            PreparedStatement columnStatement = connection.prepareStatement(columnQuery);
+            columnStatement.setString(1,name);
+            columnStatement.setString(2,type);
+            columnStatement.setString(3,table);
+            columnStatement.setInt(4, Integer.parseInt(position));
+            columnStatement.setBoolean(5,Boolean.getBoolean(required));
+            columnStatement.setInt(6,Integer.parseInt(length));
+            columnStatement.executeUpdate();
+
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void alterColumnDelete(String table, String oldValue) {
+        try{
+
+            if(table.equals("true"))
+                table = "history";
+            else
+                table = "objects";
+
+            String dropQuery = "DROP TABLE IF EXISTS \""+oldValue+"\"";
+            PreparedStatement dropStatement = connection.prepareStatement(dropQuery);
+            dropStatement.executeUpdate();
+
+            String query = "ALTER TABLE \""+table+"\" DROP COLUMN \""+oldValue+"\"";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.executeUpdate();
+
+            String columnQuery = "DELETE FROM columns WHERE name=?";
+            PreparedStatement columnStatement = connection.prepareStatement(columnQuery);
+            columnStatement.setString(1,oldValue);
+            columnStatement.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void alterColumnChange(String table, String oldValue, String newValue) {
+        try{
+            if(table.equals("true"))
+                table = "history";
+            else
+                table = "objects";
+
+            String query = "ALTER TABLE \""+table+"\" RENAME COLUMN \""+oldValue+"\" TO \""+newValue+"\"";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.executeUpdate();
+
+            String columnQuery = "UPDATE columns SET name='"+newValue+"' WHERE name='"+oldValue+"'";
+            PreparedStatement columnStatement = connection.prepareStatement(columnQuery);
+            columnStatement.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public boolean changeColumnType(String table, String name,String oldType,String newType,String length,List<String> list) {
+        try {
+            if(oldType.equals("Choice")){
+                String auxQuery = "DROP TABLE \""+name+"\"";
+                PreparedStatement auxStatement = connection.prepareStatement(auxQuery);
+                auxStatement.executeUpdate();
+            }
+            if(newType.equals("Choice")){
+                List<Status> choicesList = new ArrayList<>();
+                for (int i = 0; i < list.size(); i++) {
+                    String item = list.get(i);
+                    String choiceName = item.substring(0,item.lastIndexOf("("));
+                    String choiceColour = item.substring(item.lastIndexOf("(")+1,item.lastIndexOf(")"));
+                    choicesList.add(new Status(choiceName,i,choiceColour));
+                }
+                createAuxTable(name,choicesList);
+            }
+            String datatype = "";
+            switch (newType){
+                case "Text" -> datatype = "VARCHAR("+length+")";
+                case "Integer" -> datatype = "INTEGER";
+                case "Decimal" -> datatype = "FLOAT";
+                case "Choice" -> datatype = "VARCHAR(200)";
+            }
+
+            if(table.equals("true"))
+                table = "history";
+            else
+                table = "objects";
+
+            String query ="ALTER TABLE \""+table+"\" ALTER COLUMN \""+name+"\" TYPE "+datatype+" USING (\""+name+"\"::"+datatype+")";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.executeUpdate();
+
+            String columnQuery = "UPDATE columns SET type='"+newType+"' WHERE name='"+name+"'";
+            PreparedStatement columnStatement = connection.prepareStatement(columnQuery);
+            columnStatement.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            return false;
+        }
     }
 }

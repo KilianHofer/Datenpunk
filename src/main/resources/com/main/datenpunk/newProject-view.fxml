@@ -17,353 +17,319 @@
 
 <BorderPane fx:id="mainPane" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.main.datenpunk.NewProjectController">
    <center>
-      <ScrollPane focusTraversable="false" hbarPolicy="NEVER">
-         <content>
-            <VBox alignment="CENTER">
-               <children>
-                  <VBox fx:id="columnContainer">
-                     <children>
-                        <VBox>
-                           <children>
-                              <HBox>
-                                 <children>
-                                    <VBox>
-                                       <HBox.margin>
-                                          <Insets right="5.0" />
-                                       </HBox.margin>
-                                       <children>
-                                          <Label />
-                                          <TextField prefHeight="25.0" prefWidth="30.0" promptText="no" text="1" />
-                                       </children>
-                                    </VBox>
-                                    <VBox>
-                                       <children>
-                                          <Label text="Name:" />
-                                          <TextField disable="true" editable="false" text="id" />
-                                          <CheckBox disable="true" mnemonicParsing="false" text="Track History">
-                                             <VBox.margin>
-                                                <Insets top="5.0" />
-                                             </VBox.margin>
-                                          </CheckBox>
-                                          <CheckBox disable="true" mnemonicParsing="false" selected="true" text="Required">
-                                             <VBox.margin>
-                                                <Insets top="5.0" />
-                                             </VBox.margin>
-                                          </CheckBox>
-                                       </children>
-                                       <HBox.margin>
-                                          <Insets bottom="5.0" right="10.0" />
-                                       </HBox.margin>
-                                    </VBox>
-                                    <VBox>
-                                       <children>
-                                          <Label text="Type:" />
-                                          <ChoiceBox disable="true" prefWidth="150.0">
-                                             <VBox.margin>
-                                                <Insets right="5.0" />
-                                             </VBox.margin>
-                                          </ChoiceBox>
-                                       </children>
-                                       <HBox.margin>
-                                          <Insets bottom="5.0" />
-                                       </HBox.margin>
-                                    </VBox>
-                                    <VBox>
-                                       <HBox.margin>
-                                          <Insets />
-                                       </HBox.margin>
-                                       <children>
-                                          <Label />
-                                          <Button disable="true" mnemonicParsing="false" text="⛌" />
-                                       </children>
-                                    </VBox>
-                                 </children>
-                                 <VBox.margin>
-                                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                                 </VBox.margin>
-                              </HBox>
-                              <Separator prefWidth="200.0" />
-                           </children>
+      <ScrollPane hbarPolicy="NEVER" BorderPane.alignment="CENTER">
+         <VBox alignment="CENTER">
+            <padding>
+               <Insets right="10.0"/>
+            </padding>
+            <VBox fx:id="columnContainer" alignment="TOP_CENTER">
+               <VBox alignment="CENTER">
+                  <VBox.margin>
+                     <Insets top="5.0"/>
+                  </VBox.margin>
+                  <HBox alignment="TOP_CENTER">
+                     <VBox.margin>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                     </VBox.margin>
+                     <VBox>
+                        <HBox.margin>
+                           <Insets right="5.0"/>
+                        </HBox.margin>
+                        <Label/>
+                        <TextField prefHeight="25.0" prefWidth="30.0" promptText="no" text="1"/>
+                     </VBox>
+                     <VBox>
+                        <HBox.margin>
+                           <Insets bottom="5.0" right="10.0"/>
+                        </HBox.margin>
+                        <Label text="Name:"/>
+                        <TextField disable="true" editable="false" text="id"/>
+                        <CheckBox disable="true" mnemonicParsing="false" text="Track History">
                            <VBox.margin>
-                              <Insets top="5.0" />
+                              <Insets top="5.0"/>
                            </VBox.margin>
-                        </VBox>
-                        <VBox>
-                           <children>
-                              <HBox alignment="TOP_CENTER">
-                                 <children>
-                                    <VBox>
-                                       <children>
-                                          <Label />
-                                          <TextField prefHeight="25.0" prefWidth="30.0" promptText="no" text="2" />
-                                       </children>
-                                       <HBox.margin>
-                                          <Insets right="5.0" />
-                                       </HBox.margin>
-                                    </VBox>
-                                    <VBox>
-                                       <children>
-                                          <Label text="Name:" />
-                                          <TextField disable="true" editable="false" text="Name" />
-                                          <CheckBox mnemonicParsing="false" text="Track History">
-                                             <VBox.margin>
-                                                <Insets top="5.0" />
-                                             </VBox.margin>
-                                          </CheckBox>
-                                          <CheckBox mnemonicParsing="false" selected="true" text="Required">
-                                             <VBox.margin>
-                                                <Insets top="5.0" />
-                                             </VBox.margin>
-                                          </CheckBox>
-                                       </children>
-                                       <HBox.margin>
-                                          <Insets bottom="5.0" right="10.0" />
-                                       </HBox.margin>
-                                    </VBox>
-                                    <VBox>
-                                       <children>
-                                          <Label text="Type:" />
-                                          <ChoiceBox disable="true" prefWidth="150.0">
-                                             <VBox.margin>
-                                                <Insets right="5.0" />
-                                             </VBox.margin>
-                                          </ChoiceBox>
-                                          <TextField fx:id="nameMaxLengthField" promptText="Max. Length" text="200">
-                                             <VBox.margin>
-                                                <Insets top="5.0" />
-                                             </VBox.margin>
-                                          </TextField>
-                                       </children>
-                                       <HBox.margin>
-                                          <Insets bottom="5.0" />
-                                       </HBox.margin>
-                                    </VBox>
-                                    <VBox>
-                                       <children>
-                                          <Label />
-                                          <Button disable="true" mnemonicParsing="false" text="⛌" />
-                                       </children>
-                                    </VBox>
-                                 </children>
-                                 <VBox.margin>
-                                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                                 </VBox.margin>
-                              </HBox>
-                              <Separator prefWidth="200.0" />
-                           </children>
-                        </VBox>
-                        <VBox>
-                           <children>
-                              <HBox>
-                                 <children>
-                                    <VBox>
-                                       <children>
-                                          <Label />
-                                          <TextField prefHeight="25.0" prefWidth="30.0" promptText="no" text="3" />
-                                       </children>
-                                       <HBox.margin>
-                                          <Insets right="5.0" />
-                                       </HBox.margin>
-                                    </VBox>
-                                    <VBox>
-                                       <children>
-                                          <Label text="Name:" />
-                                          <TextField disable="true" editable="false" text="Status" />
-                                          <CheckBox mnemonicParsing="false" selected="true" text="Track History">
-                                             <VBox.margin>
-                                                <Insets top="5.0" />
-                                             </VBox.margin>
-                                          </CheckBox>
-                                          <CheckBox mnemonicParsing="false" selected="true" text="Required">
-                                             <VBox.margin>
-                                                <Insets top="5.0" />
-                                             </VBox.margin>
-                                          </CheckBox>
-                                       </children>
-                                       <HBox.margin>
-                                          <Insets bottom="5.0" right="10.0" />
-                                       </HBox.margin>
-                                    </VBox>
-                                    <VBox>
-                                       <children>
-                                          <Label text="Type:" />
-                                          <ChoiceBox disable="true" prefWidth="150.0">
-                                             <VBox.margin>
-                                                <Insets bottom="5.0" right="5.0" />
-                                             </VBox.margin>
-                                          </ChoiceBox>
-                                          <TextField onAction="#onAddToList" prefHeight="25.0" prefWidth="150.0" promptText="Name" />
-                                          <ColorPicker prefHeight="25.0" prefWidth="155.0">
-                                             <VBox.margin>
-                                                <Insets top="5.0" />
-                                             </VBox.margin>
-                                          </ColorPicker>
-                                          <BorderPane prefWidth="150.0">
-                                             <left>
-                                                <Button mnemonicParsing="false" onAction="#onRemoveFromList" text="Remove" BorderPane.alignment="CENTER" />
-                                             </left>
-                                             <right>
-                                                <Button mnemonicParsing="false" onAction="#onAddToList" text="Add" BorderPane.alignment="CENTER" />
-                                             </right>
-                                             <VBox.margin>
-                                                <Insets bottom="5.0" top="5.0" />
-                                             </VBox.margin>
-                                             <center>
-                                                <HBox alignment="CENTER" BorderPane.alignment="CENTER">
-                                                   <children>
-                                                      <Button mnemonicParsing="false" onAction="#onMoveUp" text="▲">
-                                                         <font>
-                                                            <Font size="10.0" />
-                                                         </font>
-                                                      </Button>
-                                                      <Button mnemonicParsing="false" onAction="#onMoveDown" text="▼">
-                                                         <font>
-                                                            <Font size="10.0" />
-                                                         </font>
-                                                      </Button>
-                                                   </children>
-                                                </HBox>
-                                             </center>
-                                          </BorderPane>
-                                          <ListView prefHeight="150.0" prefWidth="150.0" />
-                                       </children>
-                                       <HBox.margin>
-                                          <Insets bottom="5.0" />
-                                       </HBox.margin>
-                                    </VBox>
-                                    <VBox>
-                                       <children>
-                                          <Label />
-                                          <Button disable="true" mnemonicParsing="false" text="⛌" />
-                                       </children>
-                                    </VBox>
-                                 </children>
-                                 <VBox.margin>
-                                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                                 </VBox.margin>
-                              </HBox>
-                              <Separator prefWidth="200.0" />
-                           </children>
-                        </VBox>
-                        <VBox>
-                           <children>
-                              <HBox>
-                                 <children>
-                                    <VBox>
-                                       <children>
-                                          <Label />
-                                          <TextField prefHeight="25.0" prefWidth="30.0" promptText="no" text="4" />
-                                       </children>
-                                       <HBox.margin>
-                                          <Insets right="5.0" />
-                                       </HBox.margin>
-                                    </VBox>
-                                    <VBox>
-                                       <children>
-                                          <Label text="Name:" />
-                                          <TextField disable="true" editable="false" text="Date" />
-                                          <CheckBox disable="true" mnemonicParsing="false" selected="true" text="Track History">
-                                             <VBox.margin>
-                                                <Insets top="5.0" />
-                                             </VBox.margin>
-                                          </CheckBox>
-                                          <CheckBox disable="true" mnemonicParsing="false" selected="true" text="Required">
-                                             <VBox.margin>
-                                                <Insets top="5.0" />
-                                             </VBox.margin>
-                                          </CheckBox>
-                                       </children>
-                                       <HBox.margin>
-                                          <Insets bottom="5.0" right="10.0" />
-                                       </HBox.margin>
-                                    </VBox>
-                                    <VBox>
-                                       <children>
-                                          <Label text="Type:" />
-                                          <ChoiceBox disable="true" prefWidth="150.0">
-                                             <VBox.margin>
-                                                <Insets bottom="5.0" right="5.0" />
-                                             </VBox.margin>
-                                          </ChoiceBox>
-                                       </children>
-                                       <HBox.margin>
-                                          <Insets bottom="5.0" />
-                                       </HBox.margin>
-                                    </VBox>
-                                    <VBox>
-                                       <children>
-                                          <Label />
-                                          <Button disable="true" mnemonicParsing="false" text="⛌" />
-                                       </children>
-                                    </VBox>
-                                 </children>
-                                 <VBox.margin>
-                                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                                 </VBox.margin>
-                              </HBox>
-                              <Separator prefWidth="200.0" />
-                           </children>
-                        </VBox>
-                     </children>
-                  </VBox>
-                  <Button mnemonicParsing="false" onAction="#onAdd" text="Add" />
-               </children>
-               <padding>
-                  <Insets right="10.0" />
-               </padding>
+                        </CheckBox>
+                        <CheckBox disable="true" mnemonicParsing="false" selected="true" text="Required">
+                           <VBox.margin>
+                              <Insets top="5.0"/>
+                           </VBox.margin>
+                        </CheckBox>
+                     </VBox>
+                     <VBox>
+                        <HBox.margin>
+                           <Insets bottom="5.0" right="5.0"/>
+                        </HBox.margin>
+                        <Label text="Type:"/>
+                        <ChoiceBox disable="true" prefWidth="155.0">
+                           <VBox.margin>
+                              <Insets/>
+                           </VBox.margin>
+                        </ChoiceBox>
+                     </VBox>
+                     <VBox>
+                        <HBox.margin>
+                           <Insets/>
+                        </HBox.margin>
+                        <Label/>
+                        <Button disable="true" mnemonicParsing="false" text="⛌"/>
+                     </VBox>
+                  </HBox>
+                  <Separator prefWidth="200.0"/>
+               </VBox>
+               <VBox alignment="CENTER">
+                  <HBox alignment="TOP_CENTER">
+                     <VBox.margin>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                     </VBox.margin>
+                     <VBox>
+                        <HBox.margin>
+                           <Insets right="5.0"/>
+                        </HBox.margin>
+                        <Label/>
+                        <TextField prefHeight="25.0" prefWidth="30.0" promptText="no" text="2"/>
+                     </VBox>
+                     <VBox>
+                        <HBox.margin>
+                           <Insets bottom="5.0" right="10.0"/>
+                        </HBox.margin>
+                        <Label text="Name:"/>
+                        <TextField disable="true" editable="false" text="Name"/>
+                        <CheckBox mnemonicParsing="false" text="Track History">
+                           <VBox.margin>
+                              <Insets top="5.0"/>
+                           </VBox.margin>
+                        </CheckBox>
+                        <CheckBox mnemonicParsing="false" selected="true" text="Required">
+                           <VBox.margin>
+                              <Insets top="5.0"/>
+                           </VBox.margin>
+                        </CheckBox>
+                     </VBox>
+                     <VBox>
+                        <children>
+                           <Label text="Type:"/>
+                           <ChoiceBox disable="true" prefWidth="155.0">
+                              <VBox.margin>
+                                 <Insets/>
+                              </VBox.margin>
+                           </ChoiceBox>
+                           <TextField fx:id="nameMaxLengthField" promptText="Max. Length" text="200">
+                              <VBox.margin>
+                                 <Insets top="5.0"/>
+                              </VBox.margin>
+                           </TextField>
+                        </children>
+                        <HBox.margin>
+                           <Insets bottom="5.0" right="5.0"/>
+                        </HBox.margin>
+                     </VBox>
+                     <VBox>
+                        <children>
+                           <Label/>
+                           <Button disable="true" mnemonicParsing="false" text="⛌"/>
+                        </children>
+                     </VBox>
+                  </HBox>
+                  <Separator prefWidth="200.0"/>
+               </VBox>
+               <VBox alignment="CENTER">
+                  <children>
+                     <HBox alignment="TOP_CENTER">
+                        <children>
+                           <VBox>
+                              <children>
+                                 <Label/>
+                                 <TextField prefHeight="25.0" prefWidth="30.0" promptText="no" text="3"/>
+                              </children>
+                              <HBox.margin>
+                                 <Insets right="5.0"/>
+                              </HBox.margin>
+                           </VBox>
+                           <VBox>
+                              <children>
+                                 <Label text="Name:"/>
+                                 <TextField disable="true" editable="false" text="Status"/>
+                                 <CheckBox mnemonicParsing="false" selected="true" text="Track History">
+                                    <VBox.margin>
+                                       <Insets top="5.0"/>
+                                    </VBox.margin>
+                                 </CheckBox>
+                                 <CheckBox mnemonicParsing="false" selected="true" text="Required">
+                                    <VBox.margin>
+                                       <Insets top="5.0"/>
+                                    </VBox.margin>
+                                 </CheckBox>
+                              </children>
+                              <HBox.margin>
+                                 <Insets bottom="5.0" right="10.0"/>
+                              </HBox.margin>
+                           </VBox>
+                           <VBox>
+                              <children>
+                                 <Label text="Type:"/>
+                                 <ChoiceBox disable="true" prefWidth="155.0">
+                                    <VBox.margin>
+                                       <Insets bottom="5.0"/>
+                                    </VBox.margin>
+                                 </ChoiceBox>
+                                 <TextField onAction="#onAddToList" prefHeight="25.0" prefWidth="150.0"
+                                            promptText="Name"/>
+                                 <ColorPicker prefHeight="25.0" prefWidth="155.0">
+                                    <VBox.margin>
+                                       <Insets top="5.0"/>
+                                    </VBox.margin>
+                                 </ColorPicker>
+                                 <BorderPane prefWidth="150.0">
+                                    <left>
+                                       <Button mnemonicParsing="false" onAction="#onRemoveFromList" text="Remove"
+                                               BorderPane.alignment="CENTER"/>
+                                    </left>
+                                    <right>
+                                       <Button mnemonicParsing="false" onAction="#onAddToList" text="Add"
+                                               BorderPane.alignment="CENTER"/>
+                                    </right>
+                                    <VBox.margin>
+                                       <Insets bottom="5.0" top="5.0"/>
+                                    </VBox.margin>
+                                    <center>
+                                       <Button mnemonicParsing="false" onAction="#onSetValues" text="Set"/>
+                                    </center>
+                                 </BorderPane>
+                                 <ListView prefHeight="150.0" prefWidth="150.0"/>
+                              </children>
+                              <HBox.margin>
+                                 <Insets bottom="5.0" right="5.0"/>
+                              </HBox.margin>
+                           </VBox>
+                           <VBox>
+                              <children>
+                                 <Label/>
+                                 <Button disable="true" mnemonicParsing="false" text="⛌"/>
+                                 <Button mnemonicParsing="false" onAction="#onMoveUp" text="▲">
+                                    <font>
+                                       <Font size="10.0"/>
+                                    </font>
+                                    <VBox.margin>
+                                       <Insets top="95.0"/>
+                                    </VBox.margin>
+                                 </Button>
+                                 <Button mnemonicParsing="false" onAction="#onMoveDown" text="▼">
+                                    <font>
+                                       <Font size="10.0"/>
+                                    </font>
+                                 </Button>
+                              </children>
+                           </VBox>
+                        </children>
+                        <VBox.margin>
+                           <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                        </VBox.margin>
+                     </HBox>
+                     <Separator prefWidth="200.0"/>
+                  </children>
+               </VBox>
+               <VBox alignment="CENTER">
+                  <children>
+                     <HBox alignment="TOP_CENTER">
+                        <children>
+                           <VBox>
+                              <children>
+                                 <Label/>
+                                 <TextField prefHeight="25.0" prefWidth="30.0" promptText="no" text="4"/>
+                              </children>
+                              <HBox.margin>
+                                 <Insets right="5.0"/>
+                              </HBox.margin>
+                           </VBox>
+                           <VBox>
+                              <children>
+                                 <Label text="Name:"/>
+                                 <TextField disable="true" editable="false" text="Date"/>
+                                 <CheckBox disable="true" mnemonicParsing="false" selected="true"
+                                           text="Track History">
+                                    <VBox.margin>
+                                       <Insets top="5.0"/>
+                                    </VBox.margin>
+                                 </CheckBox>
+                                 <CheckBox disable="true" mnemonicParsing="false" selected="true" text="Required">
+                                    <VBox.margin>
+                                       <Insets top="5.0"/>
+                                    </VBox.margin>
+                                 </CheckBox>
+                              </children>
+                              <HBox.margin>
+                                 <Insets bottom="5.0" right="10.0"/>
+                              </HBox.margin>
+                           </VBox>
+                           <VBox>
+                              <children>
+                                 <Label text="Type:"/>
+                                 <ChoiceBox disable="true" prefWidth="155.0">
+                                    <VBox.margin>
+                                       <Insets bottom="5.0"/>
+                                    </VBox.margin>
+                                 </ChoiceBox>
+                              </children>
+                              <HBox.margin>
+                                 <Insets bottom="5.0" right="5.0"/>
+                              </HBox.margin>
+                           </VBox>
+                           <VBox>
+                              <children>
+                                 <Label/>
+                                 <Button disable="true" mnemonicParsing="false" text="⛌"/>
+                              </children>
+                           </VBox>
+                        </children>
+                        <VBox.margin>
+                           <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                        </VBox.margin>
+                     </HBox>
+                     <Separator prefWidth="200.0"/>
+                  </children>
+               </VBox>
             </VBox>
-         </content>
+            <Button mnemonicParsing="false" onAction="#onAdd" text="Add"/>
+         </VBox>
       </ScrollPane>
    </center>
    <top>
       <VBox alignment="CENTER" BorderPane.alignment="CENTER">
-         <children>
-            <TextField fx:id="nameField" alignment="CENTER" promptText="Name">
-               <font>
-                  <Font size="18.0" />
-               </font>
-               <VBox.margin>
-                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-               </VBox.margin>
-            </TextField>
-            <HBox alignment="CENTER">
-               <children>
-                  <VBox>
-                     <children>
-                        <Label text="Host:" />
-                        <TextField text="localhost" />
-                     </children>
-                  </VBox>
-                  <VBox>
-                     <children>
-                        <Label text="Port:" />
-                        <TextField text="1234" />
-                     </children>
-                  </VBox>
-               </children>
-               <VBox.margin>
-                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-               </VBox.margin>
-            </HBox>
-            <HBox alignment="BOTTOM_CENTER">
-               <children>
-                  <VBox>
-                     <children>
-                        <Label text="Location:" />
-                        <TextField fx:id="pathField" prefHeight="25.0" prefWidth="246.0" />
-                     </children>
-                  </VBox>
-                  <Button mnemonicParsing="false" onAction="#onSelect" text="Select">
-                     <HBox.margin>
-                        <Insets left="5.0" />
-                     </HBox.margin>
-                  </Button>
-               </children>
-               <VBox.margin>
-                  <Insets bottom="5.0" />
-               </VBox.margin>
-            </HBox>
-         </children>
+         <TextField fx:id="nameField" alignment="CENTER" promptText="Name">
+            <font>
+               <Font size="18.0"/>
+            </font>
+            <VBox.margin>
+               <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+            </VBox.margin>
+         </TextField>
+         <HBox alignment="CENTER">
+            <VBox.margin>
+               <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+            </VBox.margin>
+            <VBox>
+               <Label text="Host:"/>
+               <TextField text="localhost"/>
+            </VBox>
+            <VBox>
+               <Label text="Port:"/>
+               <TextField text="1234"/>
+            </VBox>
+         </HBox>
+         <HBox alignment="BOTTOM_CENTER">
+            <VBox.margin>
+               <Insets bottom="5.0"/>
+            </VBox.margin>
+            <VBox>
+               <Label text="Location:"/>
+               <TextField fx:id="pathField" prefHeight="25.0" prefWidth="246.0"/>
+            </VBox>
+            <Button mnemonicParsing="false" onAction="#onSelect" text="Select">
+               <HBox.margin>
+                  <Insets left="5.0"/>
+               </HBox.margin>
+            </Button>
+         </HBox>
       </VBox>
    </top>
    <bottom>
