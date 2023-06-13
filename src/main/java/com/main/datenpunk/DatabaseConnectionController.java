@@ -1,7 +1,9 @@
 package com.main.datenpunk;
 
 import database.DAO;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.PasswordField;
@@ -11,13 +13,16 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URL;
+import java.util.ResourceBundle;
 
-public class DatabaseConnectionController {
+public class DatabaseConnectionController{
         @FXML
     public PasswordField passwordField;
     public CheckBox rememberMe;
 
     public Runnable method;
+    public Runnable cancelMethod;
 
     public void onConnect(){
 
@@ -28,7 +33,8 @@ public class DatabaseConnectionController {
             checkRememberMe();
             singleton.setPassword(passwordField.getText());
             method.run();
-            onCancel();
+            Stage stage = (Stage) passwordField.getScene().getWindow();
+            stage.close();
         }
         else {
             passwordField.setStyle("-fx-border-color: red; -fx-border-width: 2px");
@@ -61,6 +67,8 @@ public class DatabaseConnectionController {
 
     public void onCancel() {
 
+        if(cancelMethod != null)
+            cancelMethod.run();
         Stage stage = (Stage) passwordField.getScene().getWindow();
         stage.close();
 

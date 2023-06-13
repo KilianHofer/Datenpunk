@@ -3,6 +3,7 @@ package com.main.datenpunk;
 import database.DAO;
 import enteties.ColumnInfo;
 import enteties.Status;
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -291,8 +292,8 @@ public class NewProjectController implements Initializable {
             else {
                 editProject();
                 openOldProject();
+                onCancel();
             }
-            onCancel();
         }
     }
 
@@ -804,6 +805,7 @@ public class NewProjectController implements Initializable {
                         singleton.setPassword(scanner.next());
 
                     }
+                    scanner.close();
                 }
             }
             openNewProject();
@@ -819,58 +821,32 @@ public class NewProjectController implements Initializable {
         String name = nameField.getText();
 
         if (!dao.connectToDB("", "postgres", singleton.getPassword())) {
-            deleteCreatedData();
             openDBPasswordWindow();
             return;
         }
         dao.createDatabase(name);
         if (!dao.connectToDB("datenpunk_" + name, "postgres", singleton.getPassword())) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setContentText("Could not create Database for this project!");
+            alert.show();
             deleteCreatedData();
             return;
         }
 
         createTables();
+        singleton.setCurrentProject(nameField.getText());
+        singleton.openProject();
+        ((Stage) mainPane.getScene().getWindow()).close();
 
-        openProject();
     }
 
     private void openOldProject(){
-        if (dao.connectToDB("datenpunk_" + nameField.getText(), "postgres", singleton.getPassword()))
-            openProject();
-    }
-
-    private void openProject() {
-        if (singleton.getColumns() != null)
-            singleton.getColumns().clear();
-        if (singleton.getColumnInfo() != null)
-            singleton.getColumnInfo().clear();
-        singleton.choices.clear();
-        singleton.choiceNames.clear();
-
-        singleton.setCurrentProject(nameField.getText());
-        singleton.setColumnInfo();
-
-        try {
-            FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
-            Stage stage = returnStage;
-            stage.setTitle("Datenpunk");
-            Scene scene = new Scene(fxmlLoader.load());
-            scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/com/main/datenpunk/application.css")).toExternalForm());
-            stage.setScene(scene);
-            MainController controller = fxmlLoader.getController();
-            singleton.setController(controller);
-
-            stage.setMaximized(true);
-            stage.setResizable(true);
-            stage.show();
-            controller.setupLater();
-
-            stage = (Stage) mainPane.getScene().getWindow();
-            stage.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        if (dao.connectToDB("datenpunk_" + nameField.getText(), "postgres", singleton.getPassword())){
+            singleton.setCurrentProject(nameField.getText());
+            singleton.openProject();
         }
     }
+
 
 
     private void openDBPasswordWindow(){
@@ -879,9 +855,14 @@ public class NewProjectController implements Initializable {
             Scene scene = new Scene(fxmlLoader.load());
             Stage stage = new Stage();
             DatabaseConnectionController connectionController = fxmlLoader.getController();
-            connectionController.method = this::createProject;
+            connectionController.method = this::openNewProject;
+            connectionController.cancelMethod = this::deleteCreatedData;
             stage.setTitle("Connect to Database");
             stage.setScene(scene);
+            stage.setOnCloseRequest(event -> {
+                deleteCreatedData();
+                stage.close();
+            });
             stage.initModality(Modality.WINDOW_MODAL);
             stage.initOwner(mainPane.getScene().getWindow());
             stage.setResizable(false);
