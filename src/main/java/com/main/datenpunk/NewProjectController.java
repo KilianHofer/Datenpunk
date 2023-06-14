@@ -1139,8 +1139,10 @@ public class NewProjectController implements Initializable {
         if(index >= 0){
             String item = listView.getSelectionModel().getSelectedItem();
 
-            int columnPosition = Integer.parseInt(((TextField)((VBox)((HBox)vBox.getParent()).getChildren().get(0)).getChildren().get(1)).getText())-1;
-            listChanged.get(columnPosition).set(index,item);
+            if(false) {
+                //int columnPosition = Integer.parseInt(((TextField) ((VBox) ((HBox) vBox.getParent()).getChildren().get(0)).getChildren().get(1)).getText()) - 1;
+                //listChanged.get(columnPosition).set(index, item);
+            }
 
             TextField textField = (TextField)vBox.getChildren().get(2);
             if(!textField.getText().equals("")){

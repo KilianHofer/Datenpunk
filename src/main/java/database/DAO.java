@@ -163,20 +163,50 @@ public class DAO {
     }
 
 
-    private void buildString(List<String> strings,ObservableList<ListView<String>> listViews,int id, String name){
+    private void buildString(List<String> strings,ObservableList<ListView<String>> listViews,int id, String name,String type){
+        boolean number = !type.equals("Choice") && !type.equals("Text");
         if(listViews.get(id).getItems().size() > 0) {
             ObservableList<String> stringList = listViews.get(id).getItems();
             for (int i = 0; i < stringList.size(); i++) {
-                strings.set(id, strings.get(id).concat("LOWER("));
-                strings.set(id, strings.get(id).concat( name));
-                strings.set(id, strings.get(id).concat(")"));
-                if(id%2!=0){
-                    strings.set(id, strings.get(id).concat(" NOT"));
+
+
+                if(number) {
+                    String operator;
+                    String value;
+                    String line = stringList.get(i);
+                    if (line.charAt(1) == '=') {
+                        operator = line.substring(0, 2);
+                        value = stringList.get(i).substring(2);
+                    }
+                    else {
+                        operator = line.substring(0, 1);
+                        value = line.substring(1);
+                    }
+
+                    strings.set(id, strings.get(id).concat( name));
+                    if(id%2!=0) {
+                        switch (operator){
+                            case "<" -> operator = ">=";
+                            case "<=" -> operator = ">";
+                            case "=" -> operator = "!=";
+                            case ">=" -> operator = "<";
+                            case ">" -> operator = "<=";
+                        }
+                    }
+                    strings.set(id, strings.get(id).concat(operator));
+                    strings.set(id,strings.get(id).concat(value));
                 }
-                strings.set(id, strings.get(id).concat(" LIKE "));
-                strings.set(id, strings.get(id).concat("'"));
-                strings.set(id, strings.get(id).concat(stringList.get(i).toLowerCase()));
-                strings.set(id, strings.get(id).concat("'"));
+                else {
+                    strings.set(id, strings.get(id).concat("LOWER("));
+                    strings.set(id, strings.get(id).concat( name));
+                    strings.set(id, strings.get(id).concat(")"));
+                    if(id%2!=0)
+                        strings.set(id, strings.get(id).concat(" NOT"));
+                    strings.set(id, strings.get(id).concat(" LIKE "));
+                    strings.set(id, strings.get(id).concat("'"));
+                    strings.set(id, strings.get(id).concat(stringList.get(i).toLowerCase()));
+                    strings.set(id, strings.get(id).concat("'"));
+                }
                 if(i <= stringList.size()-2){
                     strings.set(id, strings.get(id).concat(" OR "));
                 }
@@ -199,8 +229,8 @@ public class DAO {
         int i = 0;
         for(ColumnInfo columnInfo:singleton.getColumnInfo()){
             if(!columnInfo.name.equals("id") && !columnInfo.name.equals("Date")) {
-                buildString(lists, listViews, i++, columnInfo.table + ".\"" + columnInfo.name+"\"");
-                buildString(lists, listViews, i++, columnInfo.table + ".\"" + columnInfo.name+"\"");
+                buildString(lists, listViews, i++, columnInfo.table + ".\"" + columnInfo.name+"\"",columnInfo.type);
+                buildString(lists, listViews, i++, columnInfo.table + ".\"" + columnInfo.name+"\"",columnInfo.type);
             }
         }
 
@@ -259,6 +289,7 @@ public class DAO {
             statement = connection.prepareStatement(query);
             statement.setLong(1,fromTimestamp);
             statement.setLong(2,toTimestamp);
+            System.out.println(statement);
             resultSet = statement.executeQuery();
 
             String columnName = column.substring(column.lastIndexOf(".")+2,column.length()-1);
@@ -406,8 +437,11 @@ public class DAO {
     }
 
 
-    public String getFirstOrLastValue(boolean first, String source){
+    public String getFirstOrLastValue(boolean first, String source,String type){
         try{
+
+            
+            
             String query;
             if(first)
                 query = "SELECT "+source+ " FROM history,objects ORDER BY "+source+ " ASC LIMIT 1";
@@ -418,7 +452,12 @@ public class DAO {
             ResultSet resultSet = statement.executeQuery();
 
             if(resultSet.next()){
-                return String.valueOf(resultSet.getLong(source.substring(source.indexOf(".")+2,source.length()-1)));
+                String substring = source.substring(source.indexOf(".") + 2, source.length() - 1);
+                if(type.equals("Integer") || type.equals("DATE"))
+                    return String.valueOf(resultSet.getLong(substring));
+                else {
+                    return String.valueOf(resultSet.getFloat(substring));
+                }
             }
 
         } catch (SQLException e) {

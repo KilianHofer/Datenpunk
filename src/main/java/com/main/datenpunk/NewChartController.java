@@ -374,13 +374,13 @@ public class NewChartController implements Initializable {
                     break;
                 }
             }
-
-            String floatRegex = "^(0*[1-9][0-9]*(\\.[0-9]+)?|0+\\.[0-9]*[1-9][0-9]*)$";
+            String floatPositiveRegex = "^(0*[1-9][0-9]*(\\.[0-9]+)?|0+\\.[0-9]*[1-9][0-9]*)$";
+            String floatRegex = "^-?(0*[0-9]*(\\.[0-9]+)?|0+\\.[0-9]*[1-9][0-9]*)$";
             String intRegex = "^[1-9][0-9]*$";
 
             if (!chartType.equals("Pie Chart")) {
                 if (Boolean.FALSE.equals(discrete)) {
-                    if (!range.matches(floatRegex) || (xAxis.equals("date") && !range.matches(intRegex))) {
+                    if (!range.matches(floatPositiveRegex) || (xAxis.equals("date") && !range.matches(intRegex))) {
                         rangeField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
                         cont = false;
                     } else

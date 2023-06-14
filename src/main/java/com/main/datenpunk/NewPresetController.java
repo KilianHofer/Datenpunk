@@ -87,6 +87,7 @@ public class NewPresetController {
                 }
             }
             for(int i = 0; i<singleton.getColumnNames().size();i++){
+
                 String name = singleton.getColumnNames().get(i);
                 if(names.contains(name) || !columnVisCheck.isSelected())
                     visible.add(true);

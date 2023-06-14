@@ -65,7 +65,7 @@ public class MainController implements Initializable {
 
     @FXML
     private ChoiceBox<String> presetBox;
-    private final ObservableList<Control> controlList = FXCollections.observableArrayList();
+    private final ObservableList<HBox> controlList = FXCollections.observableArrayList();
 
     private final ObservableList<ListView<String>> listViews = FXCollections.observableArrayList();
 
@@ -305,12 +305,14 @@ public class MainController implements Initializable {
 
     private void addFiltersSettings(TilePane tilePane, ColumnInfo columnInfo, String name) {
         Label label = new Label(name + ":");
-        Control control;
+        HBox controlPane = new HBox();
+        ChoiceBox<String> choiceBox;
+        TextField textField;
 
 
         if (columnInfo.type.equals("Choice")) {
-            control = new ChoiceBox<String>();
-            control.setPrefWidth(150);
+            choiceBox = new ChoiceBox<String>();
+            choiceBox.setPrefWidth(150);
 
             int index = 0;
             for (int j = 0; j < singleton.choiceNames.size(); j++) {
@@ -321,13 +323,27 @@ public class MainController implements Initializable {
             }
 
             for (Status choice : singleton.choices.get(index)) {
-                ((ChoiceBox<String>) control).getItems().add(choice.getName());
+                choiceBox.getItems().add(choice.getName());
             }
-        } else {
-            control = new TextField();
-            ((TextField) control).setOnAction(this::onAddToList);
+            controlPane.getChildren().add(choiceBox);
         }
-        controlList.add(control);
+        else if(columnInfo.type.equals("Text")){
+            textField = new TextField();
+            textField.setOnAction(this::onAddToList);
+            controlPane.getChildren().add(textField);
+        }
+        else {
+            choiceBox = new ChoiceBox<>();
+            choiceBox.setPrefWidth(50);
+            ObservableList<String> numberOptions = FXCollections.observableArrayList("<","<=","=",">=",">");
+            choiceBox.getItems().addAll(numberOptions);
+            textField = new TextField();
+            textField.setOnAction(this::onAddToList);
+            controlPane.getChildren().addAll(choiceBox,textField);
+        }
+        controlPane.setMaxWidth(150);
+        controlPane.setMaxHeight(30);
+        controlList.add(controlPane);
 
         Button addButton = new Button("Add");
         Button removeButton = new Button("Remove");
@@ -344,7 +360,7 @@ public class MainController implements Initializable {
         filterListView.setOnMouseClicked(this::onListClick);
         listViews.add(filterListView);
 
-        VBox filterVBox = new VBox(label, control, borderPane, filterListView);
+        VBox filterVBox = new VBox(label, controlPane, borderPane, filterListView);
         VBox.setMargin(borderPane, new Insets(5, 0, 5, 0));
         tilePane.getChildren().add(filterVBox);
         TilePane.setMargin(filterVBox, new Insets(0, 5, 5, 0));
@@ -532,18 +548,26 @@ public class MainController implements Initializable {
             if (actionEvent.getSource().getClass() == Button.class)
                 i = addButtons.indexOf(actionEvent.getSource());
             else
-                i = controlList.indexOf(actionEvent.getSource());
+                i = controlList.indexOf(((Control)actionEvent.getSource()).getParent());
 
-            Control control = controlList.get(i);
-            String text;
-            if (control.getClass() == TextField.class) {
-                text = ((TextField) control).getText();
-                ((TextField) control).setText("");
-            } else
-                text = ((ChoiceBox<String>) control).getValue();
+            HBox controlPane = controlList.get(i);
+            StringBuilder text = new StringBuilder();
+            for (Node node:controlPane.getChildren()) {
+                Control control = (Control) node;
+                if (control.getClass() == TextField.class) {
+                    text.append(((TextField) control).getText());
+                    ((TextField) control).setText("");
+                } else{
+                    String value = ((ChoiceBox<String>)control).getValue();
+                    if(value == null)
+                        return;
+                    text.append(value);
+                }
+
+            }
 
             presetBox.setValue("Custom");
-            listViews.get(i).getItems().add(text);
+            listViews.get(i).getItems().add(text.toString());
             updateTable();
         }
     }
@@ -632,10 +656,7 @@ public class MainController implements Initializable {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
             alert.setContentText("Delete Prefab: " + name);
             if (alert.showAndWait().get() == ButtonType.OK) {
-                File file = new File(singleton.getWorkingDirectory() + "\\Projects\\" + singleton.getCurrentProject() + "\\Presets\\" + name);
-                for (File pFile : Objects.requireNonNull(file.listFiles())) {
-                    Files.delete(pFile.toPath());
-                }
+                File file = new File(singleton.getWorkingDirectory() + "\\Projects\\" + singleton.getCurrentProject() + "\\Presets\\" + name+".json");
                 Files.delete(file.toPath());
                 selectPresets();
             }

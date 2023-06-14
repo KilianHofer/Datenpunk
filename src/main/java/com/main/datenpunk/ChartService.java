@@ -181,11 +181,13 @@ public class ChartService extends Service<Chart> {
 
                         Boolean discrete = null;
                         String seriesX = c.xAxis, seriesY = c.yAxis;
+                        String xType = "";
                         for (ColumnInfo column : columnInfo) {
 
                             if (column.name.equals(c.xAxis)) {
                                 seriesX = column.table + ".\"" + c.xAxis+"\"";
                                 discrete = column.discrete;
+                                xType = column.type;
                             }
                             if (column.name.equals(c.yAxis))
                                 seriesY = column.table + ".\"" + c.yAxis+"\"";
@@ -208,9 +210,9 @@ public class ChartService extends Service<Chart> {
 
                                 String xMinValue = c.xMin, xMaxValue = c.xMax;
                                 if (c.xMin.equals(""))
-                                    xMinValue = dao.getFirstOrLastValue(true, seriesX);
+                                    xMinValue = dao.getFirstOrLastValue(true, seriesX,xType);
                                 if (c.xMax.equals(""))
-                                    xMaxValue = dao.getFirstOrLastValue(false, seriesX);
+                                    xMaxValue = dao.getFirstOrLastValue(false, seriesX,xType);
 
                                 if (seriesX.equals("history.\"Date\"")) {
 
