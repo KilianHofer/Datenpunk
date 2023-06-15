@@ -42,6 +42,7 @@ public class DetailController implements Initializable {
 
     List<Boolean> accept = new ArrayList<>();
     List<Boolean> required = new ArrayList<>();
+    List<String> types = new ArrayList<>();
 
 
     public void updateTable() {
@@ -89,22 +90,24 @@ public class DetailController implements Initializable {
                     oldHistoryValues.add(dao.selectHistoryElement(currentElement, name));
                 }
             }
-            for (Node setting : settingsContainer.getChildren()) {
-                VBox vBox = (VBox) setting;
+            for (int i = 0; i<settingsContainer.getChildren().size();i++) {
+                VBox vBox = (VBox) settingsContainer.getChildren().get(i);
                 String column = ((Label) vBox.getChildren().get(0)).getText();
                 column = column.substring(0, column.length() - 1);
                 Node settingValue = vBox.getChildren().get(1);
                 String value;
-                if (settingValue.getClass().equals(TextField.class))
+                if (settingValue.getClass().equals(TextField.class)){
                     value = ((TextField) settingValue).getText();
-                else
+                }
+                else {
                     value = ((ChoiceBox<String>) settingValue).getValue();
+                }
 
                 if (historyNames.contains(column)) {
                     newHistoryValues.add(value);
                 } else {
                     if (!column.equals("history"))
-                        dao.updateValue(currentElement, column, value);
+                        dao.updateValue(currentElement, column, value,types.get(i));
                 }
             }
             for (int i = 0; i < oldHistoryValues.size(); i++) {
@@ -156,6 +159,7 @@ public class DetailController implements Initializable {
                 else
                     accept.add(true);
                 required.add(columnInfo.required);
+                types.add(columnInfo.type);
                 switch (columnInfo.type) {
                     case "Choice" -> {
                         setting = new ChoiceBox<String>();
@@ -229,7 +233,7 @@ public class DetailController implements Initializable {
             ColumnInfo columnInfo = singleton.getColumnInfo().get(i);
             if (!columnInfo.table.equals("history"))
                 continue;
-            String name = columnInfo.name.substring(0, 1).toUpperCase() + columnInfo.name.substring(1);
+            String name = columnInfo.name;
             Button button = new Button(name);
             button.setPrefWidth(9999);
             button.setStyle("-fx-background-radius: 0px");

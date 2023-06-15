@@ -344,9 +344,12 @@ public class DAO {
 
     public List<String> selectHistory(int id,String column, String sortColumn,String sortType){
 
+        String type = "";
         for (ColumnInfo columnInfo : singleton.getColumnInfo()) {
-            if (columnInfo.name.equals(column))
-                column = columnInfo.table + ".\"" + columnInfo.name+"\"";
+            if (columnInfo.name.equals(column)) {
+                column = columnInfo.table + ".\"" + columnInfo.name + "\"";
+                type = columnInfo.type;
+            }
             if (columnInfo.name.equals(sortColumn)) {
                 if(!columnInfo.colored)
                     sortColumn = columnInfo.table + ".\"" + sortColumn + "\"";
@@ -367,7 +370,13 @@ public class DAO {
             String name = column.substring(column.lastIndexOf(".")+2,column.length()-1);
 
             while(resultSet.next()){
-                String result = resultSet.getString(name);
+                String result;
+                if(type.equals("Integer"))
+                    result = String.valueOf(resultSet.getInt(name));
+                else  if(type.equals("Decimal"))
+                    result = String.valueOf(resultSet.getFloat(name));
+                else
+                     result = resultSet.getString(name);
                 if(name.equals("Date"))
                     result = LocalDateTime.ofInstant(Instant.ofEpochMilli(Long.parseLong(result)), TimeZone.getDefault().toZoneId()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
@@ -643,11 +652,16 @@ public class DAO {
         }
     }
 
-    public void updateValue(int id, String column, String value){
+    public void updateValue(int id, String column, String value, String type){
         String query = "UPDATE objects SET \""+column+"\" = ? WHERE id = ?";
         try {
             PreparedStatement statement = connection.prepareStatement(query);
-            statement.setString(1,value);
+            if(type.equals("Integer"))
+                statement.setInt(1,Integer.parseInt(value));
+            else if(type.equals("Decimal"))
+                statement.setFloat(1,Float.parseFloat(value));
+            else
+                statement.setString(1,value);
             statement.setInt(2,id);
             statement.executeUpdate();
         }catch (SQLException e){
