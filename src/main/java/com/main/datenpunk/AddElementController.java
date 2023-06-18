@@ -66,6 +66,9 @@ public class AddElementController implements Initializable {
                 else
                     value = ((ChoiceBox<String>)valueNode).getValue();
 
+                if(value.equals(""))
+                    value = null;
+
                 if(objectColumns.contains(name))
                     objectValues.add(value);
                 else
@@ -134,7 +137,7 @@ public class AddElementController implements Initializable {
                             TextField textField = (TextField)settingContainer.getScene().focusOwnerProperty().get();
                             VBox vBox = (VBox)textField.getParent();
                             int index = settingContainer.getChildren().indexOf(vBox);
-                            if (t1.matches("[0-9]+")) {
+                            if (t1.matches("^[0-9]*?")) {
                                 accept.set(index,true);
                                 setting.setStyle("-fx-border-width: 0px");
                             }

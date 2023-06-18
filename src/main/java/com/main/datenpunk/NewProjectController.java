@@ -47,7 +47,10 @@ public class NewProjectController implements Initializable {
     @FXML
     TextField nameField, pathField;
 
+
     boolean changingOrder = false;
+    List<Node> oldOrder = new ArrayList<>();
+    List<Node> newOrder = new ArrayList<>();
     boolean updating = false;
 
     ObservableList<Node> oldColumns = FXCollections.observableArrayList();          //lists to detect what changed
@@ -59,7 +62,6 @@ public class NewProjectController implements Initializable {
     List<String> oldLengths = new ArrayList<>();
     List<List<String>> oldChoices = new ArrayList<>();
     static List<List<String>> listChanged = new ArrayList<>();
-
 
     List<List<String>> columnPositionChanges = new ArrayList<>();            //lists that contain what has to be changed
     List<List<String>> columnNameChanges = new ArrayList<>();
@@ -343,6 +345,11 @@ public class NewProjectController implements Initializable {
 
     private void editProject() {
         clearChangeLists();
+        Alert presetAlert = new Alert(Alert.AlertType.CONFIRMATION);
+        presetAlert.setContentText("Changing the projects Structure will most likely break pre-existing Presets!\nContinue anyway?");
+        if(presetAlert.showAndWait().get() == ButtonType.CANCEL){
+            return;
+        }
         for(int i = 0; i< columnContainer.getChildren().size();i++){
             Node column = columnContainer.getChildren().get(i);
             if(!oldColumns.contains(column)){
@@ -429,9 +436,9 @@ public class NewProjectController implements Initializable {
                 }
                 if(newType.equals("Choice")) {
                     List<String> newList = getColumnSelectionList(i).getItems();
-                    List<String> oldList = oldChoices.get(i);
+                    List<String> oldList = oldChoices.get(index);
                     if (oldList != null && !oldList.equals(newList)) {
-                        String listName = oldNames.get(i);
+                        String listName = oldNames.get(index);
                         for (int j = 0; j < oldList.size(); j++) {
                             String oldValue = oldList.get(j);
                             if (!newList.contains(oldValue)) {
@@ -518,11 +525,6 @@ public class NewProjectController implements Initializable {
     }
 
     private void editColumns() {
-        Alert presetAlert = new Alert(Alert.AlertType.CONFIRMATION);
-        presetAlert.setContentText("Changing the projects Structure will most likely break pre-existing Presets!\nContinue anyway?");
-        if(presetAlert.showAndWait().get() == ButtonType.CANCEL){
-            return;
-        }
         for(List<String> list:columnPositionChanges){
             String name = list.get(0);
             String newPos = list.get(1);
@@ -819,7 +821,6 @@ public class NewProjectController implements Initializable {
 
     private void openNewProject() {
         String name = nameField.getText();
-
         if (!dao.connectToDB("", "postgres", singleton.getPassword())) {
             openDBPasswordWindow();
             return;
@@ -920,17 +921,31 @@ public class NewProjectController implements Initializable {
     private void changeColumnOrder(int oldValue, int newValue) {
 
         changingOrder = true;
+        oldOrder = new ArrayList<>(columnContainer.getChildren());
         VBox old = (VBox) columnContainer.getChildren().get(oldValue);
         columnContainer.getChildren().remove(old);
         columnContainer.getChildren().add(newValue - 1, old);
         generateColumnOrder();
+        changingOrder = false;
     }
     private void  generateColumnOrder(){
         changingOrder = true;
         for (int i = 0; i < columnContainer.getChildren().size(); i++) {
             getColumnPositionField(i).setText(String.valueOf(i + 1));
         }
-        changingOrder = false;
+        if(updating) {
+            newOrder = new ArrayList<>(columnContainer.getChildren());
+            changeChangedOrder();
+        }
+    }
+
+    private void changeChangedOrder(){
+        List<List<String>> tmp = new ArrayList<>(listChanged);
+        for(int i = 0; i<oldOrder.size();i++){
+            int index = newOrder.indexOf(oldOrder.get(i));
+            tmp.set(index,listChanged.get(i));
+        }
+        listChanged=tmp;
     }
 
     public void setReturnStage(Stage stage) {
@@ -1122,6 +1137,7 @@ public class NewProjectController implements Initializable {
                 listView.getItems().set(index, tmp);
                 listView.getSelectionModel().select(index + offset);
 
+
                 int columnPosition = Integer.parseInt(((TextField)((VBox)hBox.getChildren().get(0)).getChildren().get(1)).getText())-1;
                 String itemBool = listChanged.get(columnPosition).get(index);
                 String tmpBool = listChanged.get(columnPosition).get(index+offset);
@@ -1139,9 +1155,9 @@ public class NewProjectController implements Initializable {
         if(index >= 0){
             String item = listView.getSelectionModel().getSelectedItem();
 
-            if(false) {
-                //int columnPosition = Integer.parseInt(((TextField) ((VBox) ((HBox) vBox.getParent()).getChildren().get(0)).getChildren().get(1)).getText()) - 1;
-                //listChanged.get(columnPosition).set(index, item);
+            if(updating) {
+                int columnPosition = Integer.parseInt(((TextField) ((VBox) ((HBox) vBox.getParent()).getChildren().get(0)).getChildren().get(1)).getText()) - 1;
+                listChanged.get(columnPosition).set(index, item);
             }
 
             TextField textField = (TextField)vBox.getChildren().get(2);

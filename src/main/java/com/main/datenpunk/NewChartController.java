@@ -260,7 +260,7 @@ public class NewChartController implements Initializable {
                 series.addAll(List.of(continuousOptions));
             } else {
                 series.add("All");
-                series.addAll(dao.selectColumnEntries(name));
+                series.addAll(dao.selectColumnEntries("\""+name+"\""));
             }
             seriesSelectionBox.getItems().setAll(series);
         }

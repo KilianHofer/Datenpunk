@@ -263,6 +263,7 @@ public class MainController implements Initializable {
                             super.updateItem(item, empty);
                             if (item == null || empty) {
                                 setText(null);
+                                setPrefHeight(24);
                                 setStyle("-fx-control-opacity: 0;");
                             } else {
                                 setText(item);
@@ -301,6 +302,12 @@ public class MainController implements Initializable {
             });
 
         }
+        for(int i = 0;i<Window.getWindows().size();i++){        //closes new project window and password window without moving primary window to background
+            Window w = Window.getWindows().get(i);
+            if(!w.equals(window))
+                ((Stage)w).close();
+        }
+        ((Stage)window).toFront();
     }
 
     private void addFiltersSettings(TilePane tilePane, ColumnInfo columnInfo, String name) {
@@ -550,12 +557,33 @@ public class MainController implements Initializable {
             else
                 i = controlList.indexOf(((Control)actionEvent.getSource()).getParent());
 
+            HBox hBox = (controlList.get(i));
+
             HBox controlPane = controlList.get(i);
             StringBuilder text = new StringBuilder();
+            String name = ((Label)((VBox)hBox.getParent()).getChildren().get(0)).getText();
+            int infoIndex = singleton.choiceNames.indexOf(name.substring(0,name.length()-1));
+            String type = singleton.getColumnInfo().get(infoIndex).type;
+
+            if(!type.equals("Choice")) {
+                TextField textField = (TextField) hBox.getChildren().get(hBox.getChildren().size() - 1);
+                if (type.equals("Decimal") && !textField.getText().matches("^\\d+(\\.\\d+)?$")) {
+                    textField.setStyle("-fx-border-color: red; -fx-border-width: 2px");
+                    return;
+                } else if (type.equals("Integer") && !textField.getText().matches("^-?[0-9]*$")) {
+                    textField.setStyle("-fx-border-color: red; -fx-border-width: 2px");
+                    return;
+                } else {
+                    textField.setStyle("-fx-border-width: 0px");
+                }
+            }
             for (Node node:controlPane.getChildren()) {
                 Control control = (Control) node;
                 if (control.getClass() == TextField.class) {
-                    text.append(((TextField) control).getText());
+                    String value = ((TextField) control).getText();
+                    if(value.equals(""))
+                        return;
+                    text.append(value);
                     ((TextField) control).setText("");
                 } else{
                     String value = ((ChoiceBox<String>)control).getValue();
@@ -565,6 +593,8 @@ public class MainController implements Initializable {
                 }
 
             }
+            if(text.isEmpty())
+                return;
 
             presetBox.setValue("Custom");
             listViews.get(i).getItems().add(text.toString());

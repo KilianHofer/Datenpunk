@@ -125,10 +125,12 @@ public class Singleton {
     }
 
     public void openProject(){
-        if (getColumns() != null)
-            getColumns().clear();
-        if (getColumnInfo() != null)
-            getColumnInfo().clear();
+        columns.clear();
+        if(choiceNames != null)
+            choiceNames.clear();
+        if (columnInfo != null)
+            columnInfo.clear();
+        columnNames.clear();
         choices.clear();
         choiceNames.clear();
 

@@ -183,8 +183,11 @@ public class DAO {
                         value = line.substring(1);
                     }
 
+                    String combinator = " AND ";
+
                     strings.set(id, strings.get(id).concat( name));
                     if(id%2!=0) {
+                        combinator = " OR ";
                         switch (operator){
                             case "<" -> operator = ">=";
                             case "<=" -> operator = ">";
@@ -195,6 +198,9 @@ public class DAO {
                     }
                     strings.set(id, strings.get(id).concat(operator));
                     strings.set(id,strings.get(id).concat(value));
+                    if(i <= stringList.size()-2){
+                        strings.set(id, strings.get(id).concat(combinator));
+                    }
                 }
                 else {
                     strings.set(id, strings.get(id).concat("LOWER("));
@@ -206,9 +212,9 @@ public class DAO {
                     strings.set(id, strings.get(id).concat("'"));
                     strings.set(id, strings.get(id).concat(stringList.get(i).toLowerCase()));
                     strings.set(id, strings.get(id).concat("'"));
-                }
-                if(i <= stringList.size()-2){
-                    strings.set(id, strings.get(id).concat(" OR "));
+                    if(i <= stringList.size()-2){
+                        strings.set(id, strings.get(id).concat(" OR "));
+                    }
                 }
             }
         }
@@ -289,7 +295,6 @@ public class DAO {
             statement = connection.prepareStatement(query);
             statement.setLong(1,fromTimestamp);
             statement.setLong(2,toTimestamp);
-            System.out.println(statement);
             resultSet = statement.executeQuery();
 
             String columnName = column.substring(column.lastIndexOf(".")+2,column.length()-1);
@@ -369,17 +374,26 @@ public class DAO {
 
             String name = column.substring(column.lastIndexOf(".")+2,column.length()-1);
 
+
             while(resultSet.next()){
                 String result;
-                if(type.equals("Integer"))
-                    result = String.valueOf(resultSet.getInt(name));
-                else  if(type.equals("Decimal"))
-                    result = String.valueOf(resultSet.getFloat(name));
+                if(type.equals("Integer")) {
+                    Integer intResult;
+                    intResult = resultSet.getObject(name,Integer.class);
+                    result = String.valueOf(intResult);
+                }
+                else  if(type.equals("Decimal")) {
+                    Float floatResult;
+                    floatResult = resultSet.getObject(name,Float.class);
+                    result = String.valueOf(floatResult);
+                }
                 else
                      result = resultSet.getString(name);
                 if(name.equals("Date"))
                     result = LocalDateTime.ofInstant(Instant.ofEpochMilli(Long.parseLong(result)), TimeZone.getDefault().toZoneId()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
+                if(result.equals("null"))
+                    result="";
                 history.add(result);
             }
             return history;
@@ -722,12 +736,14 @@ public class DAO {
                 query = "SELECT \""+nameTable+"\".\"" + name + "\" FROM objects, history, \"Status\" group by \""+nameTable+"\".\"" + name + "\"";
             }
             else
-                query = "SELECT \""+name+"\" FROM objects, history, \"Status\" group by \""+name+"\"";
+                query = "SELECT "+name+" FROM objects, history, \"Status\" group by "+name+"";
             PreparedStatement statement = connection.prepareStatement(query);
             ResultSet resultSet = statement.executeQuery();
 
+            name = name.substring(1);
             if(name.contains("."))
-                name = name.substring(name.lastIndexOf(".")+1);
+                name = name.substring(name.lastIndexOf(".")+2);
+            name = name.substring(0,name.length()-1);
             while (resultSet.next()){
                 series.add(resultSet.getString(name));
             }
@@ -999,6 +1015,12 @@ public class DAO {
     }
 
     public boolean changeColumnType(String table, String name,String oldType,String newType,String length,List<String> list) {
+
+        if(table.equals("true"))
+            table = "history";
+        else
+            table = "objects";
+
         try {
             if(oldType.equals("Choice")){
                 String auxQuery = "DROP TABLE \""+name+"\"";
@@ -1007,14 +1029,19 @@ public class DAO {
             }
             if(newType.equals("Choice")){
                 List<Status> choicesList = new ArrayList<>();
+                List<String> choiceNames = new ArrayList<>();
                 for (int i = 0; i < list.size(); i++) {
                     String item = list.get(i);
                     String choiceName = item.substring(0,item.lastIndexOf("("));
                     String choiceColour = item.substring(item.lastIndexOf("(")+1,item.lastIndexOf(")"));
                     choicesList.add(new Status(choiceName,i,choiceColour));
+                    choiceNames.add(choiceName);
                 }
                 createAuxTable(name,choicesList);
+                deleteInvalidChoices(choiceNames,table,name);
             }
+            else if(!newType.equals("Text"))
+                deleteNonNumerics(newType,table,name);
             String datatype = "";
             switch (newType){
                 case "Text" -> datatype = "VARCHAR("+length+")";
@@ -1022,11 +1049,6 @@ public class DAO {
                 case "Decimal" -> datatype = "FLOAT";
                 case "Choice" -> datatype = "VARCHAR(200)";
             }
-
-            if(table.equals("true"))
-                table = "history";
-            else
-                table = "objects";
 
             String query ="ALTER TABLE \""+table+"\" ALTER COLUMN \""+name+"\" TYPE "+datatype+" USING (\""+name+"\"::"+datatype+")";
             PreparedStatement statement = connection.prepareStatement(query);
@@ -1039,5 +1061,40 @@ public class DAO {
         } catch (SQLException e) {
             return false;
         }
+    }
+
+    private void deleteInvalidChoices(List<String> choiceNames,String table,String name) {
+        try{
+            StringBuilder subquery = new StringBuilder();
+            for(int i = 0;i<choiceNames.size();i++){
+                subquery.append("\"").append(name).append("\" != '").append(choiceNames.get(i)).append("'");
+                if(i<choiceNames.size()-1)
+                    subquery.append(" OR ");
+
+            }
+            String query = "UPDATE \"" + table+ "\" SET \""+name+"\"=null WHERE "+subquery;
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void deleteNonNumerics(String type,String table,String name){
+        String regex;
+        if(type.equals("Integer"))
+            regex = "'^-?[0-9]*$'";
+        else
+            regex = "'^\\d+(\\.\\d+)?$'";
+
+        try {
+            String query = "UPDATE \"" + table + "\" SET "+name+"=null WHERE \"" + name + "\" !~ " + regex;
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+
     }
 }
