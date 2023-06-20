@@ -253,7 +253,6 @@ public class MainController implements Initializable {
             ListView<String> listView = (ListView<String>) singleton.getColumns().get(i).getChildren().get(1);
             ColumnInfo columnInfo = singleton.getColumnInfo().get(i);
 
-
             listView.setCellFactory(new Callback<>() {
                 @Override
                 public ListCell<String> call(ListView<String> stringListView) {
@@ -281,6 +280,8 @@ public class MainController implements Initializable {
                                                 if (item.equals(status.getName())) {
                                                     setStyle("-fx-control-inner-background: " + status.getColor() + ";" +
                                                             "-fx-border-color: transparent;");
+
+
                                                 } else if (item.equals("") && columnInfo.required) {
                                                     setStyle("-fx-control-inner-background: " + status.getColor() + ";" +
                                                             "-fx-border-color: red;");
@@ -420,7 +421,7 @@ public class MainController implements Initializable {
 
     private void openDetailView(MouseEvent event) {
 
-        if (event.getClickCount() == 2) {
+        if (event.getClickCount() >= 2) {
 
             ListView<String> idList = null;
             for (VBox column : singleton.getColumns()) {
@@ -611,8 +612,33 @@ public class MainController implements Initializable {
     private void removeFromList(int id) {
         if (!changingPresets) {
             ListView<String> listView = listViews.get(id);
+
             if (listView.getSelectionModel().getSelectedItem() != null) {
-                listView.getItems().remove(listView.getSelectionModel().getSelectedItem());
+
+                String value = listView.getSelectionModel().getSelectedItem();
+                HBox hBox = (HBox) ((VBox)listView.getParent()).getChildren().get(1);
+                if(hBox.getChildren().size() > 1){
+                    String operator = "";
+                    if(value.charAt(1) == '='){
+                        operator = value.substring(0,2);
+                        value = value.substring(2);
+                    }
+                    else {
+                        operator = value.substring(0,1);
+                        value = value.substring(1);
+                    }
+                    ((ChoiceBox<String>)hBox.getChildren().get(0)).setValue(operator);
+                    ((TextField)hBox.getChildren().get(1)).setText(value);
+                }
+                else {
+                    Node node = hBox.getChildren().get(0);
+                    if(node.getClass().equals(TextField.class))
+                        ((TextField)node).setText(value);
+                    else
+                        ((ChoiceBox<String>)node).setValue(value);
+                }
+
+                listView.getItems().remove(listView.getSelectionModel().getSelectedIndex());
                 presetBox.setValue("Custom");
                 updateTable();
             }
@@ -621,7 +647,7 @@ public class MainController implements Initializable {
 
     public void onListClick(MouseEvent event) {
         if (event.getButton().equals(MouseButton.PRIMARY)) {
-            if (event.getClickCount() == 2) {
+            if (event.getClickCount() >= 2) {
                 removeFromList(listViews.indexOf(event.getSource()));
             }
         }
@@ -643,6 +669,7 @@ public class MainController implements Initializable {
         stage.initOwner(fromDatePicker.getScene().getWindow());
         NewProjectController newProjectController = fxmlLoader.getController();
         newProjectController.setReturnStage((Stage) fromDatePicker.getScene().getWindow());      //TODO: better data transfer
+        stage.setHeight(600);
         stage.show();
     }
 
@@ -907,8 +934,8 @@ public class MainController implements Initializable {
         alert.setContentText("Do you want to delete this Diagram: \n" + ((Chart) ((VBox) hBox.getChildren().get(0)).getChildren().get(0)).getTitle());
         if (alert.showAndWait().get() == ButtonType.OK) {
             int index = chartContainer.getChildren().indexOf(hBox);
-            VBox vBox = (VBox) hBox.getParent();
-            vBox.getChildren().remove(hBox);
+            TilePane tilePane = (TilePane) hBox.getParent();
+            tilePane.getChildren().remove(hBox);
             charts.remove(index);
         }
     }
@@ -1041,13 +1068,15 @@ public class MainController implements Initializable {
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("newProject-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
         Stage stage = new Stage();
-        stage.setTitle("New Project");
+        stage.setTitle("Change Project");
         stage.setScene(scene);
         stage.initModality(Modality.WINDOW_MODAL);
         stage.initOwner(fromDatePicker.getScene().getWindow());
         NewProjectController newProjectController = fxmlLoader.getController();
         newProjectController.setReturnStage((Stage) fromDatePicker.getScene().getWindow());
+        stage.setHeight(600);
         stage.show();
+
         newProjectController.setUpdating();
 
     }

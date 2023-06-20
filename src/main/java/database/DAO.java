@@ -667,16 +667,20 @@ public class DAO {
     }
 
     public void updateValue(int id, String column, String value, String type){
-        String query = "UPDATE objects SET \""+column+"\" = ? WHERE id = ?";
+
         try {
-            PreparedStatement statement = connection.prepareStatement(query);
-            if(type.equals("Integer"))
-                statement.setInt(1,Integer.parseInt(value));
-            else if(type.equals("Decimal"))
-                statement.setFloat(1,Float.parseFloat(value));
+            String subquery;
+            if(type.equals("Integer") || type.equals("Decimal")) {
+                if(!value.equals(""))
+                    subquery = value;
+                else
+                    subquery = "null";
+            }
             else
-                statement.setString(1,value);
-            statement.setInt(2,id);
+                subquery = "'"+value+"'";
+            String query = "UPDATE objects SET \""+column+"\" = "+subquery+" WHERE id = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1,id);
             statement.executeUpdate();
         }catch (SQLException e){
             System.out.println(e.getMessage());         //TODO: better error handling

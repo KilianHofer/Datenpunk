@@ -505,16 +505,18 @@ public class NewChartController implements Initializable {
 
     public void onCreate() {
 
-        chartDescriptor.setTitle(titleField.getText());
-        if(!currentChartType.equals("Pie Chart")){
-            chartDescriptor.setxName(xNameField.getText());
-            chartDescriptor.setyName(yNameField.getText());
+        if(chartDescriptor != null) {
+            chartDescriptor.setTitle(titleField.getText());
+            if (!currentChartType.equals("Pie Chart")) {
+                chartDescriptor.setxName(xNameField.getText());
+                chartDescriptor.setyName(yNameField.getText());
+            }
+            if (!update)
+                controller.addNewChart(chartDescriptor);
+            else
+                controller.setChart(chartDescriptor);
+            onCancel();
         }
-        if(!update)
-            controller.addNewChart(chartDescriptor);
-        else
-            controller.setChart(chartDescriptor);
-        onCancel();
     }
 
     public void onSeriesListClick(MouseEvent mouseEvent) {

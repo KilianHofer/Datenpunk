@@ -67,6 +67,7 @@ public class ProjectSelectionController implements Initializable {
         stage.initOwner(searchBar.getScene().getWindow());
 
         singleton.setMainStage((Stage)searchBar.getScene().getWindow());
+        stage.setHeight(600);
         stage.show();
     }
 

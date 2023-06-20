@@ -118,11 +118,11 @@ public class NewProjectController implements Initializable {
                 length.requestFocus();
                 length.setText(String.valueOf(columnInfo.length));
             }
-            if(name.equals("Id") || name.equals("Name") || name.equals("Status") || name.equals("Date")){
+            if(name.equals("id") || name.equals("Name") || name.equals("Status") || name.equals("Date")){
                 columnName.setDisable(true);
                 choiceBox.setDisable(true);
                 getColumnCloseButton(i).setDisable(true);
-                if(name.equals("Id")  || name.equals("Date")){
+                if(name.equals("id")  || name.equals("Date")){
                     historyCheck.setDisable(true);
                     requiredCheck.setDisable(true);
                 }
