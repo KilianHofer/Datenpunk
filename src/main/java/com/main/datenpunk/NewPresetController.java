@@ -40,12 +40,17 @@ public class NewPresetController {
 
     @FXML
     public void onCreate() {
-        if (presets.contains(nameField.getText()) && !nameField.getText().equals("Custom")) {
+        if(nameField.getText().equals("Custom")){
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setContentText("'Custom' is not a valid Preset name");
+            alert.show();
+        }
+        else if (presets.contains(nameField.getText())){
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setContentText("A preset with this name already exists!");
             alert.showAndWait();
         }
-        else if(!nameField.getText().equals("Custom")) {
+        else if(!nameField.getText().equals("")){
             String path = singleton.getWorkingDirectory() + "\\Projects\\" + singleton.getCurrentProject() + "\\Presets\\" + nameField.getText() + ".json";
             System.out.println(path);
 
@@ -116,13 +121,13 @@ public class NewPresetController {
                 fileWriter.write(filterObject.toJSONString());
                 fileWriter.flush();
 
+                controller.selectPresets();
+                controller.setPreset(nameField.getText());
+                onCancel();
 
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
-        controller.selectPresets();
-        controller.setPreset(nameField.getText());
-        onCancel();
     }
 }

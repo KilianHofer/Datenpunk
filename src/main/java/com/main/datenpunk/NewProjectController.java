@@ -1083,7 +1083,7 @@ public class NewProjectController implements Initializable {
         else
             vBox = (VBox) control.getParent();
         TextField textField = (TextField) vBox.getChildren().get(2);
-        if (textField.getText().equals("")) {
+        if (textField.getText().equals("") || textField.getText().length() > 200) {
             textField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
             return;
         }

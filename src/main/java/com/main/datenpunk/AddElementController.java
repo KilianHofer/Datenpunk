@@ -8,10 +8,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.Control;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import java.net.URL;
@@ -61,8 +58,20 @@ public class AddElementController implements Initializable {
 
                 Node valueNode = vBox.getChildren().get(1);
                 String value;
-                if(valueNode.getClass().equals(TextField.class))
+                if(valueNode.getClass().equals(TextField.class)) {
                     value = ((TextField) valueNode).getText();
+                    for(ColumnInfo info:singleton.getColumnInfo()){
+                        if(info.name.equals(name)){
+                            if(info.length>0 && info.length<value.length()){
+                                Alert alert = new Alert(Alert.AlertType.ERROR);
+                                alert.setContentText("Text value for '"+name+"' is too long.\n This text may not be longer than "+info.length+" characters!");
+                                alert.showAndWait();
+                                return;
+                            }
+                            break;
+                        }
+                    }
+                }
                 else
                     value = ((ChoiceBox<String>)valueNode).getValue();
 
@@ -83,6 +92,7 @@ public class AddElementController implements Initializable {
     ChangeListener<String> emptyListener = new ChangeListener<>() {
         @Override
         public void changed(ObservableValue<? extends String> observableValue, String s, String t1) {
+
             Node setting = settingContainer.getScene().focusOwnerProperty().get();
             VBox vBox = (VBox) setting.getParent();
             int index = settingContainer.getChildren().indexOf(vBox);
