@@ -9,6 +9,7 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseButton;
@@ -158,6 +159,12 @@ public class NewChartController implements Initializable {
         updating = true;
         createButton.setText("Update");
 
+        for(Node node:xToggle.getChildren()){
+            RadioButton radioButton = (RadioButton) node;
+            if(radioButton.getText().equals(c.xType))
+                radioButton.fire();
+        }
+
         xNameField.setText(c.xName);
         yNameField.setText(c.yName);
         titleField.setText(c.title);
@@ -177,7 +184,7 @@ public class NewChartController implements Initializable {
 
         String range;
         if(!c.chartType.equals("Pie Chart")) {
-            if (c.xAxis.equals("date"))
+            if (c.xAxis.equals("Date"))
                 range = String.valueOf((int) c.stepSize);
             else
                 range = String.valueOf(c.stepSize);
@@ -380,7 +387,7 @@ public class NewChartController implements Initializable {
 
             if (!chartType.equals("Pie Chart")) {
                 if (Boolean.FALSE.equals(discrete)) {
-                    if (!range.matches(floatPositiveRegex) || (xAxis.equals("date") && !range.matches(intRegex))) {
+                    if (!range.matches(floatPositiveRegex) || (xAxis.equals("Date") && !range.matches(intRegex))) {
                         rangeField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
                         cont = false;
                     } else
@@ -396,7 +403,7 @@ public class NewChartController implements Initializable {
                     cont = false;
                 } else
                     yMaxField.setStyle("--fx-border-width: 0px;");
-                if (!xAxis.equals("date")) {
+                if (!xAxis.equals("Date")) {
                     if (!xMin.matches(floatRegex) && !xMin.equals("")) {
                         xMinField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
                         cont = false;

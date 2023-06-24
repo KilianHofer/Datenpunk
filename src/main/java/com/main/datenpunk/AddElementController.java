@@ -75,7 +75,7 @@ public class AddElementController implements Initializable {
                 else
                     value = ((ChoiceBox<String>)valueNode).getValue();
 
-                if(value.equals(""))
+                if(value != null && value.equals(""))
                     value = null;
 
                 if(objectColumns.contains(name))

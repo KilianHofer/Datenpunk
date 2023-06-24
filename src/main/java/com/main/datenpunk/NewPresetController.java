@@ -80,20 +80,17 @@ public class NewPresetController {
                     order.add(name);
                 else
                     order.add(singleton.getColumnNames().get(i));
+            }
+            for(int i = 0; i<singleton.getColumnNames().size();i++){
 
-
+                String name = singleton.getColumnNames().get(i);
                 if(!name.equals("id") && !name.equals("Date")) {
-
                     if(whitelistCheck.isSelected())
                         whitelist.add(singleton.getController().getWhitelist(index));
                     if(blacklistCheck.isSelected())
                         blacklist.add(singleton.getController().getBlacklist(index));
                     index++;
                 }
-            }
-            for(int i = 0; i<singleton.getColumnNames().size();i++){
-
-                String name = singleton.getColumnNames().get(i);
                 if(names.contains(name) || !columnVisCheck.isSelected())
                     visible.add(true);
                 else

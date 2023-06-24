@@ -18,6 +18,7 @@ import javafx.util.Callback;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.ResourceBundle;
 
 
@@ -50,7 +51,12 @@ public class DetailController implements Initializable {
         for (Node column : historyTable.getItems()) {
             Button button = (Button) ((VBox) column).getChildren().get(0);
             ListView<String> listView = (ListView<String>) ((VBox) column).getChildren().get(1);
-            listView.getItems().setAll(dao.selectHistory(currentElement, button.getText(), sortColumn, sortType));
+            try {
+                listView.getItems().setAll(dao.selectHistory(currentElement, button.getText(), sortColumn, sortType));
+            }
+            catch (Exception e) {
+                System.out.println(button.getText());
+            }
         }
     }
 
@@ -110,8 +116,11 @@ public class DetailController implements Initializable {
                         dao.updateValue(currentElement, column, value,types.get(i));
                 }
             }
+
             for (int i = 0; i < oldHistoryValues.size(); i++) {
-                if (!newHistoryValues.get(i).equals(oldHistoryValues.get(i))) {
+                String oldValue = oldHistoryValues.get(i);
+                String newValue = newHistoryValues.get(i);
+                if ((newValue != null && oldValue == null) || !Objects.equals(newValue, oldValue)) {
                     updated = true;
                     break;
                 }
@@ -268,16 +277,22 @@ public class DetailController implements Initializable {
             float position = 1/((float)historyTable.getDividers().size()+1)*(i+1);
             divider.setPosition(position);
         }
-
-        updateTable();
     }
 
     public void setupLater() {
 
         Window window = historyTable.getScene().getWindow();
 
+        ListView<String> firstListView = (ListView<String>) ((VBox)historyTable.getItems().get(0)).getChildren().get(1);
+        window.setHeight(Math.min(window.getHeight()+firstListView.getItems().size()*24,700));
+
+        historyTable.setPrefWidth(historyTable.getItems().size()*150);
+
+        window.setWidth(Math.min(historyTable.getWidth()+75,1000));
+
         historyTable.setMaxWidth(window.getWidth()-75);
         window.widthProperty().addListener((observableValue, number, t1) -> historyTable.setMaxWidth((Double)t1-75));
+
 
         for (int i = 0; i < historyTable.getItems().size(); i++) {
             VBox vBox = (VBox) historyTable.getItems().get(i);
@@ -299,7 +314,7 @@ public class DetailController implements Initializable {
                             @Override
                             protected void updateItem(String item, boolean empty) {
                                 super.updateItem(item, empty);
-                                if (item == null || empty) {
+                                if (item == null || item.equals("") || empty) {
                                     setText(null);
                                     setStyle("-fx-control-opacity: 0;");
                                 } else {

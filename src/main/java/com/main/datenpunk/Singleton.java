@@ -146,7 +146,6 @@ public class Singleton {
             MainController controller = fxmlLoader.getController();
             setController(controller);
 
-            stage.setMaximized(true);
             stage.setResizable(true);
             stage.toFront();
             stage.show();

@@ -18,6 +18,7 @@ import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.input.*;
 import javafx.scene.layout.*;
+import javafx.scene.shape.FillRule;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -100,7 +101,9 @@ public class MainController implements Initializable {
 
 
     public List<String> getWhitelist(int id) {
-        return ((ListView<String>) ((VBox) whiteListContainer.getChildren().get(id)).getChildren().get(3)).getItems();
+        VBox vBox = (VBox) whiteListContainer.getChildren().get(id);
+        List<String> list = ((ListView<String>) vBox.getChildren().get(3)).getItems();
+        return list;
     }
 
 
@@ -160,7 +163,10 @@ public class MainController implements Initializable {
 
     ChangeListener widthListener = (ChangeListener<Number>) (observableValue, number, t1) -> {
         for(int i = 0; i < singleton.getColumns().size();i++){
-            columnWidths.set(i,((Double)singleton.getColumns().get(i).getWidth()).floatValue());
+            float value = ((Double)singleton.getColumns().get(i).getWidth()).floatValue();
+            if(value == 0)
+                value = 150;
+            columnWidths.set(i,value);
         }
     };
 
@@ -239,15 +245,17 @@ public class MainController implements Initializable {
 
     public void setupLater() {
         Window window = objectTable.getScene().getWindow();
-        maxWidthPane.setMaxWidth(window.getWidth() - 50);
-        maxHeightPane.setMaxHeight(window.getHeight() - 100);
+
         window.widthProperty().addListener((observableValue, number, t1) -> {
             maxWidthPane.setMaxWidth((Double) t1 - 50);
             chartContainer.setMaxWidth((Double) t1 - 50);
         });
-        window.heightProperty().addListener((observableValue, number, t1) -> maxHeightPane.setMaxHeight((Double) t1 - 100));
+        window.heightProperty().addListener((observableValue, number, t1) -> maxHeightPane.setMaxHeight((Double) t1 - 280));
         maxWidthPane.getDividers().get(0).setPosition(1);
         objectTable.setMaxWidth(window.getWidth() - 75);
+
+        ((Stage)window).setMaximized(false);        //needs to be false first or diagram presets break, idk why
+        ((Stage)window).setMaximized(true);
 
         for (int i = 0; i < singleton.getColumnInfo().size(); i++) {
             ListView<String> listView = (ListView<String>) singleton.getColumns().get(i).getChildren().get(1);
@@ -260,10 +268,10 @@ public class MainController implements Initializable {
                         @Override
                         protected void updateItem(String item, boolean empty) {
                             super.updateItem(item, empty);
-                            if (item == null || empty) {
+                            if (item == null || item.equals("") || empty) {
                                 setText(null);
                                 setPrefHeight(24);
-                                setStyle("-fx-control-opacity: 0;");
+                                setStyle("-fx-control-inner-background-color: transparent;");
                             } else {
                                 setText(item);
                                 if (columnInfo.colored) {
@@ -433,7 +441,9 @@ public class MainController implements Initializable {
             assert idList != null;
             if (idList.getSelectionModel().getSelectedItem() != null) {
                 try {
-                    String currentElement = idList.getSelectionModel().getSelectedItem();
+                    int currentElement = Integer.parseInt(idList.getSelectionModel().getSelectedItem());
+                    if(currentElement == 0)
+                        return;
 
                     FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("detail-view.fxml"));
                     Scene scene = new Scene(fxmlLoader.load());
@@ -447,7 +457,7 @@ public class MainController implements Initializable {
                     stage.initOwner(objectTable.getScene().getWindow());
 
                     DetailController detailController = fxmlLoader.getController();
-                    detailController.setCurrentElement(Integer.parseInt(currentElement));
+                    detailController.setCurrentElement(currentElement);
                     stage.show();
                     detailController.setupLater();
                 } catch (IOException e) {

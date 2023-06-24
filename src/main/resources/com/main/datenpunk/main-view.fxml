@@ -25,51 +25,46 @@
    <center>
       <TabPane nodeOrientation="LEFT_TO_RIGHT" tabClosingPolicy="UNAVAILABLE">
          <Tab closable="false" text="Table">
-            <ScrollPane>
+            <ScrollPane hbarPolicy="NEVER">
                <BorderPane>
                   <center>
                      <VBox>
                         <TitledPane expanded="false" text="Whitelist">
                            <TilePane fx:id="whiteListContainer">
                               <padding>
-                                 <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                                 <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                               </padding>
                            </TilePane>
                         </TitledPane>
                         <TitledPane expanded="false" text="Blacklist">
                            <TilePane fx:id="blackListContainer">
                               <padding>
-                                 <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                                 <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                               </padding>
                            </TilePane>
                         </TitledPane>
                         <TitledPane text="Table">
                            <AnchorPane minHeight="0.0" minWidth="0.0">
-                              <SplitPane fx:id="maxWidthPane" dividerPositions="0.5" layoutX="18.0"
-                                         layoutY="8.0" prefWidth="4000.0">
+                              <SplitPane fx:id="maxWidthPane" dividerPositions="0.5" layoutX="18.0" layoutY="8.0" prefWidth="4000.0">
                                  <BorderPane fx:id="tableWidthContainer" prefHeight="43.0">
                                     <left>
-                                       <Button onAction="#onNewObject" text="New Object"
-                                               BorderPane.alignment="CENTER"/>
+                                       <Button onAction="#onNewObject" text="New Object" BorderPane.alignment="CENTER" />
                                     </left>
                                     <right>
-                                       <Button onAction="#updateTable" text="Refresh"
-                                               BorderPane.alignment="CENTER"/>
+                                       <Button onAction="#updateTable" text="Refresh" BorderPane.alignment="CENTER" />
                                     </right>
                                     <bottom>
                                        <VBox BorderPane.alignment="CENTER">
                                           <BorderPane.margin>
-                                             <Insets top="5.0"/>
+                                             <Insets top="5.0" />
                                           </BorderPane.margin>
                                           <ScrollPane fx:id="maxHeightPane" VBox.vgrow="ALWAYS">
-                                             <SplitPane fx:id="objectTable"
-                                                        maxHeight="1.7976931348623157E308"
-                                                        style="-fx-padding: 0;"/>
+                                             <SplitPane fx:id="objectTable" maxHeight="1.7976931348623157E308" style="-fx-padding: 0;" />
                                           </ScrollPane>
                                        </VBox>
                                     </bottom>
                                  </BorderPane>
-                                 <AnchorPane/>
+                                 <AnchorPane />
                               </SplitPane>
                            </AnchorPane>
                         </TitledPane>
@@ -77,70 +72,62 @@
                   </center>
                   <top>
                      <AnchorPane prefHeight="70.0" BorderPane.alignment="CENTER">
-                        <DatePicker fx:id="fromDatePicker" layoutX="14.0" layoutY="32.0"
-                                    onAction="#selectFromDate" onKeyPressed="#setCustom"
-                                    onMouseClicked="#setCustom"/>
-                        <Label layoutX="14.0" layoutY="11.0" text="From:"/>
-                        <DatePicker fx:id="toDatePicker" layoutX="197.0" layoutY="32.0"
-                                    onAction="#selectToDate" onKeyPressed="#setCustom"
-                                    onMouseClicked="#setCustom"/>
-                        <Button layoutX="380.0" layoutY="33.0" onAction="#onResetDates" text="Reset"/>
-                        <Label layoutX="197.0" layoutY="11.0" text="To:"/>
+                        <DatePicker fx:id="fromDatePicker" layoutX="14.0" layoutY="32.0" onAction="#selectFromDate" onKeyPressed="#setCustom" onMouseClicked="#setCustom" />
+                        <Label layoutX="14.0" layoutY="11.0" text="From:" />
+                        <DatePicker fx:id="toDatePicker" layoutX="197.0" layoutY="32.0" onAction="#selectToDate" onKeyPressed="#setCustom" onMouseClicked="#setCustom" />
+                        <Button layoutX="380.0" layoutY="33.0" onAction="#onResetDates" text="Reset" />
+                        <Label layoutX="197.0" layoutY="11.0" text="To:" />
                         <HBox layoutX="458.0" layoutY="33.0">
-                           <ChoiceBox fx:id="presetBox" prefWidth="150.0"/>
-                           <Button mnemonicParsing="false" onAction="#onNewPreset" prefHeight="25.0"
-                                   prefWidth="25.0" text="+">
+                           <ChoiceBox fx:id="presetBox" prefWidth="150.0" />
+                           <Button mnemonicParsing="false" onAction="#onNewPreset" prefHeight="25.0" prefWidth="25.0" text="+">
                               <HBox.margin>
-                                 <Insets left="3.0" right="3.0"/>
+                                 <Insets left="3.0" right="3.0" />
                               </HBox.margin>
                            </Button>
-                           <Button mnemonicParsing="false" onAction="#onDeletePreset" prefHeight="25.0"
-                                   prefWidth="25.0" text="-"/>
+                           <Button mnemonicParsing="false" onAction="#onDeletePreset" prefHeight="25.0" prefWidth="25.0" text="-" />
                            <Button mnemonicParsing="false" onAction="#onResetPresets" text="Reset">
                               <HBox.margin>
-                                 <Insets left="3.0" right="3.0"/>
+                                 <Insets left="3.0" right="3.0" />
                               </HBox.margin>
                            </Button>
                         </HBox>
-                        <Label layoutX="458.0" layoutY="11.0" text="Preset:"/>
-                        <Separator layoutX="439.0" orientation="VERTICAL" prefHeight="69.0" prefWidth="7.0"/>
+                        <Label layoutX="458.0" layoutY="11.0" text="Preset:" />
+                        <Separator layoutX="439.0" orientation="VERTICAL" prefHeight="69.0" prefWidth="7.0" />
                      </AnchorPane>
                   </top>
                </BorderPane>
             </ScrollPane>
          </Tab>
          <Tab closable="false" text="Diagram">
-            <ScrollPane>
+            <ScrollPane hbarPolicy="NEVER">
                <AnchorPane minHeight="0.0" minWidth="0.0">
                   <AnchorPane layoutY="0.6666666865348816">
                      <HBox layoutX="28.0" layoutY="49.0">
                         <ChoiceBox fx:id="chartPresetBox" prefWidth="150.0">
                            <HBox.margin>
-                              <Insets bottom="15.0"/>
+                              <Insets bottom="15.0" />
                            </HBox.margin>
                         </ChoiceBox>
-                        <Button mnemonicParsing="false" onAction="#onAddChartPreset" prefHeight="25.0"
-                                prefWidth="25.0" text="+">
+                        <Button mnemonicParsing="false" onAction="#onAddChartPreset" prefHeight="25.0" prefWidth="25.0" text="+">
                            <HBox.margin>
-                              <Insets left="3.0" right="3.0"/>
+                              <Insets left="3.0" right="3.0" />
                            </HBox.margin>
                         </Button>
-                        <Button mnemonicParsing="false" onAction="#onDeleteChartPreset" prefHeight="25.0"
-                                prefWidth="25.0" text="-"/>
+                        <Button mnemonicParsing="false" onAction="#onDeleteChartPreset" prefHeight="25.0" prefWidth="25.0" text="-" />
                         <Button mnemonicParsing="false" onAction="#onResetCharts" text="Reset">
                            <HBox.margin>
-                              <Insets left="3.0"/>
+                              <Insets left="3.0" />
                            </HBox.margin>
                         </Button>
                      </HBox>
-                     <Label layoutX="28.0" layoutY="31.0" text="Preset:"/>
-                     <Separator layoutY="87.0" prefHeight="6.0" prefWidth="706.0"/>
+                     <Label layoutX="28.0" layoutY="31.0" text="Preset:" />
+                     <Separator layoutY="85.0" prefHeight="8.0" prefWidth="1597.0" />
                   </AnchorPane>
                   <VBox alignment="CENTER" layoutY="94.0">
-                     <TilePane fx:id="chartContainer"/>
+                     <TilePane fx:id="chartContainer" alignment="CENTER" />
                      <Button mnemonicParsing="false" onAction="#onAddChart" text="Add Diagram">
                         <VBox.margin>
-                           <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
+                           <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
                         </VBox.margin>
                      </Button>
                   </VBox>
@@ -152,17 +139,17 @@
    <top>
       <MenuBar BorderPane.alignment="CENTER">
          <Menu mnemonicParsing="false" text="File">
-            <MenuItem mnemonicParsing="false" onAction="#onNewProject" text="New Project"/>
-            <MenuItem mnemonicParsing="false" onAction="#onProjectSelection" text="Project Selection"/>
-            <SeparatorMenuItem mnemonicParsing="false"/>
-            <MenuItem mnemonicParsing="false" onAction="#onCancel" text="Close"/>
+            <MenuItem mnemonicParsing="false" onAction="#onNewProject" text="New Project" />
+            <MenuItem mnemonicParsing="false" onAction="#onProjectSelection" text="Project Selection" />
+            <SeparatorMenuItem mnemonicParsing="false" />
+            <MenuItem mnemonicParsing="false" onAction="#onCancel" text="Close" />
          </Menu>
          <Menu mnemonicParsing="false" text="Project">
-            <MenuItem mnemonicParsing="false" onAction="#onNewObject" text="New Object"/>
-            <SeparatorMenuItem mnemonicParsing="false"/>
-            <MenuItem mnemonicParsing="false" onAction="#onOpenSettings" text="Settings"/>
+            <MenuItem mnemonicParsing="false" onAction="#onNewObject" text="New Object" />
+            <SeparatorMenuItem mnemonicParsing="false" />
+            <MenuItem mnemonicParsing="false" onAction="#onOpenSettings" text="Settings" />
          </Menu>
-         <Menu fx:id="showHideMenu" mnemonicParsing="false" text="Show/Hide"/>
+         <Menu fx:id="showHideMenu" mnemonicParsing="false" text="Show/Hide" />
       </MenuBar>
    </top>
 </BorderPane>
