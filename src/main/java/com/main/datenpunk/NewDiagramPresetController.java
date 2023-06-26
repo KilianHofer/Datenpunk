@@ -24,13 +24,25 @@ public class NewDiagramPresetController {
     }
 
     public void onCreate() throws IOException {
-        if(!nameField.getText().equals("")) {
-            String path = singleton.getWorkingDirectory() + "\\Projects\\" + singleton.getCurrentProject() + "\\DiagramPresets\\";
-            File file = new File(path);
-            if (!file.exists())
-                Files.createDirectory(file.toPath());
-            path += nameField.getText() + ".json";
-            file = new File(path);
+        String path = singleton.getWorkingDirectory() + "\\Projects\\" + singleton.getCurrentProject() + "\\DiagramPresets\\";
+        File file = new File(path);
+        if (!file.exists())
+            Files.createDirectory(file.toPath());
+        path += nameField.getText() + ".json";
+        file = new File(path);
+
+        if(nameField.getText().equals("Custom")){
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setContentText("'Custom' is not a valid Preset name");
+            alert.show();
+        }
+        else if (file.exists()){
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setContentText("A preset with this name already exists!");
+            alert.showAndWait();
+        }
+        else if(!nameField.getText().equals("")) {
+
             if (file.exists()) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setContentText("A diagram Preset with this name already exists for this Project");

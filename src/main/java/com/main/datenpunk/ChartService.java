@@ -181,11 +181,13 @@ public class ChartService extends Service<Chart> {
 
                         Boolean discrete = null;
                         String seriesX = c.xAxis, seriesY = c.yAxis;
+                        String xType = "";
                         for (ColumnInfo column : columnInfo) {
 
                             if (column.name.equals(c.xAxis)) {
                                 seriesX = column.table + ".\"" + c.xAxis+"\"";
                                 discrete = column.discrete;
+                                xType = column.type;
                             }
                             if (column.name.equals(c.yAxis))
                                 seriesY = column.table + ".\"" + c.yAxis+"\"";
@@ -198,7 +200,7 @@ public class ChartService extends Service<Chart> {
                                 for (String category : dao.selectColumnEntries(seriesX)) {
                                     float total = 1f;
                                     if (c.isRelative) {
-                                        total = dao.getXYValues(null, null, category, seriesY, "All", startDataTimestamp, endDataTimestamp, comparator, seriesX);
+                                        total = dao.getXYValues(null, null, category, seriesY, "All", startDataTimestamp, endDataTimestamp, comparator, seriesX)/100;
                                     }
                                     if (total > 0)
                                         plot.getData().add(new XYChart.Data<>(category, dao.getXYValues(null, null, category, seriesY, value, startDataTimestamp, endDataTimestamp, comparator, seriesX) / total));
@@ -208,9 +210,9 @@ public class ChartService extends Service<Chart> {
 
                                 String xMinValue = c.xMin, xMaxValue = c.xMax;
                                 if (c.xMin.equals(""))
-                                    xMinValue = dao.getFirstOrLastValue(true, seriesX);
+                                    xMinValue = dao.getFirstOrLastValue(true, seriesX,xType);
                                 if (c.xMax.equals(""))
-                                    xMaxValue = dao.getFirstOrLastValue(false, seriesX);
+                                    xMaxValue = dao.getFirstOrLastValue(false, seriesX,xType);
 
                                 if (seriesX.equals("history.\"Date\"")) {
 
@@ -230,7 +232,7 @@ public class ChartService extends Service<Chart> {
                                         float total = 1f;
                                         if (c.xType.equals("Accumulative")) {
                                             if (c.isRelative) {
-                                                total = dao.getValuesByTime(c.fromDate, xValues.get(i).plusDays((long) c.stepSize), seriesY, "All", startDataTimestamp, endDataTimestamp, comparator);
+                                                total = dao.getValuesByTime(c.fromDate, xValues.get(i).plusDays((long) c.stepSize), seriesY, "All", startDataTimestamp, endDataTimestamp, comparator)/100;
                                             }
                                             if (total > 0)
                                                 plot.getData().add(new XYChart.Data<>(xValues.get(i).toString().substring(0, 10), dao.getValuesByTime(c.fromDate, xValues.get(i).plusDays((long) c.stepSize), seriesY, value, startDataTimestamp, endDataTimestamp, comparator) / total));
@@ -238,7 +240,7 @@ public class ChartService extends Service<Chart> {
                                                 plot.getData().add(new XYChart.Data<>(xValues.get(i).toString().substring(0, 10), 0f));
                                         } else {
                                             if (c.isRelative) {
-                                                total = dao.getValuesByTime(xValues.get(i), xValues.get(i).plusDays((long) c.stepSize), seriesY, "All", startDataTimestamp, endDataTimestamp, comparator);
+                                                total = dao.getValuesByTime(xValues.get(i), xValues.get(i).plusDays((long) c.stepSize), seriesY, "All", startDataTimestamp, endDataTimestamp, comparator)/100;
                                             }
                                             if (total > 0)
                                                 plot.getData().add(new XYChart.Data<>(xValues.get(i).toString().substring(0, 10), dao.getValuesByTime(xValues.get(i), xValues.get(i).plusDays((long) c.stepSize), seriesY, value, startDataTimestamp, endDataTimestamp, comparator) / total));
