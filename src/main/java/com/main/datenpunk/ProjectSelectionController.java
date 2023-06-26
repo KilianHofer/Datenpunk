@@ -148,20 +148,24 @@ public class ProjectSelectionController implements Initializable {
                         stage.setScene(scene);
                         stage.setResizable(false);
                         stage.show();
+                        return;
                     }
-                } else {
+                }
                     dao.connectToDB("", "postgres", singleton.getPassword());
                     dao.dropDatabase(nameToDelete);
                     singleton.removeFromProjectsFile(pathToDelete);
                     File file = new File(subString + "\\Projects\\" + nameToDelete);
-                    for (File childFile : Objects.requireNonNull(file.listFiles())) {
-                        Files.delete(childFile.toPath());
+                    if(file.exists()) {
+                        for (File childFile : Objects.requireNonNull(file.listFiles())) {
+                            Files.delete(childFile.toPath());
+                        }
+                        Files.delete(file.toPath());
                     }
-                    Files.delete(file.toPath());
                     file = new File(pathToDelete);
-                    Files.delete(file.toPath());
+                    if(file.exists())
+                        Files.delete(file.toPath());
                     getProjects();
-                }
+
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
