@@ -18,6 +18,7 @@ import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.input.*;
 import javafx.scene.layout.*;
+import javafx.scene.shape.FillRule;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -65,7 +66,7 @@ public class MainController implements Initializable {
 
     @FXML
     private ChoiceBox<String> presetBox;
-    private final ObservableList<Control> controlList = FXCollections.observableArrayList();
+    private final ObservableList<HBox> controlList = FXCollections.observableArrayList();
 
     private final ObservableList<ListView<String>> listViews = FXCollections.observableArrayList();
 
@@ -100,7 +101,9 @@ public class MainController implements Initializable {
 
 
     public List<String> getWhitelist(int id) {
-        return ((ListView<String>) ((VBox) whiteListContainer.getChildren().get(id)).getChildren().get(3)).getItems();
+        VBox vBox = (VBox) whiteListContainer.getChildren().get(id);
+        List<String> list = ((ListView<String>) vBox.getChildren().get(3)).getItems();
+        return list;
     }
 
 
@@ -160,7 +163,10 @@ public class MainController implements Initializable {
 
     ChangeListener widthListener = (ChangeListener<Number>) (observableValue, number, t1) -> {
         for(int i = 0; i < singleton.getColumns().size();i++){
-            columnWidths.set(i,((Double)singleton.getColumns().get(i).getWidth()).floatValue());
+            float value = ((Double)singleton.getColumns().get(i).getWidth()).floatValue();
+            if(value == 0)
+                value = 150;
+            columnWidths.set(i,value);
         }
     };
 
@@ -239,20 +245,21 @@ public class MainController implements Initializable {
 
     public void setupLater() {
         Window window = objectTable.getScene().getWindow();
-        maxWidthPane.setMaxWidth(window.getWidth() - 50);
-        maxHeightPane.setMaxHeight(window.getHeight() - 100);
+
         window.widthProperty().addListener((observableValue, number, t1) -> {
             maxWidthPane.setMaxWidth((Double) t1 - 50);
             chartContainer.setMaxWidth((Double) t1 - 50);
         });
-        window.heightProperty().addListener((observableValue, number, t1) -> maxHeightPane.setMaxHeight((Double) t1 - 100));
+        window.heightProperty().addListener((observableValue, number, t1) -> maxHeightPane.setMaxHeight((Double) t1 - 280));
         maxWidthPane.getDividers().get(0).setPosition(1);
         objectTable.setMaxWidth(window.getWidth() - 75);
+
+        ((Stage)window).setMaximized(false);        //needs to be false first or diagram presets break, idk why
+        ((Stage)window).setMaximized(true);
 
         for (int i = 0; i < singleton.getColumnInfo().size(); i++) {
             ListView<String> listView = (ListView<String>) singleton.getColumns().get(i).getChildren().get(1);
             ColumnInfo columnInfo = singleton.getColumnInfo().get(i);
-
 
             listView.setCellFactory(new Callback<>() {
                 @Override
@@ -261,9 +268,10 @@ public class MainController implements Initializable {
                         @Override
                         protected void updateItem(String item, boolean empty) {
                             super.updateItem(item, empty);
-                            if (item == null || empty) {
+                            if (item == null || item.equals("") || empty) {
                                 setText(null);
-                                setStyle("-fx-control-opacity: 0;");
+                                setPrefHeight(24);
+                                setStyle("-fx-control-inner-background-color: transparent;");
                             } else {
                                 setText(item);
                                 if (columnInfo.colored) {
@@ -280,6 +288,8 @@ public class MainController implements Initializable {
                                                 if (item.equals(status.getName())) {
                                                     setStyle("-fx-control-inner-background: " + status.getColor() + ";" +
                                                             "-fx-border-color: transparent;");
+
+
                                                 } else if (item.equals("") && columnInfo.required) {
                                                     setStyle("-fx-control-inner-background: " + status.getColor() + ";" +
                                                             "-fx-border-color: red;");
@@ -301,16 +311,24 @@ public class MainController implements Initializable {
             });
 
         }
+        for(int i = 0;i<Window.getWindows().size();i++){        //closes new project window and password window without moving primary window to background
+            Window w = Window.getWindows().get(i);
+            if(!w.equals(window))
+                ((Stage)w).close();
+        }
+        ((Stage)window).toFront();
     }
 
     private void addFiltersSettings(TilePane tilePane, ColumnInfo columnInfo, String name) {
         Label label = new Label(name + ":");
-        Control control;
+        HBox controlPane = new HBox();
+        ChoiceBox<String> choiceBox;
+        TextField textField;
 
 
         if (columnInfo.type.equals("Choice")) {
-            control = new ChoiceBox<String>();
-            control.setPrefWidth(150);
+            choiceBox = new ChoiceBox<String>();
+            choiceBox.setPrefWidth(150);
 
             int index = 0;
             for (int j = 0; j < singleton.choiceNames.size(); j++) {
@@ -321,13 +339,27 @@ public class MainController implements Initializable {
             }
 
             for (Status choice : singleton.choices.get(index)) {
-                ((ChoiceBox<String>) control).getItems().add(choice.getName());
+                choiceBox.getItems().add(choice.getName());
             }
-        } else {
-            control = new TextField();
-            ((TextField) control).setOnAction(this::onAddToList);
+            controlPane.getChildren().add(choiceBox);
         }
-        controlList.add(control);
+        else if(columnInfo.type.equals("Text")){
+            textField = new TextField();
+            textField.setOnAction(this::onAddToList);
+            controlPane.getChildren().add(textField);
+        }
+        else {
+            choiceBox = new ChoiceBox<>();
+            choiceBox.setPrefWidth(50);
+            ObservableList<String> numberOptions = FXCollections.observableArrayList("<","<=","=",">=",">");
+            choiceBox.getItems().addAll(numberOptions);
+            textField = new TextField();
+            textField.setOnAction(this::onAddToList);
+            controlPane.getChildren().addAll(choiceBox,textField);
+        }
+        controlPane.setMaxWidth(150);
+        controlPane.setMaxHeight(30);
+        controlList.add(controlPane);
 
         Button addButton = new Button("Add");
         Button removeButton = new Button("Remove");
@@ -344,7 +376,7 @@ public class MainController implements Initializable {
         filterListView.setOnMouseClicked(this::onListClick);
         listViews.add(filterListView);
 
-        VBox filterVBox = new VBox(label, control, borderPane, filterListView);
+        VBox filterVBox = new VBox(label, controlPane, borderPane, filterListView);
         VBox.setMargin(borderPane, new Insets(5, 0, 5, 0));
         tilePane.getChildren().add(filterVBox);
         TilePane.setMargin(filterVBox, new Insets(0, 5, 5, 0));
@@ -397,7 +429,7 @@ public class MainController implements Initializable {
 
     private void openDetailView(MouseEvent event) {
 
-        if (event.getClickCount() == 2) {
+        if (event.getClickCount() >= 2) {
 
             ListView<String> idList = null;
             for (VBox column : singleton.getColumns()) {
@@ -409,7 +441,9 @@ public class MainController implements Initializable {
             assert idList != null;
             if (idList.getSelectionModel().getSelectedItem() != null) {
                 try {
-                    String currentElement = idList.getSelectionModel().getSelectedItem();
+                    int currentElement = Integer.parseInt(idList.getSelectionModel().getSelectedItem());
+                    if(currentElement == 0)
+                        return;
 
                     FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("detail-view.fxml"));
                     Scene scene = new Scene(fxmlLoader.load());
@@ -423,7 +457,7 @@ public class MainController implements Initializable {
                     stage.initOwner(objectTable.getScene().getWindow());
 
                     DetailController detailController = fxmlLoader.getController();
-                    detailController.setCurrentElement(Integer.parseInt(currentElement));
+                    detailController.setCurrentElement(currentElement);
                     stage.show();
                     detailController.setupLater();
                 } catch (IOException e) {
@@ -532,18 +566,49 @@ public class MainController implements Initializable {
             if (actionEvent.getSource().getClass() == Button.class)
                 i = addButtons.indexOf(actionEvent.getSource());
             else
-                i = controlList.indexOf(actionEvent.getSource());
+                i = controlList.indexOf(((Control)actionEvent.getSource()).getParent());
 
-            Control control = controlList.get(i);
-            String text;
-            if (control.getClass() == TextField.class) {
-                text = ((TextField) control).getText();
-                ((TextField) control).setText("");
-            } else
-                text = ((ChoiceBox<String>) control).getValue();
+            HBox hBox = (controlList.get(i));
+
+            HBox controlPane = controlList.get(i);
+            StringBuilder text = new StringBuilder();
+            String name = ((Label)((VBox)hBox.getParent()).getChildren().get(0)).getText();
+            int infoIndex = singleton.choiceNames.indexOf(name.substring(0,name.length()-1));
+            String type = singleton.getColumnInfo().get(infoIndex).type;
+
+            if(!type.equals("Choice")) {
+                TextField textField = (TextField) hBox.getChildren().get(hBox.getChildren().size() - 1);
+                if (type.equals("Decimal") && !textField.getText().matches("^\\d+(\\.\\d+)?$")) {
+                    textField.setStyle("-fx-border-color: red; -fx-border-width: 2px");
+                    return;
+                } else if (type.equals("Integer") && !textField.getText().matches("^-?[0-9]*$")) {
+                    textField.setStyle("-fx-border-color: red; -fx-border-width: 2px");
+                    return;
+                } else {
+                    textField.setStyle("-fx-border-width: 0px");
+                }
+            }
+            for (Node node:controlPane.getChildren()) {
+                Control control = (Control) node;
+                if (control.getClass() == TextField.class) {
+                    String value = ((TextField) control).getText();
+                    if(value.equals(""))
+                        return;
+                    text.append(value);
+                    ((TextField) control).setText("");
+                } else{
+                    String value = ((ChoiceBox<String>)control).getValue();
+                    if(value == null)
+                        return;
+                    text.append(value);
+                }
+
+            }
+            if(text.isEmpty())
+                return;
 
             presetBox.setValue("Custom");
-            listViews.get(i).getItems().add(text);
+            listViews.get(i).getItems().add(text.toString());
             updateTable();
         }
     }
@@ -557,8 +622,33 @@ public class MainController implements Initializable {
     private void removeFromList(int id) {
         if (!changingPresets) {
             ListView<String> listView = listViews.get(id);
+
             if (listView.getSelectionModel().getSelectedItem() != null) {
-                listView.getItems().remove(listView.getSelectionModel().getSelectedItem());
+
+                String value = listView.getSelectionModel().getSelectedItem();
+                HBox hBox = (HBox) ((VBox)listView.getParent()).getChildren().get(1);
+                if(hBox.getChildren().size() > 1){
+                    String operator = "";
+                    if(value.charAt(1) == '='){
+                        operator = value.substring(0,2);
+                        value = value.substring(2);
+                    }
+                    else {
+                        operator = value.substring(0,1);
+                        value = value.substring(1);
+                    }
+                    ((ChoiceBox<String>)hBox.getChildren().get(0)).setValue(operator);
+                    ((TextField)hBox.getChildren().get(1)).setText(value);
+                }
+                else {
+                    Node node = hBox.getChildren().get(0);
+                    if(node.getClass().equals(TextField.class))
+                        ((TextField)node).setText(value);
+                    else
+                        ((ChoiceBox<String>)node).setValue(value);
+                }
+
+                listView.getItems().remove(listView.getSelectionModel().getSelectedIndex());
                 presetBox.setValue("Custom");
                 updateTable();
             }
@@ -567,7 +657,7 @@ public class MainController implements Initializable {
 
     public void onListClick(MouseEvent event) {
         if (event.getButton().equals(MouseButton.PRIMARY)) {
-            if (event.getClickCount() == 2) {
+            if (event.getClickCount() >= 2) {
                 removeFromList(listViews.indexOf(event.getSource()));
             }
         }
@@ -589,6 +679,7 @@ public class MainController implements Initializable {
         stage.initOwner(fromDatePicker.getScene().getWindow());
         NewProjectController newProjectController = fxmlLoader.getController();
         newProjectController.setReturnStage((Stage) fromDatePicker.getScene().getWindow());      //TODO: better data transfer
+        stage.setHeight(600);
         stage.show();
     }
 
@@ -632,10 +723,7 @@ public class MainController implements Initializable {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
             alert.setContentText("Delete Prefab: " + name);
             if (alert.showAndWait().get() == ButtonType.OK) {
-                File file = new File(singleton.getWorkingDirectory() + "\\Projects\\" + singleton.getCurrentProject() + "\\Presets\\" + name);
-                for (File pFile : Objects.requireNonNull(file.listFiles())) {
-                    Files.delete(pFile.toPath());
-                }
+                File file = new File(singleton.getWorkingDirectory() + "\\Projects\\" + singleton.getCurrentProject() + "\\Presets\\" + name+".json");
                 Files.delete(file.toPath());
                 selectPresets();
             }
@@ -856,8 +944,8 @@ public class MainController implements Initializable {
         alert.setContentText("Do you want to delete this Diagram: \n" + ((Chart) ((VBox) hBox.getChildren().get(0)).getChildren().get(0)).getTitle());
         if (alert.showAndWait().get() == ButtonType.OK) {
             int index = chartContainer.getChildren().indexOf(hBox);
-            VBox vBox = (VBox) hBox.getParent();
-            vBox.getChildren().remove(hBox);
+            TilePane tilePane = (TilePane) hBox.getParent();
+            tilePane.getChildren().remove(hBox);
             charts.remove(index);
         }
     }
@@ -990,13 +1078,15 @@ public class MainController implements Initializable {
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("newProject-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
         Stage stage = new Stage();
-        stage.setTitle("New Project");
+        stage.setTitle("Change Project");
         stage.setScene(scene);
         stage.initModality(Modality.WINDOW_MODAL);
         stage.initOwner(fromDatePicker.getScene().getWindow());
         NewProjectController newProjectController = fxmlLoader.getController();
         newProjectController.setReturnStage((Stage) fromDatePicker.getScene().getWindow());
+        stage.setHeight(600);
         stage.show();
+
         newProjectController.setUpdating();
 
     }

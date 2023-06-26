@@ -3,6 +3,7 @@ package com.main.datenpunk;
 import database.DAO;
 import enteties.ColumnInfo;
 import enteties.Status;
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -46,7 +47,10 @@ public class NewProjectController implements Initializable {
     @FXML
     TextField nameField, pathField;
 
+
     boolean changingOrder = false;
+    List<Node> oldOrder = new ArrayList<>();
+    List<Node> newOrder = new ArrayList<>();
     boolean updating = false;
 
     ObservableList<Node> oldColumns = FXCollections.observableArrayList();          //lists to detect what changed
@@ -58,7 +62,6 @@ public class NewProjectController implements Initializable {
     List<String> oldLengths = new ArrayList<>();
     List<List<String>> oldChoices = new ArrayList<>();
     static List<List<String>> listChanged = new ArrayList<>();
-
 
     List<List<String>> columnPositionChanges = new ArrayList<>();            //lists that contain what has to be changed
     List<List<String>> columnNameChanges = new ArrayList<>();
@@ -115,11 +118,11 @@ public class NewProjectController implements Initializable {
                 length.requestFocus();
                 length.setText(String.valueOf(columnInfo.length));
             }
-            if(name.equals("Id") || name.equals("Name") || name.equals("Status") || name.equals("Date")){
+            if(name.equals("id") || name.equals("Name") || name.equals("Status") || name.equals("Date")){
                 columnName.setDisable(true);
                 choiceBox.setDisable(true);
                 getColumnCloseButton(i).setDisable(true);
-                if(name.equals("Id")  || name.equals("Date")){
+                if(name.equals("id")  || name.equals("Date")){
                     historyCheck.setDisable(true);
                     requiredCheck.setDisable(true);
                 }
@@ -291,8 +294,8 @@ public class NewProjectController implements Initializable {
             else {
                 editProject();
                 openOldProject();
+                onCancel();
             }
-            onCancel();
         }
     }
 
@@ -342,6 +345,11 @@ public class NewProjectController implements Initializable {
 
     private void editProject() {
         clearChangeLists();
+        Alert presetAlert = new Alert(Alert.AlertType.CONFIRMATION);
+        presetAlert.setContentText("Changing the projects Structure will most likely break pre-existing Presets!\nContinue anyway?");
+        if(presetAlert.showAndWait().get() == ButtonType.CANCEL){
+            return;
+        }
         for(int i = 0; i< columnContainer.getChildren().size();i++){
             Node column = columnContainer.getChildren().get(i);
             if(!oldColumns.contains(column)){
@@ -428,9 +436,9 @@ public class NewProjectController implements Initializable {
                 }
                 if(newType.equals("Choice")) {
                     List<String> newList = getColumnSelectionList(i).getItems();
-                    List<String> oldList = oldChoices.get(i);
+                    List<String> oldList = oldChoices.get(index);
                     if (oldList != null && !oldList.equals(newList)) {
-                        String listName = oldNames.get(i);
+                        String listName = oldNames.get(index);
                         for (int j = 0; j < oldList.size(); j++) {
                             String oldValue = oldList.get(j);
                             if (!newList.contains(oldValue)) {
@@ -517,11 +525,6 @@ public class NewProjectController implements Initializable {
     }
 
     private void editColumns() {
-        Alert presetAlert = new Alert(Alert.AlertType.CONFIRMATION);
-        presetAlert.setContentText("Changing the projects Structure will most likely break pre-existing Presets!\nContinue anyway?");
-        if(presetAlert.showAndWait().get() == ButtonType.CANCEL){
-            return;
-        }
         for(List<String> list:columnPositionChanges){
             String name = list.get(0);
             String newPos = list.get(1);
@@ -804,6 +807,7 @@ public class NewProjectController implements Initializable {
                         singleton.setPassword(scanner.next());
 
                     }
+                    scanner.close();
                 }
             }
             openNewProject();
@@ -817,60 +821,33 @@ public class NewProjectController implements Initializable {
 
     private void openNewProject() {
         String name = nameField.getText();
-
         if (!dao.connectToDB("", "postgres", singleton.getPassword())) {
-            deleteCreatedData();
             openDBPasswordWindow();
             return;
         }
         dao.createDatabase(name);
         if (!dao.connectToDB("datenpunk_" + name, "postgres", singleton.getPassword())) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setContentText("Could not create Database for this project!");
+            alert.show();
             deleteCreatedData();
             return;
         }
 
         createTables();
+        singleton.setCurrentProject(nameField.getText());
+        singleton.openProject();
+        ((Stage) mainPane.getScene().getWindow()).close();
 
-        openProject();
     }
 
     private void openOldProject(){
-        if (dao.connectToDB("datenpunk_" + nameField.getText(), "postgres", singleton.getPassword()))
-            openProject();
-    }
-
-    private void openProject() {
-        if (singleton.getColumns() != null)
-            singleton.getColumns().clear();
-        if (singleton.getColumnInfo() != null)
-            singleton.getColumnInfo().clear();
-        singleton.choices.clear();
-        singleton.choiceNames.clear();
-
-        singleton.setCurrentProject(nameField.getText());
-        singleton.setColumnInfo();
-
-        try {
-            FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
-            Stage stage = returnStage;
-            stage.setTitle("Datenpunk");
-            Scene scene = new Scene(fxmlLoader.load());
-            scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/com/main/datenpunk/application.css")).toExternalForm());
-            stage.setScene(scene);
-            MainController controller = fxmlLoader.getController();
-            singleton.setController(controller);
-
-            stage.setMaximized(true);
-            stage.setResizable(true);
-            stage.show();
-            controller.setupLater();
-
-            stage = (Stage) mainPane.getScene().getWindow();
-            stage.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        if (dao.connectToDB("datenpunk_" + nameField.getText(), "postgres", singleton.getPassword())){
+            singleton.setCurrentProject(nameField.getText());
+            singleton.openProject();
         }
     }
+
 
 
     private void openDBPasswordWindow(){
@@ -879,9 +856,14 @@ public class NewProjectController implements Initializable {
             Scene scene = new Scene(fxmlLoader.load());
             Stage stage = new Stage();
             DatabaseConnectionController connectionController = fxmlLoader.getController();
-            connectionController.method = this::createProject;
+            connectionController.method = this::openNewProject;
+            connectionController.cancelMethod = this::deleteCreatedData;
             stage.setTitle("Connect to Database");
             stage.setScene(scene);
+            stage.setOnCloseRequest(event -> {
+                deleteCreatedData();
+                stage.close();
+            });
             stage.initModality(Modality.WINDOW_MODAL);
             stage.initOwner(mainPane.getScene().getWindow());
             stage.setResizable(false);
@@ -939,17 +921,31 @@ public class NewProjectController implements Initializable {
     private void changeColumnOrder(int oldValue, int newValue) {
 
         changingOrder = true;
+        oldOrder = new ArrayList<>(columnContainer.getChildren());
         VBox old = (VBox) columnContainer.getChildren().get(oldValue);
         columnContainer.getChildren().remove(old);
         columnContainer.getChildren().add(newValue - 1, old);
         generateColumnOrder();
+        changingOrder = false;
     }
     private void  generateColumnOrder(){
         changingOrder = true;
         for (int i = 0; i < columnContainer.getChildren().size(); i++) {
             getColumnPositionField(i).setText(String.valueOf(i + 1));
         }
-        changingOrder = false;
+        if(updating) {
+            newOrder = new ArrayList<>(columnContainer.getChildren());
+            changeChangedOrder();
+        }
+    }
+
+    private void changeChangedOrder(){
+        List<List<String>> tmp = new ArrayList<>(listChanged);
+        for(int i = 0; i<oldOrder.size();i++){
+            int index = newOrder.indexOf(oldOrder.get(i));
+            tmp.set(index,listChanged.get(i));
+        }
+        listChanged=tmp;
     }
 
     public void setReturnStage(Stage stage) {
@@ -1087,7 +1083,7 @@ public class NewProjectController implements Initializable {
         else
             vBox = (VBox) control.getParent();
         TextField textField = (TextField) vBox.getChildren().get(2);
-        if (textField.getText().equals("")) {
+        if (textField.getText().equals("") || textField.getText().length() > 200) {
             textField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
             return;
         }
@@ -1141,6 +1137,7 @@ public class NewProjectController implements Initializable {
                 listView.getItems().set(index, tmp);
                 listView.getSelectionModel().select(index + offset);
 
+
                 int columnPosition = Integer.parseInt(((TextField)((VBox)hBox.getChildren().get(0)).getChildren().get(1)).getText())-1;
                 String itemBool = listChanged.get(columnPosition).get(index);
                 String tmpBool = listChanged.get(columnPosition).get(index+offset);
@@ -1158,8 +1155,10 @@ public class NewProjectController implements Initializable {
         if(index >= 0){
             String item = listView.getSelectionModel().getSelectedItem();
 
-            int columnPosition = Integer.parseInt(((TextField)((VBox)((HBox)vBox.getParent()).getChildren().get(0)).getChildren().get(1)).getText())-1;
-            listChanged.get(columnPosition).set(index,item);
+            if(updating) {
+                int columnPosition = Integer.parseInt(((TextField) ((VBox) ((HBox) vBox.getParent()).getChildren().get(0)).getChildren().get(1)).getText()) - 1;
+                listChanged.get(columnPosition).set(index, item);
+            }
 
             TextField textField = (TextField)vBox.getChildren().get(2);
             if(!textField.getText().equals("")){

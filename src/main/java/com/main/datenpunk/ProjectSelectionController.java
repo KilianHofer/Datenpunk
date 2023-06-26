@@ -66,8 +66,8 @@ public class ProjectSelectionController implements Initializable {
         stage.initModality(Modality.WINDOW_MODAL);
         stage.initOwner(searchBar.getScene().getWindow());
 
-        NewProjectController newProjectController = fxmlLoader.getController();
-        newProjectController.setReturnStage((Stage)searchBar.getScene().getWindow());      //TODO: better data transfer
+        singleton.setMainStage((Stage)searchBar.getScene().getWindow());
+        stage.setHeight(600);
         stage.show();
     }
 
@@ -148,20 +148,24 @@ public class ProjectSelectionController implements Initializable {
                         stage.setScene(scene);
                         stage.setResizable(false);
                         stage.show();
+                        return;
                     }
-                } else {
+                }
                     dao.connectToDB("", "postgres", singleton.getPassword());
                     dao.dropDatabase(nameToDelete);
                     singleton.removeFromProjectsFile(pathToDelete);
                     File file = new File(subString + "\\Projects\\" + nameToDelete);
-                    for (File childFile : Objects.requireNonNull(file.listFiles())) {
-                        Files.delete(childFile.toPath());
+                    if(file.exists()) {
+                        for (File childFile : Objects.requireNonNull(file.listFiles())) {
+                            Files.delete(childFile.toPath());
+                        }
+                        Files.delete(file.toPath());
                     }
-                    Files.delete(file.toPath());
                     file = new File(pathToDelete);
-                    Files.delete(file.toPath());
+                    if(file.exists())
+                        Files.delete(file.toPath());
                     getProjects();
-                }
+
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -223,36 +227,16 @@ public class ProjectSelectionController implements Initializable {
         ProjectTableElement element = projectTable.getSelectionModel().getSelectedItem();
 
         try {
-        FileWriter fileWriter = new FileWriter(element.getLocation());
-        fileWriter.write('!');                                      //accesses the file so that last accessed works properly
-        fileWriter.flush();
-        fileWriter.close();
-
-        if(dao.connectToDB("datenpunk_"+element.getName(), "postgres", singleton.getPassword())) {
-            if (singleton.getColumns() != null)
-                singleton.getColumns().clear();
-            if (singleton.getColumnInfo() != null)
-                singleton.getColumnInfo().clear();
-            singleton.choices.clear();
-            singleton.choiceNames.clear();
-
-            singleton.setCurrentProject(element.getName());
-            singleton.setColumnInfo();
+            FileWriter fileWriter = new FileWriter(element.getLocation());
+            fileWriter.write('!');                                      //accesses the file so that last accessed works properly
+            fileWriter.flush();
+            fileWriter.close();
 
 
 
-                FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
-                Stage stage = (Stage) projectTable.getScene().getWindow();
-                stage.setTitle("Datenpunk");
-                Scene scene = new Scene(fxmlLoader.load());
-                scene.getStylesheets().add(Objects.requireNonNull(ProjectSelectionController.class.getResource("/com/main/datenpunk/application.css")).toExternalForm());
-                MainController controller = fxmlLoader.getController();
-                singleton.setController(controller);
-                stage.setScene(scene);
-                stage.setMaximized(true);
-                stage.setResizable(true);
-                stage.show();
-                controller.setupLater();
+            if(dao.connectToDB("datenpunk_"+element.getName(), "postgres", singleton.getPassword())) {
+                singleton.setCurrentProject(element.getName());
+                singleton.openProject();
             }
         }catch (IOException e) {
             throw new RuntimeException(e);
@@ -307,6 +291,7 @@ public class ProjectSelectionController implements Initializable {
     }
 
     public void initializeTable(){
+        singleton.setMainStage((Stage) projectTable.getScene().getWindow());
         String path = System.getProperty("user.home")+"\\Datenpunk";
         File file = new File(path);
         try {
@@ -393,14 +378,16 @@ public class ProjectSelectionController implements Initializable {
     }
 
     public void onDeleteSavedPasswords() {
+        singleton.setPassword(null);
         File connectionFile = new File(System.getProperty("user.home")+"\\Datenpunk\\connection.dtpnk");
         Alert alert;
         if(connectionFile.delete()){
+
             alert = new Alert((Alert.AlertType.INFORMATION));
             alert.setContentText("Saved passwords have been deleted!");
             alert.showAndWait();
         }
-        else{
+        else if (connectionFile.exists()){
             alert = new Alert((Alert.AlertType.ERROR));
             alert.setContentText("Could not delete saved passwords!");
             alert.showAndWait();
